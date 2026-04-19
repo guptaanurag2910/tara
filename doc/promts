@@ -1,0 +1,2085 @@
+----------------------------------------------------------------------------------
+Phase 1: Setup & Foundation
+Phase 2: Profile & Data Collection
+Phase 3: Core Engine (Kundali + Personality)
+Phase 4: Matching & Recommendation
+Phase 5: Swipe & Match System
+Phase 6: Chat System
+Phase 7: UI Polish & Engagement
+----------------------------------------------------------------------------------
+
+
+🧱 PHASE 1: SETUP & FOUNDATION (CODEX PROMPTS)
+
+🔹 PROMPT 1: Full Project Structure (VERY IMPORTANT)
+You are setting up a full-stack application named "Tara".
+
+Tech stack:
+
+* Backend: Django + Django REST Framework
+* Frontend: React (with Vite or Next.js)
+* Database: PostgreSQL
+
+Goal:
+Create a clean, scalable project structure for a production-ready app.
+
+---
+
+PROJECT STRUCTURE:
+
+Root/
+backend/
+manage.py
+config/ (settings, urls, wsgi)
+apps/
+users/
+matching/
+chat/
+services/
+kundali/
+personality/
+matching/
+utils/
+frontend/
+src/
+components/
+pages/
+hooks/
+services/
+context/
+styles/
+
+---
+
+REQUIREMENTS:
+
+Backend:
+
+* Use Django REST Framework
+* Separate apps: users, matching, chat
+* Use services layer for business logic
+* Prepare for JWT authentication
+
+Frontend:
+
+* Use React functional components
+* Use hooks and modular structure
+* Use Tailwind CSS for styling
+
+---
+
+OUTPUT:
+
+* Folder structure
+* Basic files for each folder
+* Explanation of purpose of each module
+
+----------------------------------------------------------------------------------
+
+
+🔹 PROMPT 2: Django Backend Setup
+You are setting up the Django backend for a dating app.
+
+Requirements:
+
+1. Create Django project named "config"
+
+2. Create apps:
+
+   * users
+   * matching
+   * chat
+
+3. Install and configure:
+
+   * djangorestframework
+   * django-cors-headers
+   * psycopg2 (PostgreSQL)
+
+4. Configure settings.py:
+
+   * Add installed apps
+   * Enable CORS
+   * Setup PostgreSQL connection
+   * Configure REST framework defaults
+
+5. Setup base User model (extend AbstractUser):
+   Fields:
+
+   * name
+   * email
+   * date_of_birth
+   * gender
+   * preference
+   * birth_time (nullable)
+   * latitude
+   * longitude
+   * is_birth_time_default
+
+6. Create basic API:
+
+   * POST /api/auth/signup
+   * POST /api/auth/login
+
+7. Setup JWT authentication
+
+---
+
+OUTPUT:
+
+* models.py
+* settings.py changes
+* serializers.py
+* views.py
+* urls.py
+* migrations
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 3: React Frontend Setup
+You are building a mobile-first frontend for a dating app called "Tara" using React.
+
+Requirements:
+
+1. Setup React app using Vite or Next.js
+
+2. Install:
+
+   * axios
+   * react-router-dom
+   * tailwindcss
+
+3. Create folder structure:
+   src/
+   components/
+   pages/
+   hooks/
+   services/
+   context/
+
+4. Setup routing:
+   Pages:
+
+   * Landing
+   * Login
+   * ProfileSetup
+   * Discover
+   * Matches
+   * Chat
+
+5. Create reusable components:
+
+   * Button
+   * Input
+   * Card
+   * Loader
+
+6. Setup API service layer:
+
+   * axios instance
+   * base URL config
+   * auth token handling
+
+7. Create global auth context:
+
+   * store user + token
+   * login/logout functions
+
+---
+
+OUTPUT:
+
+* Folder structure
+* App.js / routing setup
+* Sample components
+* API service file
+
+----------------------------------------------------------------------------------
+
+
+🔹 PROMPT 4: Backend ↔ Frontend Integration
+Task:
+Connect React frontend with Django backend.
+
+Requirements:
+
+1. Setup axios base URL:
+   http://localhost:8000/api/
+
+2. Handle authentication:
+
+   * Store JWT token in localStorage
+   * Attach token to headers
+
+3. Create API calls:
+
+   * signup()
+   * login()
+   * getUser()
+
+4. Handle errors globally
+
+5. Setup CORS in Django
+
+6. Test:
+
+   * Signup user from frontend
+   * Login and store token
+   * Fetch user profile
+
+---
+
+OUTPUT:
+
+* API service code (React)
+* Django CORS config
+* Example API call usage
+
+----------------------------------------------------------------------------------
+
+
+**********************************************************************************
+
+
+🧱 PHASE 2: PROFILE SETUP + PERSONALITY FLOW
+
+🔹 PROMPT 1: Backend – Profile & Personality Models
+
+You are working on a Django backend for a dating app called "Tara".
+
+Task:
+Design models to support user profile setup and personality questions.
+
+---
+
+REQUIREMENTS:
+
+1. Extend User model (if not already):
+   Fields:
+
+* name
+* date_of_birth
+* gender
+* preference
+* birth_time (nullable)
+* latitude
+* longitude
+* is_birth_time_default (boolean)
+
+---
+
+2. Create PersonalityQuestion model:
+   Fields:
+
+* id
+* question_text
+* category (e.g., personality, emotions, relationships)
+* is_active
+
+---
+
+3. Create PersonalityOption model:
+   Fields:
+
+* id
+* question (ForeignKey)
+* option_text
+* trait_mapping (JSONField)
+
+Example:
+{
+"overthinking": 2,
+"emotional_depth": 1
+}
+
+---
+
+4. Create PersonalityResponse model:
+   Fields:
+
+* user (ForeignKey)
+* question (ForeignKey)
+* selected_option (ForeignKey)
+
+---
+
+5. Create Trait model:
+   Fields:
+
+* user (OneToOne)
+* traits (JSONField)
+
+---
+
+OUTPUT:
+
+* models.py
+* migrations
+* admin registration for all models
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 2: Backend – Profile Setup API
+
+Task:
+Create APIs for profile setup and personality responses.
+
+---
+
+ENDPOINTS:
+
+1. POST /api/profile/basic/
+   Input:
+   {
+   name,
+   date_of_birth,
+   gender,
+   preference
+   }
+
+---
+
+2. POST /api/profile/birth/
+   Input:
+   {
+   latitude,
+   longitude,
+   birth_time (optional)
+   }
+
+Logic:
+
+* If birth_time is missing:
+  set is_birth_time_default = true
+
+---
+
+3. GET /api/personality/questions/
+
+* Return all active questions with options
+
+---
+
+4. POST /api/personality/response/
+   Input:
+   {
+   question_id,
+   option_id
+   }
+
+Logic:
+
+* Save or update response
+
+---
+
+5. GET /api/profile/me/
+
+* Return full profile with:
+
+  * basic info
+  * birth details
+  * personality responses
+
+---
+
+REQUIREMENTS:
+
+* Use Django REST Framework
+* Use serializers
+* Validate inputs
+* Auth required for all endpoints
+
+---
+
+OUTPUT:
+
+* serializers.py
+* views.py
+* urls.py
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 3: Backend – Personality Engine (Trait Calculation)
+
+Task:
+Create a personality engine to calculate user traits.
+
+---
+
+INPUT:
+
+* All PersonalityResponse for a user
+
+---
+
+LOGIC:
+
+1. For each response:
+
+   * Fetch selected option
+   * Extract trait_mapping JSON
+
+2. Aggregate trait values:
+   Example:
+   {
+   "overthinking": sum,
+   "emotional_depth": sum
+   }
+
+3. Normalize values (optional scaling 1–10)
+
+---
+
+OUTPUT:
+{
+"overthinking": number,
+"emotional_depth": number,
+"communication": number
+}
+
+---
+
+4. Save result in Trait model
+
+---
+
+REQUIREMENTS:
+
+* Place logic in services/personality_service.py
+* Make mapping dynamic (not hardcoded)
+* Create function:
+  calculate_traits(user)
+
+---
+
+OUTPUT:
+
+* service file
+* example usage in view or signal
+
+----------------------------------------------------------------------------------
+
+
+🔹 PROMPT 4: Frontend – Profile Setup Flow
+
+You are building a mobile-first profile setup flow in React for "Tara".
+
+---
+
+TASK:
+Create a multi-step onboarding flow.
+
+---
+
+SCREENS:
+
+1. Basic Info Screen
+
+* Name input
+* DOB picker
+* Gender select
+* Preference select
+
+---
+
+2. Birth Details Screen
+
+* Location input (or auto-detect)
+* Time input (optional)
+* Show hint:
+  “Add time for better compatibility 🔮”
+
+---
+
+3. Personality Questions (7 screens)
+
+* Show 1 question per screen
+* Display options as large cards
+* Tap to select
+* Auto move to next
+
+---
+
+4. Progress Indicator
+
+* Show step count (e.g., 3/7)
+
+---
+
+REQUIREMENTS:
+
+* Use React hooks
+* Maintain state across steps
+* Use clean UI with Tailwind
+* Mobile-first design
+* Smooth transitions
+
+---
+
+OUTPUT:
+
+* Components for each screen
+* State management logic
+* Navigation between steps
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 5: Frontend – API Integration
+Task:
+Connect profile setup UI with backend APIs.
+
+---
+
+REQUIREMENTS:
+
+1. Create API functions:
+
+* saveBasicProfile(data)
+* saveBirthDetails(data)
+* fetchQuestions()
+* submitResponse(data)
+
+---
+
+2. Flow:
+
+* On Basic Info submit → call API
+* On Birth Details submit → call API
+* Fetch questions → render screens
+* Save each response
+
+---
+
+3. Handle:
+
+* Loading states
+* Error states
+* Success navigation
+
+---
+
+4. Store progress locally (optional)
+
+---
+
+OUTPUT:
+
+* API service functions
+* Example usage in components
+
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 6: Frontend – “Your Vibe” Screen
+Task:
+Create a “Your Vibe” screen after onboarding.
+
+---
+
+INPUT:
+
+* Traits from backend
+
+---
+
+DISPLAY:
+
+Example:
+✨ Calm overthinker
+🌙 Emotionally deep
+💘 Values real connection
+
+---
+
+REQUIREMENTS:
+
+* Clean centered layout
+* Add subtle animations
+* CTA button: “See Matches”
+
+---
+
+OUTPUT:
+
+* React component
+* Styling
+
+
+
+----------------------------------------------------------------------------------
+**********************************************************************************
+
+
+🔮 PHASE 3: Kundali Engine + Matching Logic
+
+🔹 PROMPT 1: Backend – Kundali Model
+You are working on a Django backend.
+
+Task:
+Create a model to store kundali (astrology) data for each user.
+
+---
+
+FIELDS:
+
+* user (OneToOne)
+* moon_sign (string)
+* nakshatra (string)
+* nakshatra_pada (integer)
+* varna (string)
+* vashya (string)
+* gana (string)
+* yoni (string)
+* nadi (string)
+* bhakoot (string)
+* is_accurate (boolean)
+
+---
+
+REQUIREMENTS:
+
+* Use Django ORM
+* Add migrations
+* Register in admin panel
+
+---
+
+OUTPUT:
+
+* models.py
+* admin.py
+* migrations
+
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 2: Backend – Kundali Calculation Service
+Task:
+Create a kundali calculation service in Django.
+
+---
+
+INPUT:
+
+* date_of_birth
+* birth_time
+* latitude
+* longitude
+
+---
+
+LOGIC (Simplified for MVP):
+
+1. Calculate moon sign:
+
+* Based on date (approximate logic is acceptable)
+
+2. Calculate nakshatra:
+
+* Divide zodiac into 27 parts
+
+3. Assign attributes:
+
+* varna
+* vashya
+* gana
+* yoni
+* nadi
+* bhakoot
+
+Use predefined mapping tables.
+
+---
+
+OUTPUT:
+{
+moon_sign: "Gemini",
+nakshatra: "Ardra",
+varna: "Brahmin",
+gana: "Deva",
+nadi: "Madhya"
+}
+
+---
+
+REQUIREMENTS:
+
+* Keep logic modular
+* Place in services/kundali_service.py
+* Easy to upgrade later
+
+---
+
+OUTPUT:
+
+* service file
+* helper functions
+
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 3: Backend – Kundali Matching (36 Gunas)
+Task:
+Implement kundali matching logic using 36 guna system.
+
+---
+
+INPUT:
+Two users' kundali data
+
+---
+
+SCORING RULES:
+
+* Varna: 1 point
+* Vashya: 2 points
+* Tara: 3 points
+* Yoni: 4 points
+* Graha Maitri: 5 points
+* Gana: 6 points
+* Bhakoot: 7 points
+* Nadi: 8 points
+
+---
+
+LOGIC:
+
+* Compare attributes
+* Assign points if compatible
+
+---
+
+OUTPUT:
+{
+total_score: 28,
+breakdown: {
+varna: 1,
+vashya: 2,
+...
+}
+}
+
+---
+
+REQUIREMENTS:
+
+* Clean modular functions
+* Place in services/matching_service.py
+
+---
+
+OUTPUT:
+
+* matching logic code
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 4: Backend – Personality Matching
+Task:
+Create personality matching logic.
+
+---
+
+INPUT:
+Two users' trait JSON
+
+Example:
+{
+"overthinking": 8,
+"emotional_depth": 7,
+"communication": 5
+}
+
+---
+
+LOGIC:
+
+1. For each trait:
+   difference = abs(A - B)
+
+2. Calculate similarity:
+   lower difference = higher score
+
+3. Normalize to 0–100 scale
+
+---
+
+OUTPUT:
+{
+personality_score: 72
+}
+
+---
+
+REQUIREMENTS:
+
+* Modular function
+* Place in services/matching_service.py
+
+---
+
+OUTPUT:
+
+* personality match function
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 5: Backend – Final Matching Engine
+Task:
+Create final matching engine combining kundali + personality.
+
+---
+
+INPUT:
+
+* kundali_score (0–36)
+* personality_score (0–100)
+
+---
+
+LOGIC:
+
+final_score =
+(kundali_score / 36 * 80)
+
+* (personality_score / 100 * 20)
+
+---
+
+Also classify match type:
+
+if kundali_score > 28:
+"High Compatibility 💞"
+
+elif personality_score > 75:
+"Mental Match 🧠"
+
+else:
+"Balanced Match ⚖️"
+
+---
+
+OUTPUT:
+{
+kundali_score: 28,
+personality_score: 72,
+final_score: 78,
+match_type: "High Compatibility"
+}
+
+---
+
+REQUIREMENTS:
+
+* Keep weights configurable
+* Clean code
+
+---
+
+OUTPUT:
+
+* final matching service
+
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 6: Backend – Match Insight Generator (VERY IMPORTANT)
+Task:
+Create a function to generate human-readable match insights.
+
+---
+
+INPUT:
+
+* traits of user A
+* traits of user B
+* kundali data
+
+---
+
+OUTPUT (example):
+
+“You both overthink emotions and value deep connection.
+This creates a strong bond but may lead to overanalysis.”
+
+---
+
+LOGIC:
+
+* If both high in overthinking → mention it
+* If one stable, one chaotic → highlight contrast
+* If kundali strong → mention emotional alignment
+
+---
+
+REQUIREMENTS:
+
+* Use rule-based templates
+* Keep it simple but engaging
+* Place in services/insight_service.py
+
+---
+
+OUTPUT:
+
+* insight generator function
+
+
+
+----------------------------------------------------------------------------------
+
+PROMPT 7: Backend – Store Matches
+Task:
+Create Match model and logic to store compatibility results.
+
+---
+
+FIELDS:
+
+* user_a
+* user_b
+* kundali_score
+* personality_score
+* final_score
+* match_type
+* insight_text
+* status (suggested, liked, matched)
+
+---
+
+REQUIREMENTS:
+
+* Prevent duplicate matches
+* Index for fast lookup
+
+---
+
+OUTPUT:
+
+* model
+* migration
+* save logic
+
+
+----------------------------------------------------------------------------------
+
+🧱 PHASE 4: RECOMMENDATION + SWIPE SYSTEM
+User completes profile
+   ↓
+Backend generates matches
+   ↓
+Frontend fetches recommendations
+   ↓
+User swipes (like/pass)
+   ↓
+Mutual like → MATCH
+   ↓
+Chat unlocked
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 1: Backend – Recommendation Engine
+Task:
+Create a recommendation service in Django.
+
+---
+
+INPUT:
+
+* user_id
+
+---
+
+LOGIC:
+
+1. Fetch all users matching:
+
+   * gender preference
+   * exclude self
+
+2. For each user:
+
+   * calculate compatibility using matching engine
+
+3. Sort users by:
+
+   * final_score DESC
+
+4. Return top 50 users
+
+---
+
+OUTPUT:
+[
+{
+user_id,
+name,
+age,
+compatibility_score,
+kundali_score,
+personality_score,
+insight
+}
+]
+
+---
+
+REQUIREMENTS:
+
+* Optimize queries (avoid N+1)
+* Use select_related / prefetch_related
+* Cache results if possible
+
+---
+
+OUTPUT:
+
+* recommendation_service.py
+* API endpoint: GET /api/recommendations/
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 2: Backend – Swipe Actions (Like / Pass)
+Task:
+Implement swipe functionality.
+
+---
+
+ENDPOINTS:
+
+POST /api/swipe/like/
+POST /api/swipe/pass/
+
+---
+
+INPUT:
+{
+target_user_id
+}
+
+---
+
+LOGIC:
+
+1. On LIKE:
+
+   * store interaction (user A → user B)
+
+2. Check:
+
+   * if user B already liked user A:
+     → create MATCH
+
+3. On PASS:
+
+   * store as rejected
+
+---
+
+REQUIREMENTS:
+
+* Prevent duplicate likes
+* Use unique constraints
+
+---
+
+OUTPUT:
+
+* models (Swipe / Interaction)
+* views
+* serializers
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 3: Backend – Match Creation Logic
+Task:
+Create match creation logic.
+
+---
+
+LOGIC:
+
+If:
+A likes B
+AND
+B likes A
+
+THEN:
+create match entry
+
+---
+
+MATCH MODEL UPDATE:
+
+Fields:
+
+* user_a
+* user_b
+* matched_at
+* status = "matched"
+
+---
+
+Also:
+
+* Copy compatibility data into match
+* Store insight_text
+
+---
+
+OUTPUT:
+
+* match creation function
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 4: Backend – Fetch Matches API
+Task:
+Create API to fetch matches.
+
+---
+
+ENDPOINT:
+GET /api/matches/
+
+---
+
+OUTPUT:
+[
+{
+match_id,
+user: {
+name,
+photo
+},
+compatibility_score,
+insight
+}
+]
+
+---
+
+Also:
+GET /api/matches/:id/
+
+→ full match detail:
+
+* kundali score
+* personality score
+* breakdown
+* insight
+
+---
+
+OUTPUT:
+
+* views
+* serializers
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 5: Frontend – Swipe Screen UI
+Task:
+Create Tinder-style swipe screen in React.
+
+---
+
+FEATURES:
+
+1. Card Stack UI
+
+* Show one profile at a time
+* Next card behind
+
+2. Card Content:
+
+* Image
+* Name + age
+* Compatibility %
+* Short insight
+
+Example:
+“Both overthink texts 😄”
+
+---
+
+3. Swipe Actions:
+
+* Swipe right → Like
+* Swipe left → Pass
+
+---
+
+4. Buttons:
+
+* Like (❤️)
+* Pass (❌)
+
+---
+
+REQUIREMENTS:
+
+* Mobile-first
+* Smooth animations
+* Use gesture library (react-swipeable or framer-motion)
+
+---
+
+OUTPUT:
+
+* SwipeCard component
+* SwipeScreen page
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 6: Frontend – API Integration (Swipe)
+Task:
+Connect swipe UI with backend.
+
+---
+
+LOGIC:
+
+1. On load:
+
+* call GET /api/recommendations/
+
+2. On swipe:
+
+* call:
+  POST /api/swipe/like/
+  OR
+  POST /api/swipe/pass/
+
+3. Remove card from stack
+
+4. If match:
+
+* trigger match popup
+
+---
+
+REQUIREMENTS:
+
+* Handle loading states
+* Handle empty state (no more matches)
+
+---
+
+OUTPUT:
+
+* API calls
+* state management
+
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 7: Frontend – Match Popup (CRITICAL UX)
+Task:
+Create match popup UI.
+
+---
+
+WHEN:
+
+* mutual like detected
+
+---
+
+DISPLAY:
+
+“You matched 🔮”
+
+Show:
+
+* both user images
+* compatibility %
+
+Breakdown:
+
+* Kundali: 30/36
+* Personality: 72%
+
+Insight:
+“You both value emotional depth”
+
+---
+
+CTA:
+
+* Start Chat
+* Keep Swiping
+
+---
+
+REQUIREMENTS:
+
+* Modal or full-screen popup
+* Smooth animation
+
+---
+
+OUTPUT:
+
+* MatchPopup component
+
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 8: Frontend – Matches List Screen
+Task:
+Create matches list screen.
+
+---
+
+DISPLAY:
+List of matched users:
+
+* photo
+* name
+* compatibility score
+* short insight
+
+---
+
+ON CLICK:
+→ open match detail
+
+---
+
+REQUIREMENTS:
+
+* Clean list UI
+* Mobile optimized
+
+---
+
+OUTPUT:
+
+* MatchesPage component
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 9: Frontend – Match Detail Screen
+Task:
+Create detailed match screen.
+
+---
+
+DISPLAY:
+
+Compatibility Breakdown:
+
+🔮 Kundali Score: 30/36
+🧠 Personality: 72%
+
+Insight:
+“You both overthink emotions...”
+
+---
+
+ALSO:
+
+* show personality prompts
+* show astro info
+
+---
+
+CTA:
+
+* Start Chat
+
+---
+
+OUTPUT:
+
+* MatchDetail component
+
+
+----------------------------------------------------------------------------------
+
+1. Recommendation Engine (BE)
+2. Swipe APIs (BE)
+3. Match Logic (BE)
+4. Matches API (BE)
+5. Swipe UI (FE)
+6. API Integration (FE)
+7. Match Popup (FE)
+8. Matches List (FE)
+9. Match Detail (FE)
+
+----------------------------------------------------------------------------------
+**********************************************************************************
+
+
+🧱 PHASE 5: CHAT SYSTEM
+
+Match created
+   ↓
+Chat unlocked
+   ↓
+User opens chat
+   ↓
+Sees insight + icebreakers
+   ↓
+Starts conversation
+   ↓
+Real-time messaging
+
+----------------------------------------------------------------------------------
+🔹 PROMPT 1: Backend – Chat Models
+You are working on a Django backend.
+
+Task:
+Create chat-related models.
+
+---
+
+MODELS:
+
+1. Match (if not already exists)
+
+* id
+* user_a
+* user_b
+* created_at
+
+---
+
+2. Message
+
+* id
+* match (ForeignKey)
+* sender (ForeignKey to User)
+* content (text)
+* is_read (boolean)
+* created_at (timestamp)
+
+---
+
+REQUIREMENTS:
+
+* Index match_id for faster queries
+* Order messages by created_at
+* Register in admin
+
+---
+
+OUTPUT:
+
+* models.py
+* migrations
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 2: Backend – Django Channels Setup (WebSocket)
+Task:
+Setup real-time chat using Django Channels.
+
+---
+
+REQUIREMENTS:
+
+1. Install:
+
+* channels
+* channels_redis
+
+2. Configure:
+
+* ASGI application
+* Redis channel layer
+
+3. Create:
+
+* routing.py
+* consumers.py
+
+---
+
+WEBSOCKET ENDPOINT:
+ws://localhost:8000/ws/chat/{match_id}/
+
+---
+
+CONSUMER LOGIC:
+
+* connect to room (match_id)
+* receive message
+* save message to DB
+* broadcast message to both users
+
+---
+
+OUTPUT:
+
+* settings.py changes
+* asgi.py
+* routing.py
+* consumers.py
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 3: Backend – Chat APIs
+Task:
+Create REST APIs for chat.
+
+---
+
+ENDPOINTS:
+
+1. GET /api/chat/{match_id}/messages/
+
+* Fetch all messages for a match
+
+2. POST /api/chat/{match_id}/message/
+
+* Send message (fallback if websocket fails)
+
+---
+
+OUTPUT:
+[
+{
+sender_id,
+content,
+timestamp,
+is_read
+}
+]
+
+---
+
+REQUIREMENTS:
+
+* Auth required
+* Only matched users can access
+
+---
+
+OUTPUT:
+
+* views.py
+* serializers.py
+* urls.py
+
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 4: Frontend – Chat UI
+You are building a mobile-first chat screen in React.
+
+---
+
+FEATURES:
+
+1. Chat Layout:
+
+* Top: user name + compatibility insight
+* Middle: messages (scrollable)
+* Bottom: input box + send button
+
+---
+
+2. Message UI:
+
+* Sent messages (right aligned)
+* Received messages (left aligned)
+* Timestamps
+
+---
+
+3. Input:
+
+* Text input
+* Send button
+
+---
+
+REQUIREMENTS:
+
+* Mobile optimized
+* Clean UI (like WhatsApp/Tinder)
+* Auto scroll to latest message
+
+---
+
+OUTPUT:
+
+* ChatScreen component
+* MessageBubble component
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 5: Frontend – WebSocket Integration
+Task:
+Integrate WebSocket chat in React.
+
+---
+
+REQUIREMENTS:
+
+1. Connect to:
+   ws://localhost:8000/ws/chat/{match_id}/
+
+2. On connect:
+
+* join chat room
+
+3. On send:
+
+* send message via socket
+
+4. On receive:
+
+* update UI instantly
+
+---
+
+5. Handle:
+
+* reconnect on disconnect
+* fallback to REST API
+
+---
+
+OUTPUT:
+
+* WebSocket hook (useChatSocket)
+* Integration in ChatScreen
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 6: Icebreaker Suggestions (VERY IMPORTANT)
+Task:
+Create a system for suggested conversation starters.
+
+---
+
+INPUT:
+
+* match insight
+* personality traits
+
+---
+
+OUTPUT (examples):
+
+* “You also overthink texts? 😄”
+* “Be honest, situationships or serious?”
+
+---
+
+LOGIC:
+
+* Rule-based suggestions
+* Based on shared traits
+
+---
+
+REQUIREMENTS:
+
+* Generate 2–3 suggestions per match
+* Return via API
+
+---
+
+OUTPUT:
+
+* service/icebreaker_service.py
+* API endpoint
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 7: Frontend – Icebreaker UI
+Task:
+Display icebreaker suggestions in chat UI.
+
+---
+
+FEATURES:
+
+* Show 2–3 suggestions above input box
+* Tap to auto-fill message
+
+---
+
+REQUIREMENTS:
+
+* Hide after first message sent
+* Clean pill-style UI
+
+---
+
+OUTPUT:
+
+* Icebreaker component
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 8: Read Receipts + Status
+Task:
+Add message status features.
+
+---
+
+FEATURES:
+
+* Sent
+* Delivered
+* Read
+
+---
+
+LOGIC:
+
+* Update is_read when user opens chat
+* Show indicator in UI
+
+---
+
+OUTPUT:
+
+* backend update
+* frontend UI indicators
+
+
+
+----------------------------------------------------------------------------------
+**********************************************************************************
+
+
+🧱 PHASE 6: RETENTION + GROWTH SYSTEM
+
+User leaves app
+   ↓
+Receives notification 🔔
+   ↓
+Opens app
+   ↓
+Sees new match / recommendation
+   ↓
+Swipes / chats
+   ↓
+Gets reward (match / reply)
+   ↓
+Repeats
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 1: Backend – Daily Recommendation System
+Task:
+Create a daily recommendation system.
+
+---
+
+LOGIC:
+
+1. For each user:
+
+   * fetch top matches using compatibility score
+
+2. Select top 5–10 users
+
+3. Store separately as:
+   "daily_recommendations"
+
+---
+
+MODEL:
+
+DailyRecommendation:
+
+* user
+* recommended_user
+* score
+* created_at
+
+---
+
+CRON JOB:
+
+* Run once per day
+* Refresh recommendations
+
+---
+
+OUTPUT:
+
+* model
+* scheduled task (Celery or cron)
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 2: Backend – Notification System
+Task:
+Create a notification system.
+
+---
+
+MODEL:
+
+Notification:
+
+* user
+* type (match, message, recommendation)
+* text
+* is_read
+* created_at
+
+---
+
+EVENTS TO TRIGGER:
+
+1. New Match
+2. New Message
+3. Daily Recommendation
+
+---
+
+EXAMPLES:
+
+* “You have a new match 🔮”
+* “Someone messaged you 👀”
+* “Your top match today is waiting ✨”
+
+---
+
+OUTPUT:
+
+* model
+* service for creating notifications
+
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 3: Backend – Notification API
+Task:
+Create API to fetch notifications.
+
+---
+
+ENDPOINTS:
+
+GET /api/notifications/
+
+* list all notifications
+
+POST /api/notifications/read/
+
+* mark as read
+
+---
+
+OUTPUT:
+[
+{
+text,
+type,
+is_read,
+timestamp
+}
+]
+
+---
+
+OUTPUT:
+
+* views
+* serializers
+* urls
+
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 4: Frontend – Notification UI
+Task:
+Create notification UI in React.
+
+---
+
+FEATURES:
+
+* Bell icon with unread count
+* Dropdown / screen showing notifications
+* Mark as read
+
+---
+
+REQUIREMENTS:
+
+* Clean mobile UI
+* Highlight unread items
+
+---
+
+OUTPUT:
+
+* Notification component
+
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 5: Frontend – Daily Match Screen
+Task:
+Create “Your Stars Today” screen.
+
+---
+
+DISPLAY:
+
+Top section:
+“✨ Your Top Matches Today”
+
+---
+
+Show:
+
+* 3–5 curated matches
+* Compatibility %
+* Insight text
+
+---
+
+CTA:
+
+* View Profile
+* Swipe
+
+---
+
+REQUIREMENTS:
+
+* Visually different from swipe screen
+* Premium feel
+
+---
+
+OUTPUT:
+
+* DailyMatches component
+
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 6: Backend – Re-engagement Logic
+Task:
+Create re-engagement triggers.
+
+---
+
+LOGIC:
+
+1. If user inactive for 24 hours:
+   → send notification
+
+2. If new high compatibility match found:
+   → notify
+
+3. If user has unread message:
+   → notify
+
+---
+
+OUTPUT:
+
+* service logic
+
+
+----------------------------------------------------------------------------------
+
+🔹 PROMPT 7: Frontend – Empty State Improvements
+
+Task:
+Improve empty states.
+
+---
+
+CASES:
+
+1. No matches:
+   “Your next match is on the way 🔮”
+
+2. No messages:
+   “Start a conversation 👀”
+
+3. No recommendations:
+   “Check back later for new matches ✨”
+
+---
+
+OUTPUT:
+
+* UI components
+
+----------------------------------------------------------------------------------
+
+
+🔹 PROMPT 8: Backend – Match Highlight Logic
+Task:
+Highlight best matches.
+
+---
+
+LOGIC:
+
+* Identify:
+  top 1–3 matches (highest score)
+
+* Tag them:
+  "Top Match"
+  "High Compatibility"
+
+---
+
+OUTPUT:
+
+* update recommendation logic
+
+
+
+----------------------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------
+
+
+
+----------------------------------------------------------------------------------
+
+
+GAME 1: THIS OR THAT (50 Questions)
+
+
+
+

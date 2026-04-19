@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: tara_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: tara_db
+      POSTGRES_USER: tara_user
+      POSTGRES_PASSWORD: tara_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

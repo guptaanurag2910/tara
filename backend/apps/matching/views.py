@@ -1,0 +1,143 @@
+import logging
+
+from django.db.models import Q
+from django.shortcuts import get_object_or_404
+from rest_framework import generics, permissions, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from apps.services.matching.icebreaker_service import generate_icebreakers
+from apps.services.matching.service import generate_match_score
+from apps.services.utils.pagination import StandardResultsSetPagination
+
+from .models import Match, MatchResult, Swipe
+from .recommendation_service import get_recommendations_for_user
+from .serializers import (
+    IcebreakerResponseSerializer,
+    MatchDetailSerializer,
+    MatchListSerializer,
+    MatchResultSerializer,
+    RecommendationSerializer,
+    SwipeInputSerializer,
+)
+from .swipe_service import handle_swipe
+
+logger = logging.getLogger(__name__)
+
+
+class RecommendationPagination(StandardResultsSetPagination):
+    page_size = 20
+    page_size_query_param = None
+
+
+class MatchResultListCreateView(generics.ListCreateAPIView):
+    serializer_class = MatchResultSerializer
+
+    def get_queryset(self):
+        return MatchResult.objects.filter(user=self.request.user).order_by("-created_at")
+
+    def perform_create(self, serializer):
+        data = serializer.validated_data
+        score, reasoning = generate_match_score(self.request.user, data["partner_name"])
+        serializer.save(user=self.request.user, score=score, reasoning=reasoning)
+
+
+class RecommendationListView(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = RecommendationSerializer
+    pagination_class = RecommendationPagination
+
+    def get_queryset(self):
+        user = self.request.user
+        try:
+            # Ensure recommendations are generated before listing.
+            get_recommendations_for_user(user.id, limit=50, use_cache=True)
+        except Exception:
+            logger.exception("Failed to build recommendations for user_id=%s", user.id)
+
+        swiped_target_ids = Swipe.objects.filter(user=user).values_list("target_user_id", flat=True)
+
+        return (
+            Match.objects.filter(
+                status=Match.Status.SUGGESTED,
+                is_visible=True,
+            )
+            .filter(Q(user_a=user) | Q(user_b=user))
+            .exclude(
+                Q(user_a=user, user_b_id__in=swiped_target_ids)
+                | Q(user_b=user, user_a_id__in=swiped_target_ids)
+            )
+            .select_related("user_a", "user_b")
+            .prefetch_related("user_a__profile_images", "user_b__profile_images")
+            .order_by("-final_score", "-id")
+        )
+
+
+class MatchListView(generics.ListAPIView):
+    serializer_class = MatchListSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return (
+            Match.objects.filter(status=Match.Status.MATCHED)
+            .filter(Q(user_a=self.request.user) | Q(user_b=self.request.user))
+            .select_related("user_a", "user_b")
+            .prefetch_related("user_a__profile_images", "user_b__profile_images")
+            .order_by("-matched_at", "-updated_at")
+        )
+
+
+class MatchDetailView(generics.RetrieveAPIView):
+    serializer_class = MatchDetailSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_url_kwarg = "match_id"
+
+    def get_queryset(self):
+        return (
+            Match.objects.filter(status=Match.Status.MATCHED)
+            .filter(Q(user_a=self.request.user) | Q(user_b=self.request.user))
+            .select_related("user_a", "user_b")
+            .prefetch_related("user_a__profile_images", "user_b__profile_images")
+        )
+
+
+class MatchIcebreakerView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, match_id: int):
+        match = get_object_or_404(
+            Match.objects.filter(status=Match.Status.MATCHED)
+            .filter(Q(user_a=request.user) | Q(user_b=request.user))
+            .select_related("user_a", "user_b")
+            .prefetch_related("user_a__profile_images", "user_b__profile_images"),
+            id=match_id,
+        )
+
+        payload = {
+            "match_id": match.id,
+            "suggestions": generate_icebreakers(match),
+        }
+        serializer = IcebreakerResponseSerializer(payload)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class SwipeLikeView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = SwipeInputSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        target_user = serializer.validated_data["target_user"]
+        payload = handle_swipe(request.user, target_user, Swipe.Action.LIKE)
+        return Response(payload, status=status.HTTP_200_OK)
+
+
+class SwipePassView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = SwipeInputSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        target_user = serializer.validated_data["target_user"]
+        payload = handle_swipe(request.user, target_user, Swipe.Action.PASS)
+        return Response(payload, status=status.HTTP_200_OK)

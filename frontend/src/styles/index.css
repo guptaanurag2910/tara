@@ -1,0 +1,391 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: "Inter", "Avenir Next", "Segoe UI", sans-serif;
+  --font-serif: "Cormorant Garamond", "Playfair Display", Georgia, serif;
+
+  --tara-bg: radial-gradient(circle at 50% -26%, #2f2581 0%, #11064f 46%, #070432 100%);
+  --tara-bg-surface:
+    radial-gradient(circle at 52% 6%, rgba(114, 87, 247, 0.36), transparent 45%),
+    radial-gradient(circle at 13% 17%, rgba(102, 82, 225, 0.18), transparent 42%),
+    radial-gradient(circle at 88% 18%, rgba(37, 32, 107, 0.48), transparent 37%),
+    linear-gradient(180deg, #0b0542 0%, #090338 42%, #07022f 100%);
+  --tara-star-opacity: 0.24;
+
+  --tara-text-primary: #f3f0ea;
+  --tara-text-secondary: #8f91af;
+  --tara-text-faint: #74769a;
+
+  --tara-card-bg: linear-gradient(135deg, rgba(13, 11, 54, 0.9), rgba(10, 9, 46, 0.98));
+  --tara-card-bg-strong: linear-gradient(135deg, rgba(17, 14, 63, 0.94), rgba(11, 10, 49, 0.99));
+  --tara-card-border: rgba(70, 78, 136, 0.34);
+  --tara-input-bg: linear-gradient(135deg, rgba(16, 14, 59, 0.95), rgba(12, 10, 50, 0.98));
+
+  --tara-nav-bg: rgba(8, 10, 43, 0.83);
+  --tara-nav-pill: radial-gradient(circle at 38% 12%, rgba(132, 126, 255, 0.6), rgba(134, 150, 255, 0.22) 58%, rgba(134, 150, 255, 0.04));
+
+  --tara-violet: #6f63f7;
+  --tara-gold: #e2b54f;
+  --tara-primary-grad: linear-gradient(92deg, #7c5df6 0%, #5d73fb 52%, #e4be65 100%);
+
+  --tara-overlay: rgba(3, 3, 20, 0.76);
+  --tara-shadow: 0 18px 55px rgba(0, 0, 0, 0.34);
+}
+
+:root[data-theme="light"] {
+  --tara-bg: radial-gradient(circle at 8% 0%, #fff7f2 0%, #efeaff 50%, #e5edff 100%);
+  --tara-bg-surface:
+    radial-gradient(circle at 52% 5%, rgba(141, 114, 244, 0.2), transparent 44%),
+    radial-gradient(circle at 11% 15%, rgba(172, 144, 236, 0.17), transparent 48%),
+    radial-gradient(circle at 90% 13%, rgba(182, 203, 255, 0.43), transparent 40%),
+    linear-gradient(180deg, #f8f5ff 0%, #edf0ff 50%, #e7eeff 100%);
+  --tara-star-opacity: 0.14;
+
+  --tara-text-primary: #212850;
+  --tara-text-secondary: #4a5180;
+  --tara-text-faint: #69709e;
+
+  --tara-card-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.86), rgba(246, 248, 255, 0.96));
+  --tara-card-bg-strong: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 255, 0.98));
+  --tara-card-border: rgba(124, 131, 189, 0.26);
+  --tara-input-bg: rgba(255, 255, 255, 0.92);
+
+  --tara-nav-bg: rgba(255, 255, 255, 0.88);
+  --tara-nav-pill: radial-gradient(circle at 40% 10%, rgba(115, 113, 241, 0.38), rgba(115, 113, 241, 0.1));
+
+  --tara-violet: #6f5be8;
+  --tara-gold: #c69232;
+  --tara-primary-grad: linear-gradient(92deg, #6f5be8 0%, #7a75f1 52%, #d4af5f 100%);
+
+  --tara-overlay: rgba(241, 244, 255, 0.68);
+  --tara-shadow: 0 12px 34px rgba(59, 66, 122, 0.16);
+}
+
+body {
+  margin: 0;
+  background: var(--tara-bg);
+  color: var(--tara-text-primary);
+  min-height: 100vh;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  font-family: "Inter", "Avenir Next", "Segoe UI", sans-serif;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.bg-app {
+  background: var(--tara-bg-surface);
+  position: relative;
+}
+
+.bg-app::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 12% 17%, rgba(255, 255, 255, 0.35) 0 1px, transparent 2px),
+    radial-gradient(circle at 79% 24%, rgba(255, 255, 255, 0.3) 0 1px, transparent 2px),
+    radial-gradient(circle at 67% 78%, rgba(255, 255, 255, 0.24) 0 1px, transparent 2px),
+    radial-gradient(circle at 27% 64%, rgba(255, 255, 255, 0.22) 0 1px, transparent 2px);
+  z-index: 0;
+  opacity: var(--tara-star-opacity);
+}
+
+.bg-app > *:not(.tara-fixed-nav) {
+  position: relative;
+  z-index: 1;
+}
+
+.bg-cosmic {
+  background: var(--tara-bg-surface);
+  position: relative;
+}
+
+.star-field {
+  background-image:
+    radial-gradient(circle at 12% 17%, rgba(255, 255, 255, 0.35) 0 1px, transparent 2px),
+    radial-gradient(circle at 79% 24%, rgba(255, 255, 255, 0.3) 0 1px, transparent 2px),
+    radial-gradient(circle at 67% 78%, rgba(255, 255, 255, 0.24) 0 1px, transparent 2px),
+    radial-gradient(circle at 27% 64%, rgba(255, 255, 255, 0.22) 0 1px, transparent 2px),
+    radial-gradient(circle at 41% 31%, rgba(255, 255, 255, 0.24) 0 1px, transparent 2px);
+  background-size: 100% 100%;
+}
+
+.bg-glow {
+  background: radial-gradient(
+    circle at 36% 28%,
+    color-mix(in srgb, var(--tara-violet) 55%, transparent),
+    color-mix(in srgb, var(--tara-violet) 18%, transparent) 52%,
+    transparent 78%
+  );
+}
+
+.glass {
+  background: color-mix(in srgb, var(--tara-card-bg-strong) 85%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tara-card-border) 86%, transparent);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(10px);
+}
+
+.glass-strong {
+  background: color-mix(in srgb, var(--tara-card-bg-strong) 94%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tara-card-border) 90%, transparent);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(14px);
+}
+
+.shadow-glow {
+  box-shadow: 0 0 30px color-mix(in srgb, var(--tara-violet) 34%, transparent);
+}
+
+.shadow-elevated {
+  box-shadow: 0 22px 52px rgba(0, 0, 0, 0.35);
+}
+
+.shadow-card-mystic {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(78, 74, 140, 0.24);
+}
+
+.bg-aurora {
+  background: var(--tara-primary-grad);
+}
+
+.bg-mystic {
+  background: linear-gradient(180deg, transparent 0%, rgba(6, 4, 32, 0.92) 100%);
+}
+
+.bg-gold-gradient {
+  background: linear-gradient(135deg, #e2b54f 0%, #cc8f34 100%);
+}
+
+.bg-card-gradient {
+  background: linear-gradient(180deg, rgba(23, 17, 79, 0.9) 0%, rgba(10, 9, 44, 0.95) 100%);
+}
+
+.text-aurora {
+  background: var(--tara-primary-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.text-gold-gradient {
+  background: linear-gradient(135deg, #f1c463 0%, #d9a242 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+main {
+  width: 100%;
+}
+
+.tara-container {
+  width: 100%;
+  max-width: 390px;
+  margin: 0 auto;
+}
+
+.tara-card {
+  background: var(--tara-card-bg);
+  border: 1px solid var(--tara-card-border);
+  box-shadow: var(--tara-shadow);
+}
+
+.tara-card-strong {
+  background: var(--tara-card-bg-strong);
+  border: 1px solid var(--tara-card-border);
+  box-shadow: var(--tara-shadow);
+}
+
+.tara-heading {
+  color: var(--tara-text-primary);
+  font-family: var(--font-serif);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.tara-copy {
+  color: var(--tara-text-secondary);
+}
+
+.tara-faint {
+  color: var(--tara-text-faint);
+}
+
+.tara-kicker {
+  color: color-mix(in srgb, var(--tara-gold) 78%, transparent);
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  font-size: 10px;
+  font-family: "Cinzel", "Times New Roman", serif;
+}
+
+.tara-input {
+  width: 100%;
+  height: 56px;
+  border-radius: 999px;
+  border: 1px solid var(--tara-card-border);
+  background: var(--tara-input-bg);
+  color: var(--tara-text-primary);
+  padding: 0.95rem 1.2rem;
+  outline: none;
+  font-size: 1.15rem;
+}
+
+.tara-input::placeholder {
+  color: color-mix(in srgb, var(--tara-text-faint) 86%, transparent);
+}
+
+.tara-input:focus {
+  border-color: color-mix(in srgb, var(--tara-violet) 62%, white 12%);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--tara-violet) 22%, transparent);
+}
+
+.tara-option-card {
+  width: 100%;
+  min-height: 74px;
+  border-radius: 999px;
+  border: 1px solid var(--tara-card-border);
+  background: var(--tara-input-bg);
+  color: var(--tara-text-primary);
+  padding: 0.9rem 1.25rem;
+  text-align: left;
+  transition: all 0.18s ease;
+}
+
+.tara-option-card.active {
+  border-color: color-mix(in srgb, var(--tara-gold) 72%, var(--tara-violet) 22%);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--tara-gold) 44%, transparent),
+    0 0 28px color-mix(in srgb, var(--tara-gold) 24%, transparent);
+}
+
+.tara-option-dot {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  border: 1px solid var(--tara-card-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  color: #161221;
+}
+
+.tara-option-card.active .tara-option-dot {
+  background: var(--tara-gold);
+  border-color: color-mix(in srgb, var(--tara-gold) 72%, transparent);
+}
+
+.tara-primary-btn {
+  background: var(--tara-primary-grad);
+  color: #f7f7ff;
+  border: none;
+  border-radius: 999px;
+  font-weight: 700;
+  min-height: 72px;
+  font-size: 1.08rem;
+  letter-spacing: 0.01em;
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--tara-violet) 29%, transparent);
+}
+
+.tara-secondary-btn {
+  background: transparent;
+  border: 1px solid var(--tara-card-border);
+  color: var(--tara-text-primary);
+  border-radius: 999px;
+  min-height: 68px;
+  font-size: 1rem;
+}
+
+.tara-back-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  border: 1px solid var(--tara-card-border);
+  background: var(--tara-input-bg);
+  color: var(--tara-text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+}
+
+.tara-progress-track {
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tara-card-border) 62%, transparent);
+  overflow: hidden;
+}
+
+.tara-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--tara-violet) 85%, white 8%), color-mix(in srgb, var(--tara-gold) 92%, white 2%));
+}
+
+.onboarding-step-enter {
+  animation: stepIn 220ms ease-out;
+}
+
+@keyframes stepIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.vibe-card {
+  animation: vibeIn 420ms ease both;
+}
+
+@keyframes vibeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fadeInQuick {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeInQuick 280ms ease both;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fadeUp 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}

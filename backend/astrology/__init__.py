@@ -1,0 +1,4 @@
+"""
+Astrology domain package.
+"""
+
