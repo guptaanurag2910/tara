@@ -17,6 +17,7 @@ if DEBUG:
             ALLOWED_HOSTS.append(host)
 
 INSTALLED_APPS = [
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -119,6 +120,10 @@ CORS_ALLOWED_ORIGINS = [
         "http://localhost:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173",
     ).split(",")
     if origin.strip()
+]
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https?://localhost:\d+$",
+    r"^https?://127\.0\.0\.1:\d+$",
 ]
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS.copy()

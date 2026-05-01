@@ -4,6 +4,7 @@ from django.conf.urls.static import static
 from django.urls import include, path
 
 from apps.matching.views import (
+    DailyRecommendationListView,
     MatchDetailView,
     MatchIcebreakerView,
     MatchListView,
@@ -16,6 +17,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("apps.users.urls")),
     path("api/astrology/", include("apps.astrology.urls")),
+    path("api/daily-recommendations/", DailyRecommendationListView.as_view(), name="daily-recommendations"),
     path("api/matches/", MatchListView.as_view(), name="matches-list"),
     path("api/matches/<int:match_id>/", MatchDetailView.as_view(), name="matches-detail"),
     path("api/matches/<int:match_id>/icebreakers/", MatchIcebreakerView.as_view(), name="matches-icebreakers"),

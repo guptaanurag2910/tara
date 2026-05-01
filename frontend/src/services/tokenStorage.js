@@ -1,6 +1,14 @@
 const TOKEN_KEY = "tara_access_token";
 const REFRESH_KEY = "tara_refresh_token";
 const USER_KEY = "tara_user";
+const AUTH_CHANGED_EVENT = "tara-auth-changed";
+
+function notifyAuthChanged() {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+}
 
 export function getStoredToken() {
   return localStorage.getItem(TOKEN_KEY);
@@ -34,10 +42,14 @@ export function setStoredAuth({ access, refresh, user }) {
   if (user) {
     localStorage.setItem(USER_KEY, JSON.stringify(user));
   }
+  notifyAuthChanged();
 }
 
 export function clearStoredAuth() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(REFRESH_KEY);
   localStorage.removeItem(USER_KEY);
+  notifyAuthChanged();
 }
+
+export { AUTH_CHANGED_EVENT };

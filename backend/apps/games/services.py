@@ -9,9 +9,98 @@ from .models import Game, GameOption, GameQuestion, GameResponse, GameSession, G
 
 SAME_PICK_RESULT_TEXT = "You both picked the same 😄"
 DIFFERENT_PICK_RESULT_TEXT = "Opposites 👀 interesting"
+SESSION_QUESTION_LIMIT = 3
 
 
-def start_game_session(*, match_id: int, game_id: int, user_id: int) -> GameSession:
+def _serialize_question_payload(question: GameQuestion) -> dict:
+    return {
+        "id": question.id,
+        "question_text": question.question_text,
+        "options": question.options or [],
+        "game_type": question.game_type,
+    }
+
+
+def _ensure_session_question_ids(
+    session: GameSession,
+    *,
+    preferred_question_ids: Optional[list[int]] = None,
+    limit: int = SESSION_QUESTION_LIMIT,
+) -> list[int]:
+    existing_ids = list(
+        GameSessionQuestion.objects.filter(session_id=session.id)
+        .order_by("order", "id")
+        .values_list("question_id", flat=True)
+    )
+    if existing_ids:
+        return existing_ids
+
+    ordered_game_question_ids = list(
+        GameQuestion.objects.filter(game_id=session.game_id, is_active=True)
+        .order_by("order", "id")
+        .values_list("id", flat=True)
+    )
+    if not ordered_game_question_ids:
+        return []
+
+    valid_ids = set(ordered_game_question_ids)
+    response_question_ids = list(
+        GameResponse.objects.filter(session_id=session.id)
+        .order_by("created_at", "id")
+        .values_list("question_id", flat=True)
+        .distinct()
+    )
+
+    ordered_ids: list[int] = []
+    for source in (preferred_question_ids or [], response_question_ids, ordered_game_question_ids):
+        for question_id in source:
+            normalized_id = int(question_id)
+            if normalized_id in valid_ids and normalized_id not in ordered_ids:
+                ordered_ids.append(normalized_id)
+            if len(ordered_ids) >= limit:
+                break
+        if len(ordered_ids) >= limit:
+            break
+
+    GameSessionQuestion.objects.bulk_create(
+        [
+            GameSessionQuestion(session_id=session.id, question_id=question_id, order=index)
+            for index, question_id in enumerate(ordered_ids, start=1)
+        ],
+        ignore_conflicts=True,
+    )
+
+    return list(
+        GameSessionQuestion.objects.filter(session_id=session.id)
+        .order_by("order", "id")
+        .values_list("question_id", flat=True)
+    )
+
+
+def get_session_questions_payload(*, session_id: int) -> list[dict]:
+    session = GameSession.objects.only("id", "game_id").filter(id=session_id).first()
+    if session is None:
+        raise ValueError("Game session not found.")
+
+    ordered_ids = _ensure_session_question_ids(session)
+    if not ordered_ids:
+        return []
+
+    question_map = {
+        question.id: _serialize_question_payload(question)
+        for question in GameQuestion.objects.filter(id__in=ordered_ids)
+    }
+    return [question_map[question_id] for question_id in ordered_ids if question_id in question_map]
+
+
+def start_game_session(
+    *,
+    match_id: int,
+    game_id: int,
+    user_id: int,
+    category_id: Optional[int] = None,
+    question_ids: Optional[list[int]] = None,
+) -> GameSession:
     """
     Start a gameplay session for a match.
 
@@ -42,10 +131,29 @@ def start_game_session(*, match_id: int, game_id: int, user_id: int) -> GameSess
             game_id=game.id,
             status=GameSession.Status.ACTIVE,
             defaults={
+                "category_id": category_id,
                 "started_by_id": user_id,
+                "created_by_id": user_id,
                 "current_question_index": 0,
             },
         )
+        update_fields = []
+        if category_id is not None and session.category_id != category_id:
+            session.category_id = category_id
+            update_fields.append("category")
+        if session.started_by_id != user_id:
+            session.started_by_id = user_id
+            update_fields.append("started_by")
+        if session.created_by_id is None:
+            session.created_by_id = user_id
+            update_fields.append("created_by")
+        if update_fields:
+            session.save(update_fields=update_fields)
+
+        session_question_ids = _ensure_session_question_ids(session, preferred_question_ids=question_ids)
+        if not session_question_ids:
+            raise ValueError("No active questions found for this game.")
+
     if created:
         create_game_event_message(
             match_id=match.id,
@@ -81,10 +189,14 @@ def fetch_next_question(*, session_id: int) -> dict:
     if session is None:
         raise ValueError("Game session not found.")
 
+    ordered_question_ids = _ensure_session_question_ids(session)
     current_index = max(int(session.current_question_index or 0), 0)
+    if current_index >= len(ordered_question_ids):
+        return {"question_id": None, "question_text": None, "options": []}
+
     question = (
-        GameQuestion.objects.filter(game_id=session.game_id, is_active=True)
-        .order_by("order", "id")[current_index : current_index + 1]
+        GameQuestion.objects.filter(id=ordered_question_ids[current_index], is_active=True)
+        .order_by("order", "id")
         .first()
     )
     if question is None:
@@ -147,11 +259,7 @@ def submit_game_response(
         if user_id not in participant_ids:
             raise ValueError("User is not part of this match session.")
 
-        ordered_question_ids = list(
-            GameQuestion.objects.filter(game_id=session.game_id, is_active=True)
-            .order_by("order", "id")
-            .values_list("id", flat=True)
-        )
+        ordered_question_ids = _ensure_session_question_ids(session)
         if not ordered_question_ids:
             session.status = GameSession.Status.COMPLETED
             session.save(update_fields=["status"])

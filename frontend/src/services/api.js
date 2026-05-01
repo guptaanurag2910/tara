@@ -48,6 +48,12 @@ function normalizeApiError(error) {
   const status = error?.response?.status ?? 0;
   const data = error?.response?.data;
   const fallbackMessage = "Something went wrong. Please try again.";
+  const rawMessage = String(error?.message || "").trim();
+  const isTimeout =
+    error?.code === "ECONNABORTED" ||
+    /timed?\s*out/i.test(rawMessage) ||
+    /timeout/i.test(rawMessage);
+  const isNetworkError = !error?.response && !isTimeout;
 
   const extractFieldMessage = () => {
     if (!data || typeof data !== "object" || Array.isArray(data)) {
@@ -67,18 +73,36 @@ function normalizeApiError(error) {
     return null;
   };
 
-  const message =
+  const extractedMessage =
     data?.detail ||
     data?.message ||
     extractFieldMessage() ||
     (typeof data === "string" ? data : null) ||
-    error?.message ||
+    rawMessage ||
     fallbackMessage;
+
+  const isGenericServerMessage =
+    /request failed with status code 5\d\d/i.test(extractedMessage) ||
+    /^internal server error$/i.test(extractedMessage) ||
+    /^server error$/i.test(extractedMessage) ||
+    /^network error$/i.test(extractedMessage);
+
+  let message = extractedMessage;
+  if (isTimeout) {
+    message = "The request took too long. Please try again.";
+  } else if (isNetworkError) {
+    message = "Cannot reach the server. Check your connection and try again.";
+  } else if (status >= 500 && isGenericServerMessage) {
+    message = "Something went wrong on our side. Please try again.";
+  }
 
   return {
     status,
     message,
     details: data ?? null,
+    isTimeout,
+    isNetworkError,
+    isRetryable: isTimeout || isNetworkError || status >= 500,
     raw: error,
   };
 }

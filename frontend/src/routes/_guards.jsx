@@ -8,7 +8,7 @@ export function RequireAuth({ children, allowIncompleteOnboarding = false }) {
   const onboardingDone = isOnboardingComplete(user?.id);
 
   if (!token) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/" replace />;
   }
 
   if (!allowIncompleteOnboarding && !onboardingDone) {

@@ -43,6 +43,15 @@ function scoreColor(score) {
   return "text-slate-100 bg-slate-500/20 border-slate-300/30";
 }
 
+function insightText(match) {
+  if (match?.insight) {
+    return match.insight;
+  }
+  const kundaliScore = Number(match?.kundali_score || 0);
+  const personalityScore = Number(match?.personality_score || 0);
+  return `Today's score blends kundali ${kundaliScore}/36 with personality ${personalityScore}%.`;
+}
+
 function MatchSpotlight({ match, onClose }) {
   if (!match) {
     return null;
@@ -53,9 +62,17 @@ function MatchSpotlight({ match, onClose }) {
       <div className="w-full rounded-t-[1.8rem] border-t border-white/20 bg-slate-950/95 p-5">
         <div className="mx-auto mb-3 h-1.5 w-14 rounded-full bg-white/20" />
         <div className="flex items-center gap-3">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full border border-white/25 bg-gradient-to-br from-cyan-400/45 to-amber-300/40 text-lg font-semibold text-white">
-            {initials(match.name)}
-          </div>
+          {match.photo ? (
+            <img
+              alt={match.name || "Daily match"}
+              className="h-14 w-14 rounded-full border border-white/25 object-cover"
+              src={match.photo}
+            />
+          ) : (
+            <div className="flex h-14 w-14 items-center justify-center rounded-full border border-white/25 bg-gradient-to-br from-cyan-400/45 to-amber-300/40 text-lg font-semibold text-white">
+              {initials(match.name)}
+            </div>
+          )}
           <div>
             <p className="text-lg font-semibold text-white">{match.name}</p>
             <p className="text-xs text-cyan-100/80">{match.age} years · Curated for today</p>
@@ -78,7 +95,7 @@ function MatchSpotlight({ match, onClose }) {
         </div>
 
         <p className="mt-4 rounded-xl border border-cyan-300/20 bg-cyan-400/10 px-3 py-3 text-sm text-cyan-50">
-          {match.insight || "Your emotional rhythm aligns naturally today."}
+          {insightText(match)}
         </p>
 
         <div className="mt-4">
@@ -120,7 +137,7 @@ export default function DailyMatches() {
   const headingCount = useMemo(() => Math.min(matches.length, 5), [matches.length]);
 
   return (
-    <main className="relative mx-auto min-h-[calc(100vh-88px)] w-full max-w-md overflow-hidden px-4 py-5">
+    <main className="relative mx-auto min-h-[calc(100dvh-88px)] w-full max-w-md overflow-hidden px-4 py-5">
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_10%,rgba(14,165,233,0.35),transparent_45%),radial-gradient(circle_at_85%_20%,rgba(251,191,36,0.28),transparent_42%),linear-gradient(180deg,#0f172a_0%,#111827_65%,#0a1122_100%)]" />
 
       <header className="mb-5 rounded-3xl border border-cyan-200/20 bg-white/[0.04] p-4 shadow-xl shadow-black/30 backdrop-blur-sm">
@@ -169,9 +186,17 @@ export default function DailyMatches() {
               transition={{ duration: 0.25, delay: index * 0.04 }}
             >
               <div className="flex items-start gap-3">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-white/30 bg-gradient-to-br from-cyan-400/40 to-amber-300/40 text-base font-semibold text-white">
-                  {initials(match.name)}
-                </div>
+                {match.photo ? (
+                  <img
+                    alt={match.name || "Daily match"}
+                    className="h-14 w-14 shrink-0 rounded-full border border-white/30 object-cover"
+                    src={match.photo}
+                  />
+                ) : (
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-white/30 bg-gradient-to-br from-cyan-400/40 to-amber-300/40 text-base font-semibold text-white">
+                    {initials(match.name)}
+                  </div>
+                )}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
                     <p className="truncate text-base font-semibold text-white">
@@ -182,7 +207,7 @@ export default function DailyMatches() {
                       {match.compatibility_score ?? 0}%
                     </span>
                   </div>
-                  <p className="mt-1 line-clamp-2 text-sm text-slate-200">{match.insight || "Your energy signatures look beautifully aligned."}</p>
+                  <p className="mt-1 line-clamp-2 text-sm text-slate-200">{insightText(match)}</p>
                 </div>
               </div>
 
@@ -192,7 +217,7 @@ export default function DailyMatches() {
                   onClick={() => setSpotlightMatch(match)}
                   type="button"
                 >
-                  View Profile
+                  View Details
                 </button>
                 <button
                   className="rounded-xl bg-gradient-to-r from-cyan-500 via-sky-500 to-amber-400 px-3 py-2 text-sm font-semibold text-white shadow-md shadow-sky-900/40"

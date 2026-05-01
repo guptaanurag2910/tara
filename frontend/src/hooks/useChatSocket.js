@@ -46,6 +46,9 @@ function parseSocketPayload(raw) {
     return { event: "unknown", data: {} };
   }
   if (typeof raw.event === "string") {
+    if (raw.event === "error") {
+      return { event: raw.event, data: raw };
+    }
     return { event: raw.event, data: raw.data ?? {} };
   }
   if (raw.type === "chat.message" && raw.payload) {

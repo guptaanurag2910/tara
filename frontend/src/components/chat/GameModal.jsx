@@ -79,8 +79,11 @@ export default function GameModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/65 p-4 pb-8 sm:items-center">
-      <div className="w-full max-w-md rounded-[2rem] border border-[#2f3178]/70 bg-[#121248]/94 p-5 shadow-[0_26px_80px_rgba(2,3,18,0.68)] backdrop-blur-xl animate-scale-in">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/65 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center">
+      <div
+        className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-[2rem] border border-[#2f3178]/70 bg-[#121248]/94 p-5 shadow-[0_26px_80px_rgba(2,3,18,0.68)] backdrop-blur-xl animate-scale-in"
+        data-testid="game-modal"
+      >
         <div className="flex items-start justify-between">
           <div>
             <p className="text-[0.75rem] uppercase tracking-[0.35em] text-[#d7be72]">
@@ -108,14 +111,15 @@ export default function GameModal({
           <p className="text-xs uppercase tracking-[0.2em] text-white/55">
             Round {Math.min(step + 1, questions.length || 1)} of {questions.length || 1}
           </p>
-          <p className="mt-3 font-serif text-[2.1rem] leading-tight text-white">
+          <p className="mt-3 font-serif text-[1.8rem] leading-tight text-white sm:text-[2.1rem]">
             {currentQuestion?.question_text || "Question"}
           </p>
 
           <div className={`mt-5 grid gap-3 ${options.length === 2 ? "grid-cols-2" : "grid-cols-1"}`}>
             {options.map((option) => (
               <button
-                className="rounded-3xl border border-[#30347d]/80 bg-[#11154b]/70 px-4 py-6 text-center font-serif text-[1.9rem] leading-none text-white transition-all duration-200 hover:border-[#d7be72]/90 hover:bg-[#171d5f] disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-3xl border border-[#30347d]/80 bg-[#11154b]/70 px-4 py-5 text-center font-serif text-[1.45rem] leading-tight text-white transition-all duration-200 hover:border-[#d7be72]/90 hover:bg-[#171d5f] disabled:cursor-not-allowed disabled:opacity-60 sm:text-[1.9rem] sm:leading-none"
+                data-testid="game-option-button"
                 disabled={submitting}
                 key={option.key}
                 onClick={() => handleOptionClick(option)}

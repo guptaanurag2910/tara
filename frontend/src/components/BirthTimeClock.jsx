@@ -219,10 +219,10 @@ export default function BirthTimeClock({
 
       <div className="mt-3 text-center">
         <p className="font-serif text-3xl text-[color:var(--tara-text-primary)]">
-          {pad(hour12)}:{pad(minute)} {period}
+          {parsed.isSet ? `${pad(hour12)}:${pad(minute)} ${period}` : "--:--"}
         </p>
         <p className="mt-1 text-[11px] text-[color:var(--tara-text-secondary)]">
-          24h: {parsed.isSet ? value : to24h(hour12, minute, period)}
+          {parsed.isSet ? `24h: ${value}` : "Time not set yet"}
         </p>
       </div>
 
@@ -243,4 +243,3 @@ export default function BirthTimeClock({
     </div>
   );
 }
-

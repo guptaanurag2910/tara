@@ -25,7 +25,7 @@ function RequireAuth({ children, allowIncompleteOnboarding = false }) {
   const onboardingDone = isOnboardingComplete(user?.id);
 
   if (!token) {
-    return <Navigate to="/auth" replace state={{ from: location.pathname }} />;
+    return <Navigate to="/" replace state={{ from: location.pathname }} />;
   }
 
   if (!allowIncompleteOnboarding && !onboardingDone) {
@@ -41,7 +41,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/auth" element={<Login />} />
-        <Route path="/login" element={<Navigate to="/auth" replace />} />
+        <Route path="/login" element={<Navigate to="/auth?mode=login" replace />} />
 
         <Route
           path="/welcome"

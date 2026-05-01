@@ -7,6 +7,7 @@ const EDIT_ITEMS = [
   { key: "dob", label: "Date of Birth", hint: "Must be 18+ to use Tara" },
   { key: "gender", label: "Gender", hint: "How you identify" },
   { key: "preferences", label: "Preferences", hint: "Who you are interested in" },
+  { key: "birth-details", label: "Birth Details", hint: "Birth date, time and place for your kundali" },
   { key: "photos", label: "Photos", hint: "Add, remove or reorder photos" },
   { key: "bio", label: "Bio", hint: "A short about-you line" },
   { key: "interests", label: "Interests", hint: "Choose tags that represent you" },
@@ -54,4 +55,3 @@ export default function EditProfile() {
     </main>
   );
 }
-

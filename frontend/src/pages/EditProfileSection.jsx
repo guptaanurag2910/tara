@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import Button from "../components/Button";
+import BirthDetailsForm from "../components/BirthDetailsForm";
 import Input from "../components/Input";
 import { useAuth } from "../hooks/useAuth";
 import {
@@ -23,7 +24,7 @@ import {
   saveProfileEditDraft,
 } from "../services/profileService";
 
-const SECTION_ORDER = ["name", "dob", "gender", "preferences", "photos", "bio", "interests"];
+const SECTION_ORDER = ["name", "dob", "gender", "preferences", "birth-details", "photos", "bio", "interests"];
 const MAX_PHOTOS = 5;
 
 const SECTION_META = {
@@ -42,6 +43,10 @@ const SECTION_META = {
   preferences: {
     title: "Edit Preferences",
     subtitle: "Who you are interested in",
+  },
+  "birth-details": {
+    title: "Edit Birth Details",
+    subtitle: "Keep your birth date, time and place accurate for kundali updates",
   },
   photos: {
     title: "Edit Photos",
@@ -148,6 +153,9 @@ export default function EditProfileSection() {
     }
     if (section === "photos") {
       return extras.photos.length > 0;
+    }
+    if (section === "birth-details") {
+      return true;
     }
     if (section === "bio") {
       return String(extras.bio || "").trim().length > 0;
@@ -446,6 +454,15 @@ export default function EditProfileSection() {
             </>
           ) : null}
 
+          {section === "birth-details" ? (
+            <BirthDetailsForm
+              onSaved={async () => {
+                await fetchCurrentUser();
+                setSuccess("Saved");
+              }}
+            />
+          ) : null}
+
           {section === "bio" ? (
             <textarea
               className="min-h-[140px] w-full rounded-xl border border-white/20 bg-white/5 px-3 py-3 text-sm text-white placeholder:text-slate-400 focus:border-rose-300/60 focus:outline-none"
@@ -489,11 +506,13 @@ export default function EditProfileSection() {
           </p>
         ) : null}
 
-        <div className="mt-5">
-          <Button disabled={!canSave || loading} loading={loading} onClick={onSave}>
-            Save Changes
-          </Button>
-        </div>
+        {section !== "birth-details" ? (
+          <div className="mt-5">
+            <Button disabled={!canSave || loading} loading={loading} onClick={onSave}>
+              Save Changes
+            </Button>
+          </div>
+        ) : null}
       </section>
     </main>
   );

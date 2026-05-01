@@ -327,3 +327,47 @@ def refresh_daily_recommendations(*, top_n: int = DEFAULT_DAILY_RECOMMENDATION_L
         "recommendations_created": total_created,
         "top_n": safe_top_n,
     }
+
+
+def ensure_daily_recommendations_for_user(
+    user_id: int,
+    *,
+    top_n: int = DEFAULT_DAILY_RECOMMENDATION_LIMIT,
+) -> List[DailyRecommendation]:
+    safe_top_n = max(1, min(int(top_n or DEFAULT_DAILY_RECOMMENDATION_LIMIT), 10))
+    today = timezone.localdate()
+
+    existing = list(
+        DailyRecommendation.objects.filter(user_id=user_id, created_at__date=today)
+        .select_related("recommended_user")
+        .prefetch_related("recommended_user__profile_images")
+        .order_by("-score", "id")[:safe_top_n]
+    )
+    if existing:
+        return existing
+
+    ranked = get_recommendations_for_user(user_id, limit=safe_top_n, use_cache=False)
+    rows = [
+        DailyRecommendation(
+            user_id=user_id,
+            recommended_user_id=item["user_id"],
+            score=item["compatibility_score"],
+        )
+        for item in ranked
+    ]
+
+    with transaction.atomic():
+        DailyRecommendation.objects.filter(user_id=user_id).delete()
+        if rows:
+            DailyRecommendation.objects.bulk_create(rows, batch_size=100)
+
+    if ranked:
+        top_name = ranked[0].get("name")
+        notify_daily_recommendation(user_id=user_id, top_match_name=top_name)
+
+    return list(
+        DailyRecommendation.objects.filter(user_id=user_id)
+        .select_related("recommended_user")
+        .prefetch_related("recommended_user__profile_images")
+        .order_by("-score", "id")[:safe_top_n]
+    )

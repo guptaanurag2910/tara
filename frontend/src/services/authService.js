@@ -10,6 +10,11 @@ export async function login(credentials) {
   return data;
 }
 
+export async function getPhoneStatus(payload) {
+  const { data } = await api.post("auth/phone-status", payload);
+  return data;
+}
+
 export async function getUser() {
   const { data } = await api.get("auth/me");
   return data;

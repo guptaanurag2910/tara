@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    DailyRecommendationListView,
     MatchIcebreakerView,
     MatchDetailView,
     MatchListView,
@@ -11,6 +12,7 @@ from .views import (
 )
 
 urlpatterns = [
+    path("daily-recommendations/", DailyRecommendationListView.as_view(), name="daily-recommendations"),
     path("matches/", MatchListView.as_view(), name="matches-list"),
     path("matches/<int:match_id>/", MatchDetailView.as_view(), name="matches-detail"),
     path("matches/<int:match_id>/icebreakers/", MatchIcebreakerView.as_view(), name="matches-icebreakers"),

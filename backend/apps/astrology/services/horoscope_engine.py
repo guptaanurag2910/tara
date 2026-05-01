@@ -58,6 +58,23 @@ PLANET_MESSAGES = {
 }
 
 
+def _cache_token(value: Optional[str]) -> str:
+    return str(value or "").strip().lower() or "none"
+
+
+def _daily_horoscope_cache_key(
+    *,
+    user_id: int,
+    target_day: date,
+    lagna_sign: Optional[str],
+    moon_sign: Optional[str],
+) -> str:
+    return (
+        "astrology:daily-horoscope:"
+        f"{user_id}:{target_day.isoformat()}:{_cache_token(lagna_sign)}:{_cache_token(moon_sign)}"
+    )
+
+
 def _transit_message_for_domain(domain: str, mapped_transits: Mapping[str, Mapping[str, object]]) -> str:
     sun_house = int((mapped_transits.get("Sun") or {}).get("house") or 0)
     moon_house = int((mapped_transits.get("Moon") or {}).get("house") or 0)
@@ -248,7 +265,12 @@ def generate_daily_horoscope(*, lagna_sign: Optional[str] = None, moon_sign: Opt
 
 def get_cached_daily_horoscope(*, user_id: int, lagna_sign: Optional[str], moon_sign: Optional[str], day: Optional[date] = None) -> Dict[str, object]:
     target_day = day or timezone.localdate()
-    cache_key = f"astrology:daily-horoscope:{user_id}:{target_day.isoformat()}"
+    cache_key = _daily_horoscope_cache_key(
+        user_id=user_id,
+        target_day=target_day,
+        lagna_sign=lagna_sign,
+        moon_sign=moon_sign,
+    )
     cached = cache.get(cache_key)
     if cached is not None:
         return cached

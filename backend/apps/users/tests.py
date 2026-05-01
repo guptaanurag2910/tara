@@ -1,19 +1,23 @@
+from base64 import b64decode
 from decimal import Decimal
 from datetime import datetime
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from rest_framework.test import APIClient
 
 from astrology.services.kundali_service import calculate_kundali as calculate_astrology_kundali
+from apps.astrology.models import BirthDetails as AstrologyBirthDetails
 
-from .models import KundaliProfile
+from .models import KundaliProfile, PersonalityOption, PersonalityQuestion, PersonalityResponse, Trait
 from .services.kundali_service import calculate_kundali
 from .services.matching_service import calculate_guna_match
 from .services.vedic_kundali_engine import calculate_vedic_kundali
 
 User = get_user_model()
+TINY_PNG_BYTES = b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9WlAbwAAAABJRU5ErkJggg==")
 
 
 class BirthDetailsKundaliTests(TestCase):
@@ -48,12 +52,16 @@ class BirthDetailsKundaliTests(TestCase):
         self.assertTrue(KundaliProfile.objects.filter(user=self.user).exists())
 
         kundali = KundaliProfile.objects.get(user=self.user)
+        astrology_birth = AstrologyBirthDetails.objects.get(user=self.user)
         expected = calculate_kundali(
             date_of_birth=payload["date_of_birth"],
             birth_time=payload["time_of_birth"],
             latitude=payload["latitude"],
             longitude=payload["longitude"],
         )
+        self.assertEqual(str(astrology_birth.place_of_birth), payload["place_of_birth"])
+        self.assertEqual(str(astrology_birth.latitude), payload["latitude"])
+        self.assertEqual(str(astrology_birth.longitude), payload["longitude"])
         self.assertEqual(kundali.moon_sign, expected["moon_sign"])
         self.assertEqual(kundali.nakshatra, expected["nakshatra"])
         self.assertEqual(kundali.nakshatra_pada, expected["nakshatra_pada"])
@@ -115,6 +123,12 @@ class BirthDetailsKundaliTests(TestCase):
         self.assertEqual(updated.nadi, expected["nadi"])
         self.assertEqual(updated.bhakoot, expected["bhakoot"])
 
+        self.assertEqual(AstrologyBirthDetails.objects.filter(user=self.user).count(), 1)
+        astrology_birth = AstrologyBirthDetails.objects.get(user=self.user)
+        self.assertEqual(str(astrology_birth.place_of_birth), second_payload["place_of_birth"])
+        self.assertEqual(str(astrology_birth.latitude), second_payload["latitude"])
+        self.assertEqual(str(astrology_birth.longitude), second_payload["longitude"])
+
         updated_signature = (
             updated.moon_sign,
             updated.nakshatra,
@@ -127,6 +141,76 @@ class BirthDetailsKundaliTests(TestCase):
             updated.bhakoot,
         )
         self.assertNotEqual(updated_signature, original_signature)
+
+    def test_birth_details_rejects_underage_date(self):
+        response = self.client.post(
+            "/api/birth-details/",
+            {
+                "date_of_birth": "2010-01-01",
+                "place_of_birth": "Mumbai, India",
+                "latitude": "19.076000",
+                "longitude": "72.877700",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["date_of_birth"][0], "You must be 18+ to use Tara.")
+
+    def test_birth_details_rejects_missing_or_invalid_coordinates(self):
+        missing_pair = self.client.post(
+            "/api/birth-details/",
+            {
+                "date_of_birth": "1995-02-14",
+                "place_of_birth": "Mumbai, India",
+                "latitude": "19.076000",
+            },
+            format="json",
+        )
+        self.assertEqual(missing_pair.status_code, 400)
+        self.assertIn("latitude and longitude", str(missing_pair.data).lower())
+
+        invalid_range = self.client.post(
+            "/api/birth-details/",
+            {
+                "date_of_birth": "1995-02-14",
+                "place_of_birth": "Mumbai, India",
+                "latitude": "91.000000",
+                "longitude": "72.877700",
+            },
+            format="json",
+        )
+        self.assertEqual(invalid_range.status_code, 400)
+        self.assertEqual(invalid_range.data["latitude"][0], "latitude must be between -90 and 90.")
+
+    def test_birth_details_rejects_place_change_without_fresh_coordinates(self):
+        first_response = self.client.post(
+            "/api/birth-details/",
+            {
+                "date_of_birth": "1995-02-14",
+                "time_of_birth": "08:45",
+                "place_of_birth": "Mumbai, India",
+                "latitude": "19.076000",
+                "longitude": "72.877700",
+            },
+            format="json",
+        )
+        self.assertEqual(first_response.status_code, 200)
+
+        response = self.client.put(
+            "/api/birth-details/",
+            {
+                "date_of_birth": "1995-02-14",
+                "time_of_birth": "08:45",
+                "place_of_birth": "Chennai, India",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.data["place_of_birth"][0],
+            "latitude and longitude are required when changing place_of_birth.",
+        )
 
     def test_same_input_produces_same_kundali_output(self):
         input_payload = {
@@ -189,6 +273,180 @@ class BirthDetailsKundaliTests(TestCase):
         response = self.client.get("/api/horoscope/not-a-sign/")
         self.assertEqual(response.status_code, 400)
         self.assertIn("detail", response.data)
+
+
+class ProfilePhotoUploadTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email="photo.tester@tara.demo",
+            password="StrongPass@123",
+            name="Photo Tester",
+            date_of_birth="1994-06-10",
+            gender="female",
+            preference="male",
+            latitude=Decimal("12.971600"),
+            longitude=Decimal("77.594600"),
+            birth_place="Bengaluru, India",
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+
+    def test_profile_photo_upload_accepts_valid_png(self):
+        image = SimpleUploadedFile("photo.png", TINY_PNG_BYTES, content_type="image/png")
+
+        response = self.client.post("/api/profile/photos/", {"image": image}, format="multipart")
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(self.user.profile_images.count(), 1)
+        self.assertEqual(self.user.profile_images.first().display_order, 0)
+
+    def test_profile_photo_upload_rejects_fake_image_content(self):
+        image = SimpleUploadedFile("photo.png", b"not-really-a-png", content_type="image/png")
+
+        response = self.client.post("/api/profile/photos/", {"image": image}, format="multipart")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["image"][0], "Upload a valid image file.")
+        self.assertEqual(self.user.profile_images.count(), 0)
+
+    def test_profile_photo_upload_retries_create_ordered_rows(self):
+        first = SimpleUploadedFile("photo1.png", TINY_PNG_BYTES, content_type="image/png")
+        second = SimpleUploadedFile("photo2.png", TINY_PNG_BYTES, content_type="image/png")
+
+        first_response = self.client.post("/api/profile/photos/", {"image": first}, format="multipart")
+        second_response = self.client.post("/api/profile/photos/", {"image": second}, format="multipart")
+
+        self.assertEqual(first_response.status_code, 201)
+        self.assertEqual(second_response.status_code, 201)
+        rows = list(self.user.profile_images.order_by("display_order", "id").values_list("id", "display_order"))
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0][1], 0)
+        self.assertEqual(rows[1][1], 1)
+
+    def test_profile_photo_reorder_preserves_unique_order_sequence(self):
+        first = SimpleUploadedFile("photo1.png", TINY_PNG_BYTES, content_type="image/png")
+        second = SimpleUploadedFile("photo2.png", TINY_PNG_BYTES, content_type="image/png")
+        third = SimpleUploadedFile("photo3.png", TINY_PNG_BYTES, content_type="image/png")
+
+        first_response = self.client.post("/api/profile/photos/", {"image": first}, format="multipart")
+        second_response = self.client.post("/api/profile/photos/", {"image": second}, format="multipart")
+        third_response = self.client.post("/api/profile/photos/", {"image": third}, format="multipart")
+
+        photo_ids = [
+            first_response.data["id"],
+            second_response.data["id"],
+            third_response.data["id"],
+        ]
+        response = self.client.post(
+            "/api/profile/photos/reorder/",
+            {"photo_ids": [photo_ids[2], photo_ids[0], photo_ids[1]]},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        rows = list(self.user.profile_images.order_by("display_order", "id").values_list("id", "display_order"))
+        self.assertEqual(rows, [(photo_ids[2], 0), (photo_ids[0], 1), (photo_ids[1], 2)])
+
+
+class PersonalityResponseFlowTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email="personality.tester@tara.demo",
+            password="StrongPass@123",
+            name="Personality Tester",
+            date_of_birth="1994-06-10",
+            gender="female",
+            preference="male",
+            latitude=Decimal("12.971600"),
+            longitude=Decimal("77.594600"),
+            birth_place="Bengaluru, India",
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+
+        self.question_one = PersonalityQuestion.objects.create(
+            question_text="A perfect Sunday looks like...",
+            category=PersonalityQuestion.Category.PERSONALITY,
+            is_active=True,
+        )
+        self.question_two = PersonalityQuestion.objects.create(
+            question_text="In conflict, you usually...",
+            category=PersonalityQuestion.Category.RELATIONSHIPS,
+            is_active=True,
+        )
+        self.option_one_a = PersonalityOption.objects.create(
+            question=self.question_one,
+            option_text="Books and tea",
+            trait_mapping={"emotional_depth": 2, "stability": 1},
+        )
+        self.option_one_b = PersonalityOption.objects.create(
+            question=self.question_one,
+            option_text="Road trip",
+            trait_mapping={"openness": 2, "stability": -1},
+        )
+        self.option_two = PersonalityOption.objects.create(
+            question=self.question_two,
+            option_text="Talk it through",
+            trait_mapping={"communication": 3, "emotional_depth": 1},
+        )
+
+    def test_fetch_personality_questions_returns_options(self):
+        response = self.client.get("/api/personality/questions/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertGreaterEqual(len(response.data), 2)
+        first = response.data[0]
+        self.assertIn("question_text", first)
+        self.assertIn("options", first)
+        self.assertGreaterEqual(len(first["options"]), 1)
+
+    def test_submiting_all_questions_creates_responses_and_traits(self):
+        first = self.client.post(
+            "/api/personality/response/",
+            {"question_id": self.question_one.id, "option_id": self.option_one_a.id},
+            format="json",
+        )
+        second = self.client.post(
+            "/api/personality/response/",
+            {"question_id": self.question_two.id, "option_id": self.option_two.id},
+            format="json",
+        )
+
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(second.status_code, 201)
+        self.assertEqual(PersonalityResponse.objects.filter(user=self.user).count(), 2)
+
+        trait_profile = Trait.objects.get(user=self.user)
+        self.assertIn("emotional_depth", trait_profile.traits)
+        self.assertIn("communication", trait_profile.traits)
+
+        summary = self.client.get("/api/profile/me/")
+        self.assertEqual(summary.status_code, 200)
+        self.assertEqual(len(summary.data["personality_responses"]), 2)
+        self.assertEqual(summary.data["traits"], trait_profile.traits)
+
+    def test_duplicate_response_updates_in_place_without_creating_junk_rows(self):
+        first = self.client.post(
+            "/api/personality/response/",
+            {"question_id": self.question_one.id, "option_id": self.option_one_a.id},
+            format="json",
+        )
+        updated = self.client.post(
+            "/api/personality/response/",
+            {"question_id": self.question_one.id, "option_id": self.option_one_b.id},
+            format="json",
+        )
+
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(updated.status_code, 200)
+        self.assertEqual(PersonalityResponse.objects.filter(user=self.user, question=self.question_one).count(), 1)
+
+        response_obj = PersonalityResponse.objects.get(user=self.user, question=self.question_one)
+        self.assertEqual(response_obj.selected_option_id, self.option_one_b.id)
+
+        trait_profile = Trait.objects.get(user=self.user)
+        self.assertIn("openness", trait_profile.traits)
+        self.assertNotIn("communication", trait_profile.traits)
 
 
 class _FakeSwe:

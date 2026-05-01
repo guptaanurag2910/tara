@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.utils.html import format_html
 
 from .models import (
     KundaliProfile,
@@ -91,7 +92,13 @@ class KundaliProfileAdmin(admin.ModelAdmin):
 
 @admin.register(UserProfileImage)
 class UserProfileImageAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "display_order", "created_at")
+    list_display = ("id", "user", "display_order", "image_preview", "created_at")
     search_fields = ("user__email", "user__name")
     list_filter = ("created_at",)
     ordering = ("user_id", "display_order", "id")
+
+    @admin.display(description="Preview")
+    def image_preview(self, obj):
+        if not obj.image:
+            return "No image"
+        return format_html('<a href="{0}" target="_blank" rel="noopener"><img src="{0}" alt="preview" style="height:40px;width:40px;object-fit:cover;border-radius:8px;" /></a>', obj.image.url)

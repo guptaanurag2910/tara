@@ -19,8 +19,12 @@ class BirthDetailsSerializer(serializers.ModelSerializer):
         read_only_fields = ["updated_at"]
 
     def validate_date_of_birth(self, value):
-        if value >= timezone.localdate():
+        today = timezone.localdate()
+        if value >= today:
             raise serializers.ValidationError("date_of_birth must be in the past.")
+        age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
+        if age < 18:
+            raise serializers.ValidationError("You must be 18+ to use Tara.")
         return value
 
     def validate(self, attrs):

@@ -68,6 +68,7 @@ body {
   background: var(--tara-bg);
   color: var(--tara-text-primary);
   min-height: 100vh;
+  min-height: 100dvh;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   font-family: "Inter", "Avenir Next", "Segoe UI", sans-serif;
@@ -75,6 +76,7 @@ body {
 
 #root {
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .bg-app {

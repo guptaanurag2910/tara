@@ -1,5 +1,6 @@
 import logging
 
+from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework import permissions, status
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -18,6 +19,7 @@ from .serializers import (
     PersonalityQuestionSerializer,
     PersonalityResponseInputSerializer,
     PersonalityResponseSerializer,
+    PhoneStatusSerializer,
     ProfileBasicSerializer,
     ProfileBirthSerializer,
     ProfileExtrasSerializer,
@@ -36,6 +38,7 @@ from .services.matching_service import calculate_user_guna_match
 from .services.personality_service import calculate_traits
 
 logger = logging.getLogger(__name__)
+User = get_user_model()
 
 
 def _regenerate_user_kundali(user):
@@ -82,6 +85,22 @@ def _regenerate_user_kundali(user):
     return kundali_obj
 
 
+def _sync_astrology_birth_details(user):
+    from apps.astrology.models import BirthDetails as AstrologyBirthDetails
+
+    AstrologyBirthDetails.objects.update_or_create(
+        user=user,
+        defaults={
+            "date_of_birth": user.date_of_birth,
+            "time_of_birth": user.birth_time,
+            "place_of_birth": user.birth_place,
+            "latitude": user.latitude,
+            "longitude": user.longitude,
+            "is_default_location": user.is_default_location,
+        },
+    )
+
+
 class SignupView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -117,6 +136,24 @@ class ForgotPasswordResetView(APIView):
         user.set_password(serializer.validated_data["new_password"])
         user.save(update_fields=["password"])
         return Response({"detail": "Password reset successful."}, status=status.HTTP_200_OK)
+
+
+class PhoneStatusView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = PhoneStatusSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        phone_number = serializer.validated_data["phone_number"]
+        exists = User.objects.filter(phone_number=phone_number).exists()
+        return Response(
+            {
+                "phone_number": phone_number,
+                "exists": exists,
+                "next_mode": "login" if exists else "signup",
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class MeView(APIView):
@@ -259,6 +296,7 @@ class BirthDetailsUpsertView(APIView):
             with transaction.atomic():
                 serializer.save()
                 kundali_obj = _regenerate_user_kundali(request.user)
+                _sync_astrology_birth_details(request.user)
         except ValueError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception:

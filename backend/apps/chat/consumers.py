@@ -126,7 +126,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
     @database_sync_to_async
     def _user_can_access_match(self, match_id: int, user_id: int) -> bool:
-        return Match.objects.filter(id=match_id).filter(
+        return Match.objects.filter(id=match_id, status=Match.Status.MATCHED).filter(
             models.Q(user_a_id=user_id) | models.Q(user_b_id=user_id)
         ).exists()
 
@@ -197,7 +197,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                 raise ValueError("Game can start only for matched users.")
 
             category = (
-                GameCategory.objects.only("id", "slug", "is_active")
+                GameCategory.objects.only("id", "slug", "name", "is_active")
                 .filter(slug=category_slug, is_active=True)
                 .first()
             )
@@ -266,10 +266,11 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             )
 
             message_payload = {
-                "event_type": "game_start",
+                "event_type": "game_started",
                 "match_id": self.match_id,
                 "session_id": session.id,
                 "category": category.slug,
+                "game_name": category.name,
                 "questions": ordered_questions,
             }
             message = Message.objects.create(
@@ -288,6 +289,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         return {
             "session_id": session.id,
             "category": category.slug,
+            "game_name": category.name,
             "questions": ordered_questions,
             "message": MessageSerializer(message).data,
         }
@@ -313,14 +315,11 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         with transaction.atomic():
             session = (
                 GameSession.objects.select_for_update()
-                .select_related("match")
                 .only(
                     "id",
                     "match_id",
                     "status",
-                    "match__id",
-                    "match__user_a_id",
-                    "match__user_b_id",
+                    "category_id",
                 )
                 .filter(id=session_id, match_id=self.match_id)
                 .first()
@@ -330,7 +329,15 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             if session.status != GameSession.Status.ACTIVE:
                 raise ValueError("Game session is not active.")
 
-            participant_ids = {session.match.user_a_id, session.match.user_b_id}
+            match = (
+                Match.objects.only("id", "user_a_id", "user_b_id")
+                .filter(id=session.match_id)
+                .first()
+            )
+            if match is None:
+                raise ValueError("Match not found for this game session.")
+
+            participant_ids = {match.user_a_id, match.user_b_id}
             if user_id not in participant_ids:
                 raise ValueError("You are not part of this game session.")
 
@@ -391,10 +398,19 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                 session.save(update_fields=["status"])
 
                 result = calculate_game_result(session.id)
+                category_slug = ""
+                if session.category_id:
+                    category_slug = (
+                        GameCategory.objects.filter(id=session.category_id)
+                        .values_list("slug", flat=True)
+                        .first()
+                        or ""
+                    )
                 game_result_payload = {
                     "event_type": "game_result",
                     "match_id": self.match_id,
                     "session_id": session.id,
+                    "category": category_slug,
                     "result": result,
                 }
                 result_message = Message.objects.create(
@@ -411,6 +427,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                     "event": "game_result",
                     "data": {
                         "session_id": session.id,
+                        "category": category_slug,
                         "completed": True,
                         "result": result,
                         "message": MessageSerializer(result_message).data,

@@ -74,7 +74,7 @@ export async function fetchRecommendations() {
 }
 
 export async function fetchDailyMatches() {
-  const { data } = await api.get("recommendations/");
+  const { data } = await api.get("daily-recommendations/");
   return asList(data).map((item, index) => {
     const recommendation = normalizeRecommendation(item, index);
     return {
@@ -82,6 +82,7 @@ export async function fetchDailyMatches() {
       name: recommendation.user.name,
       age: recommendation.user.age,
       photo: recommendation.user.photo,
+      insight: item?.insight || item?.insight_text || null,
     };
   });
 }

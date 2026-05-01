@@ -33,9 +33,9 @@ export default function MessageBubble({
 }) {
   const isGameEvent = String(message?.message_type || "text") === "game_event";
   const eventType = String(message?.game_payload?.event_type || "").trim().toLowerCase();
-  const alignmentClass = isGameEvent ? "justify-center" : isOwn ? "items-end" : "items-start";
+  const alignmentClass = isGameEvent ? "justify-center" : isOwn ? "justify-end" : "justify-start";
 
-  if (isGameEvent && eventType === "game_started") {
+  if (isGameEvent && (eventType === "game_started" || eventType === "game_start")) {
     return (
       <div className={`flex ${alignmentClass}`}>
         <GameMessage

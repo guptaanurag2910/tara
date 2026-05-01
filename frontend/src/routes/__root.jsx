@@ -1,10 +1,12 @@
-import { Link, Outlet, createRootRoute } from "@tanstack/react-router";
+import { Link, Outlet, createRootRoute, useRouterState } from "@tanstack/react-router";
 
+import NotificationBell from "../components/NotificationBell";
 import BottomNav from "../components/tara/BottomNav";
+import { useAuth } from "../hooks/useAuth";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-cosmic px-4">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-cosmic px-4">
       <div className="max-w-md text-center">
         <h1 className="font-serif text-7xl text-aurora">404</h1>
         <h2 className="mt-4 font-serif text-2xl text-foreground">Lost in the stars</h2>
@@ -41,11 +43,17 @@ export const Route = createRootRoute({
 });
 
 function RootComponent() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const { token } = useAuth();
+  const hiddenRoutes = ["/", "/auth", "/login", "/welcome", "/onboarding", "/profile-setup"];
+  const showNotifications = Boolean(token) && !hiddenRoutes.includes(pathname);
+
   return (
     <div className="relative h-[100dvh] overflow-hidden bg-app text-[color:var(--tara-text-primary)]">
       <div className="h-full overflow-x-hidden overflow-y-auto overscroll-contain pb-[calc(7rem+env(safe-area-inset-bottom))]">
         <Outlet />
       </div>
+      {showNotifications ? <NotificationBell /> : null}
       <BottomNav />
     </div>
   );

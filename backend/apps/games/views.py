@@ -17,7 +17,7 @@ from .serializers import (
     StartGameSessionSerializer,
     SubmitGameAnswerSerializer,
 )
-from .services import fetch_next_question, start_game_session, submit_game_response
+from .services import fetch_next_question, get_session_questions_payload, start_game_session, submit_game_response
 
 
 def _get_authorized_session_or_404(session_id: int, user):
@@ -103,15 +103,19 @@ class StartGameSessionView(APIView):
                 match_id=match.id,
                 game_id=first_question.game_id,
                 user_id=user.id,
+                category_id=category_obj.id,
+                question_ids=[question["id"] for question in questions],
             )
         except ValueError as exc:
             raise ValidationError({"detail": str(exc)}) from exc
+
+        session_questions = get_session_questions_payload(session_id=session.id)
 
         response_serializer = StartGameSessionResponseSerializer(
             {
                 "session_id": session.id,
                 "category": category,
-                "questions": questions,
+                "questions": session_questions,
             }
         )
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)

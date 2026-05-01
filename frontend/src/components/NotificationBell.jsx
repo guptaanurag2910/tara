@@ -41,6 +41,19 @@ export default function NotificationBell() {
     [notifications],
   );
 
+  async function refreshNotifications() {
+    setLoading(true);
+    setError("");
+    try {
+      const items = await fetchNotifications();
+      setNotifications(items);
+    } catch {
+      setError("Could not load notifications.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
     if (!token) {
       setNotifications([]);
@@ -62,10 +75,22 @@ export default function NotificationBell() {
     }
 
     load();
+    function onFocus() {
+      load();
+    }
+    function onVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        load();
+      }
+    }
     const timerId = window.setInterval(load, 45000);
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
       alive = false;
       window.clearInterval(timerId);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [token]);
 
@@ -80,19 +105,6 @@ export default function NotificationBell() {
     }
     return () => document.removeEventListener("mousedown", onPointerDown);
   }, [open]);
-
-  async function refreshNotifications() {
-    setLoading(true);
-    setError("");
-    try {
-      const items = await fetchNotifications();
-      setNotifications(items);
-    } catch {
-      setError("Could not load notifications.");
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function onOpenToggle() {
     const nextOpen = !open;
@@ -171,7 +183,7 @@ export default function NotificationBell() {
                 {notifications.map((item, index) => (
                   <li
                     className={`px-4 py-3 ${item.is_read ? "bg-transparent" : "bg-rose-500/10"}`}
-                    key={`${item.timestamp || "n"}-${index}`}
+                    key={item.id || `${item.timestamp || "n"}-${index}`}
                   >
                     <p className={`text-sm ${item.is_read ? "text-slate-200" : "font-semibold text-white"}`}>{item.text}</p>
                     <div className="mt-1 flex items-center justify-between text-[11px] text-slate-400">

@@ -5,6 +5,20 @@ import { ArrowLeft, Heart, MessageCircle, Moon, Sparkles, Sun } from "lucide-rea
 import Loader from "../components/Loader";
 import { fetchMatchDetail } from "../services/matchingService";
 
+function matchErrorMessage(apiError) {
+  const status = Number(apiError?.status || 0);
+  if (status === 401) {
+    return "Your session expired. Please log in again.";
+  }
+  if (status === 404) {
+    return "This match isn't available anymore.";
+  }
+  if (status >= 500) {
+    return "Compatibility details are unavailable right now. Please try again shortly.";
+  }
+  return apiError?.message || "Could not load this match.";
+}
+
 function label(value, fallback = "") {
   const normalized = String(value || fallback || "").trim();
   if (!normalized) {
@@ -67,7 +81,7 @@ export default function MatchDetail() {
         const data = await fetchMatchDetail(matchId);
         setDetail(data || null);
       } catch (apiError) {
-        setError(apiError?.message || "Could not load this match.");
+        setError(matchErrorMessage(apiError));
       } finally {
         setLoading(false);
       }
@@ -81,23 +95,25 @@ export default function MatchDetail() {
   const kundaliScore = Number(detail?.kundali_score ?? 0);
   const personalityScore = Number(detail?.personality_score ?? 0);
   const insight = detail?.insight || "Your stars suggest an emotionally aligned connection.";
+  const hasDetail = Boolean(detail) && !error;
 
   const moonSign = useMemo(() => {
-    const source = detail?.user?.moon_sign || detail?.moon_sign || "Pisces";
-    return label(source, "Pisces");
+    const source = detail?.user?.moon_sign || detail?.moon_sign || "";
+    return label(source);
   }, [detail?.moon_sign, detail?.user?.moon_sign]);
 
   const sunSign = useMemo(() => {
-    const source = detail?.user?.sun_sign || detail?.sun_sign || "Scorpio";
-    return label(source, "Scorpio");
+    const source = detail?.user?.sun_sign || detail?.sun_sign || "";
+    return label(source);
   }, [detail?.sun_sign, detail?.user?.sun_sign]);
 
   const nakshatra = useMemo(() => {
-    const source = detail?.user?.nakshatra || detail?.nakshatra || "Revati";
-    return label(source, "Revati");
+    const source = detail?.user?.nakshatra || detail?.nakshatra || "";
+    return label(source);
   }, [detail?.nakshatra, detail?.user?.nakshatra]);
 
   const traits = useMemo(() => traitsFromInsight(insight), [insight]);
+  const hasKundaliAttributes = Boolean(sunSign || moonSign || nakshatra);
 
   return (
     <main className="tara-container pb-28">
@@ -118,13 +134,19 @@ export default function MatchDetail() {
         </button>
         <div className="absolute bottom-0 left-0 right-0 p-5">
           <h1 className="tara-heading text-5xl text-[color:var(--tara-text-primary)]">
-            {name}
-            <span className="text-[color:var(--tara-text-secondary)]">{age}</span>
+            {hasDetail ? name : "Match unavailable"}
+            {hasDetail ? <span className="text-[color:var(--tara-text-secondary)]">{age}</span> : null}
           </h1>
-          <div className="mt-2 flex items-center gap-2">
-            <span className="rounded-full glass-strong px-3 py-1 text-xs font-medium">{sunSign} sun</span>
-            <span className="rounded-full glass-strong px-3 py-1 text-xs font-medium">{moonSign} moon</span>
-          </div>
+          {hasDetail && (sunSign || moonSign) ? (
+            <div className="mt-2 flex items-center gap-2">
+              {sunSign ? (
+                <span className="rounded-full glass-strong px-3 py-1 text-xs font-medium">{sunSign} sun</span>
+              ) : null}
+              {moonSign ? (
+                <span className="rounded-full glass-strong px-3 py-1 text-xs font-medium">{moonSign} moon</span>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -134,7 +156,7 @@ export default function MatchDetail() {
           <p className="rounded-xl border border-rose-300/20 bg-rose-500/10 px-3 py-3 text-sm text-rose-100">{error}</p>
         ) : null}
 
-        {!loading && !error ? (
+        {!loading && !error && hasDetail ? (
           <>
             <div className="rounded-3xl bg-card-gradient p-6 shadow-card-mystic">
               <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--tara-gold)]">Cosmic compatibility</p>
@@ -152,14 +174,22 @@ export default function MatchDetail() {
               <Stat icon={<Sparkles className="h-4 w-4" />} label="Personality" value={`${personalityScore}%`} note="Compatible vibes" />
             </div>
 
-            <section className="mt-6">
-              <h2 className="mb-3 text-xs uppercase tracking-widest text-[color:var(--tara-text-faint)]">Kundali attributes</h2>
-              <div className="space-y-2">
-                <Attribute label="Sun sign" value={sunSign} icon={<Sun className="h-4 w-4 text-[color:var(--tara-gold)]" />} />
-                <Attribute label="Moon sign" value={moonSign} icon={<Moon className="h-4 w-4 text-[color:var(--tara-gold)]" />} />
-                <Attribute label="Nakshatra" value={nakshatra} icon={<Sparkles className="h-4 w-4 text-[color:var(--tara-gold)]" />} />
-              </div>
-            </section>
+            {hasKundaliAttributes ? (
+              <section className="mt-6">
+                <h2 className="mb-3 text-xs uppercase tracking-widest text-[color:var(--tara-text-faint)]">Kundali attributes</h2>
+                <div className="space-y-2">
+                  {sunSign ? (
+                    <Attribute label="Sun sign" value={sunSign} icon={<Sun className="h-4 w-4 text-[color:var(--tara-gold)]" />} />
+                  ) : null}
+                  {moonSign ? (
+                    <Attribute label="Moon sign" value={moonSign} icon={<Moon className="h-4 w-4 text-[color:var(--tara-gold)]" />} />
+                  ) : null}
+                  {nakshatra ? (
+                    <Attribute label="Nakshatra" value={nakshatra} icon={<Sparkles className="h-4 w-4 text-[color:var(--tara-gold)]" />} />
+                  ) : null}
+                </div>
+              </section>
+            ) : null}
 
             <section className="mt-6">
               <h2 className="mb-3 text-xs uppercase tracking-widest text-[color:var(--tara-text-faint)]">Their vibe</h2>

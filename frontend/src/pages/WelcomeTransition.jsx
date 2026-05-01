@@ -17,7 +17,7 @@ export default function WelcomeTransition() {
   }, [navigate, nextPath]);
 
   return (
-    <main className="tara-container flex min-h-screen flex-col px-6 pb-8 pt-10">
+    <main className="tara-container flex min-h-[100dvh] flex-col px-6 pb-8 pt-10">
       <header className="mb-16 flex items-center gap-4">
         <button aria-label="Back" className="tara-back-btn" onClick={() => navigate(-1)} type="button">
           ←

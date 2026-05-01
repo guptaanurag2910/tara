@@ -116,7 +116,7 @@ export default function SwipeScreen() {
   }
 
   return (
-    <main className="tara-container flex min-h-[calc(100vh-132px)] flex-col px-5 pt-6">
+    <main className="tara-container flex min-h-[calc(100dvh-132px)] flex-col px-5 pt-6">
       <header className="mb-5 flex items-center justify-between">
         <Logo size={32} />
         <button

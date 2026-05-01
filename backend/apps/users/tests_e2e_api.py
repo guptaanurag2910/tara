@@ -1,3 +1,5 @@
+import base64
+
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from rest_framework.test import APIClient
@@ -78,6 +80,24 @@ class ApiEndToEndSmokeTests(TestCase):
         client = APIClient()
         client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
         return client
+
+    def test_profile_basic_enforces_adult_dob(self):
+        user = self._signup(name="Teen Check", email="teen.check@tara.demo")
+        client = self._auth_client(user["access"])
+
+        response = client.post(
+            "/api/profile/basic/",
+            {
+                "name": "Teen Check",
+                "date_of_birth": "2010-01-01",
+                "gender": "other",
+                "preference": "everyone",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["date_of_birth"][0], "You must be 18+ to use Tara.")
 
     def test_full_authenticated_api_flow(self):
         response = self.anon.post("/api/profile/basic/", {"name": "x"}, format="json")
@@ -181,7 +201,10 @@ class ApiEndToEndSmokeTests(TestCase):
         )
 
         self.assertEqual(c1.get("/api/profile/photos/").status_code, 200)
-        image = SimpleUploadedFile("photo.png", b"fake-image-bytes", content_type="image/png")
+        valid_png = base64.b64decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a4x0AAAAASUVORK5CYII="
+        )
+        image = SimpleUploadedFile("photo.png", valid_png, content_type="image/png")
         uploaded = c1.post("/api/profile/photos/", {"image": image}, format="multipart")
         self.assertEqual(uploaded.status_code, 201)
         photo_id = uploaded.data["id"]
@@ -203,6 +226,11 @@ class ApiEndToEndSmokeTests(TestCase):
         self.assertEqual(like_two.status_code, 200)
         match_id = like_two.data["match_id"]
         self.assertIsNotNone(match_id)
+
+        profile_summary = c1.get("/api/profile/me/")
+        self.assertEqual(profile_summary.status_code, 200)
+        self.assertEqual(profile_summary.data["stats"]["matches_count"], 1)
+        self.assertEqual(profile_summary.data["stats"]["likes_received_count"], 1)
 
         self.assertEqual(c1.get("/api/matches/").status_code, 200)
         self.assertEqual(c1.get(f"/api/matches/{match_id}/").status_code, 200)

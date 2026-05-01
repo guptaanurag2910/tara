@@ -5,11 +5,11 @@ import Logo from "../components/tara/Logo";
 
 export default function Landing() {
   return (
-    <div className="relative mx-auto min-h-screen w-full max-w-[390px] overflow-hidden bg-cosmic">
+    <div className="relative mx-auto min-h-[100dvh] w-full max-w-[390px] overflow-hidden bg-cosmic">
       <div className="star-field pointer-events-none absolute inset-0 opacity-70" />
       <div className="pointer-events-none absolute left-1/2 top-20 h-80 w-80 -translate-x-1/2 rounded-full bg-glow blur-3xl" />
 
-      <div className="relative z-10 flex min-h-screen flex-col px-6 pb-10 pt-12">
+      <div className="relative z-10 flex min-h-[100dvh] flex-col px-6 pb-10 pt-12">
         <div className="flex justify-center animate-fade-in">
           <Logo size={44} />
         </div>

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
+import GameModal from "../components/chat/GameModal";
+import GameResultCard from "../components/chat/GameResultCard";
 import EmptyState from "../components/EmptyState";
 import Icebreaker from "../components/Icebreaker";
 import Loader from "../components/Loader";
@@ -10,6 +12,37 @@ import { useChatSocket } from "../hooks/useChatSocket";
 import { fetchMatchDetail, fetchMatchIcebreakers, fetchMatches } from "../services/matchingService";
 import { fetchMatchMessages, sendMatchMessage } from "../services/chatService";
 import { submitGameAnswer } from "../services/gameService";
+
+const GAME_ACTIONS = [
+  { id: "this_or_that", label: "This or That", emoji: "⚖️" },
+  { id: "predict_me", label: "Predict Me", emoji: "🔮" },
+  { id: "deal_breaker", label: "Deal Breaker", emoji: "💔" },
+];
+
+function conversationErrorMessage(apiError) {
+  const status = Number(apiError?.status || 0);
+  if (status === 401) {
+    return "Your session expired. Please log in again.";
+  }
+  if (status === 404) {
+    return "This conversation isn't available yet. You can only chat with confirmed matches.";
+  }
+  if (status >= 500) {
+    return "Chat is having a moment right now. Please try again shortly.";
+  }
+  return apiError?.message || "Could not load this chat.";
+}
+
+function messageSendErrorMessage(apiError) {
+  const status = Number(apiError?.status || 0);
+  if (status === 404) {
+    return "This conversation isn't available yet. You can only message confirmed matches.";
+  }
+  if (status >= 500) {
+    return "Could not send your message right now. Please try again.";
+  }
+  return apiError?.message || "Could not send your message.";
+}
 
 function normalizeStatus(rawStatus, isReadFallback = false) {
   const value = String(rawStatus || "").trim().toLowerCase();
@@ -102,6 +135,29 @@ function createClientMessageId() {
 
 function parseGameEventType(message) {
   return String(message?.game_payload?.event_type || "").trim().toLowerCase();
+}
+
+function hasDetailedGameResult(message) {
+  return (
+    String(message?.message_type || "") === "game_event" &&
+    parseGameEventType(message) === "game_result" &&
+    Array.isArray(message?.game_payload?.result?.questions)
+  );
+}
+
+function normalizeGameResultForViewer(result, viewerIsUserA = true) {
+  if (viewerIsUserA || !result || !Array.isArray(result.questions)) {
+    return result;
+  }
+
+  return {
+    ...result,
+    questions: result.questions.map((item) => ({
+      ...item,
+      user_a: item?.user_b ?? null,
+      user_b: item?.user_a ?? null,
+    })),
+  };
 }
 
 function buildQuestionAnswersMap(messageList) {
@@ -255,6 +311,11 @@ export default function ChatScreen() {
   const [draft, setDraft] = useState("");
   const [icebreakers, setIcebreakers] = useState([]);
   const [icebreakersLoading, setIcebreakersLoading] = useState(false);
+  const [gameOpen, setGameOpen] = useState(false);
+  const [activeGame, setActiveGame] = useState(null);
+  const [selectedGame, setSelectedGame] = useState("this_or_that");
+  const [startingGame, setStartingGame] = useState("");
+  const [pendingGameStart, setPendingGameStart] = useState("");
   const [firstMessageSent, setFirstMessageSent] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -311,6 +372,8 @@ export default function ChatScreen() {
   );
 
   const questionAnswersById = useMemo(() => buildQuestionAnswersMap(messages), [messages]);
+  const partnerLabel = matchInfo?.user?.name || "Partner";
+  const viewerIsUserA = matchInfo?.viewer_is_user_a !== false;
 
   const filteredConversations = useMemo(() => {
     const term = conversationQuery.trim().toLowerCase();
@@ -373,7 +436,7 @@ export default function ChatScreen() {
         }
       } catch (apiError) {
         if (active) {
-          setConversationError(apiError?.message || "Could not load conversations.");
+          setConversationError(conversationErrorMessage(apiError));
           setConversations([]);
         }
       } finally {
@@ -388,6 +451,59 @@ export default function ChatScreen() {
       active = false;
     };
   }, [hasMatch]);
+
+  useEffect(() => {
+    const startedEvent = socket.events?.game_started;
+    if (!startedEvent?.session_id) {
+      return;
+    }
+    if (startedEvent?.message) {
+      setMessages((prev) => mergeMessage(prev, normalizeMessage(startedEvent.message)));
+    }
+    setActiveGame(startedEvent);
+    setSelectedGame(startedEvent.category || "this_or_that");
+    setStartingGame("");
+    setGameOpen(true);
+  }, [socket.events?.game_started]);
+
+  useEffect(() => {
+    const resultEvent = socket.events?.game_result;
+    if (!resultEvent?.result) {
+      return;
+    }
+    if (resultEvent?.message) {
+      setMessages((prev) => mergeMessage(prev, normalizeMessage(resultEvent.message)));
+    }
+    setGameOpen(false);
+    setStartingGame("");
+    setActiveGame(null);
+  }, [socket.events?.game_result]);
+
+  useEffect(() => {
+    if (!socket.lastError) {
+      return;
+    }
+    setStartingGame("");
+    setPendingGameStart("");
+  }, [socket.lastError]);
+
+  useEffect(() => {
+    if (!pendingGameStart || !socket.isConnected) {
+      return;
+    }
+
+    const queuedGame = pendingGameStart;
+    const sent = socket.startGame(queuedGame);
+    if (sent) {
+      setPendingGameStart("");
+      setError("");
+      return;
+    }
+
+    setPendingGameStart("");
+    setStartingGame("");
+    setError("Could not start game right now.");
+  }, [pendingGameStart, socket]);
 
   useEffect(() => {
     if (!hasMatch) {
@@ -412,7 +528,7 @@ export default function ChatScreen() {
         setMessages(Array.isArray(history) ? history.map(normalizeMessage) : []);
         setIcebreakers(Array.isArray(suggestionList) ? suggestionList.slice(0, 3) : []);
       } catch (apiError) {
-        setError(apiError?.message || "Could not load this chat.");
+        setError(conversationErrorMessage(apiError));
       } finally {
         setIcebreakersLoading(false);
         setLoading(false);
@@ -462,9 +578,46 @@ export default function ChatScreen() {
         setMessages(Array.isArray(history) ? history.map(normalizeMessage) : []);
       }
     } catch (apiError) {
-      setError(apiError?.message || "Could not submit game answer.");
+      setError(messageSendErrorMessage(apiError));
     } finally {
       setAnsweringByQuestion((prev) => ({ ...prev, [questionId]: false }));
+    }
+  }
+
+  async function onModalGameAnswer(payload) {
+    if (!payload || typeof payload !== "object") {
+      return;
+    }
+
+    const sent = socket.answerQuestion(payload);
+    if (sent) {
+      return;
+    }
+
+    throw new Error("Live game connection unavailable right now.");
+  }
+
+  function onStartGame(category) {
+    const gameId = String(category || "").trim();
+    if (!gameId) {
+      return;
+    }
+
+    setError("");
+    setSelectedGame(gameId);
+    setStartingGame(gameId);
+    if (!socket.isConnected) {
+      setPendingGameStart(gameId);
+      setError("Reconnecting to start your game...");
+      socket.reconnect();
+      return;
+    }
+
+    const sent = socket.startGame(gameId);
+    if (!sent) {
+      setPendingGameStart(gameId);
+      setError("Reconnecting to start your game...");
+      socket.reconnect();
     }
   }
 
@@ -503,7 +656,7 @@ export default function ChatScreen() {
           (message) => !(message.client_message_id === clientMessageId && !message.id),
         ),
       );
-      setError(apiError?.message || "Could not send your message.");
+      setError(messageSendErrorMessage(apiError));
     } finally {
       setSending(false);
     }
@@ -522,7 +675,7 @@ export default function ChatScreen() {
   }
 
   return (
-    <main className="tara-container flex h-[calc(100vh-88px)] flex-col">
+    <main className="tara-container flex h-[calc(100dvh-112px)] flex-col sm:h-[calc(100dvh-96px)]">
       <header className="border-b border-[color:var(--tara-card-border)] bg-[color:var(--tara-card-bg)] px-4 py-3 backdrop-blur-xl">
         <p className="tara-heading text-[1.35rem] leading-none">{matchInfo?.user?.name || "Chat"}</p>
         <p className="tara-copy mt-1 text-sm italic">✧ {insightText}</p>
@@ -548,24 +701,46 @@ export default function ChatScreen() {
               const answers = Number.isInteger(questionId) ? (questionAnswersById[questionId] || []) : [];
               const currentAnswer =
                 answers.find((answer) => Number(answer?.sender_id) === Number(user?.id))?.content || "";
+              const result = hasDetailedGameResult(message)
+                ? normalizeGameResultForViewer(message.game_payload.result, viewerIsUserA)
+                : null;
 
               return (
-                <MessageBubble
-                  currentUserAnswer={currentAnswer}
-                  currentUserId={user?.id}
-                  gameAnswers={answers}
-                  isAnsweringGameQuestion={Boolean(answeringByQuestion[questionId])}
-                  isOwn={Number(message.sender_id) === Number(user?.id)}
-                  key={message.id ? `id-${message.id}` : `cid-${message.client_message_id || index}`}
-                  message={message}
-                  onGameAnswer={onGameAnswer}
-                />
+                result ? (
+                  <GameResultCard
+                    category={message?.game_payload?.category || selectedGame}
+                    key={message.id ? `id-${message.id}` : `cid-${message.client_message_id || index}`}
+                    partnerLabel={partnerLabel}
+                    result={result}
+                    userLabel="You"
+                  />
+                ) : (
+                  <MessageBubble
+                    currentUserAnswer={currentAnswer}
+                    currentUserId={user?.id}
+                    gameAnswers={answers}
+                    isAnsweringGameQuestion={Boolean(answeringByQuestion[questionId])}
+                    isOwn={Number(message.sender_id) === Number(user?.id)}
+                    key={message.id ? `id-${message.id}` : `cid-${message.client_message_id || index}`}
+                    message={message}
+                    onGameAnswer={onGameAnswer}
+                  />
+                )
               );
             })}
             <div ref={endRef} />
           </div>
         )}
       </section>
+
+      <GameModal
+        category={activeGame?.category || selectedGame}
+        onAnswer={onModalGameAnswer}
+        onClose={() => setGameOpen(false)}
+        open={gameOpen}
+        questions={activeGame?.questions || []}
+        sessionId={activeGame?.session_id}
+      />
 
       <form className="border-t border-[color:var(--tara-card-border)] bg-[color:var(--tara-card-bg)] px-3 py-3 backdrop-blur-xl" onSubmit={onSend}>
         {shouldShowIcebreakers ? (
@@ -578,6 +753,29 @@ export default function ChatScreen() {
             suggestions={icebreakers}
           />
         ) : null}
+
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          {GAME_ACTIONS.map((game) => {
+            const isActive = selectedGame === game.id;
+            const isPending = startingGame === game.id;
+            return (
+              <button
+                className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm transition-all ${
+                  isActive
+                    ? "border-[color:var(--tara-gold)] bg-[color:var(--tara-card-bg)] text-[color:var(--tara-text-primary)]"
+                    : "border-[color:var(--tara-card-border)] bg-[color:var(--tara-input-bg)] text-[color:var(--tara-text-secondary)]"
+                } ${!socket.isConnected ? "opacity-60" : ""}`}
+                disabled={Boolean(startingGame) || !socket.isConnected}
+                key={game.id}
+                onClick={() => onStartGame(game.id)}
+                type="button"
+              >
+                <span>{game.emoji}</span>
+                <span>{isPending ? "Starting..." : game.label}</span>
+              </button>
+            );
+          })}
+        </div>
 
         <div className="flex items-center gap-2">
           <input

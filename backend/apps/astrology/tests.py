@@ -3,6 +3,7 @@ from decimal import Decimal
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.test import TestCase
 from django.test.utils import override_settings
 from rest_framework.test import APIClient
@@ -43,6 +44,7 @@ class _FakeSwe:
 
 class AstrologyModuleTests(TestCase):
     def setUp(self):
+        cache.clear()
         self.user = User.objects.create_user(
             email="astro.module@tara.demo",
             password="StrongPass@123",
@@ -73,6 +75,7 @@ class AstrologyModuleTests(TestCase):
             p.start()
 
     def tearDown(self):
+        cache.clear()
         for p in self.patchers:
             p.stop()
 
@@ -90,6 +93,14 @@ class AstrologyModuleTests(TestCase):
         self.assertTrue(BirthDetails.objects.filter(user=self.user).exists())
         self.assertTrue(Kundali.objects.filter(user=self.user).exists())
         self.assertEqual(bool(response.data.get("is_default_location")), True)
+        self.user.refresh_from_db()
+        self.assertEqual(str(self.user.date_of_birth), "1995-02-14")
+        self.assertEqual(str(self.user.birth_time), "08:45:00")
+        self.assertEqual(self.user.birth_place, "Mumbai, India")
+        self.assertEqual(str(self.user.latitude), "19.076000")
+        self.assertEqual(str(self.user.longitude), "72.877700")
+        self.assertTrue(self.user.is_default_location)
+        self.assertFalse(self.user.is_birth_time_default)
 
     def test_update_birth_details_updates_kundali(self):
         self.client.post(
@@ -120,6 +131,8 @@ class AstrologyModuleTests(TestCase):
         self.assertEqual(response.status_code, 200)
         updated = Kundali.objects.get(user=self.user)
         self.assertGreaterEqual(updated.updated_at, original_updated_at)
+        self.user.refresh_from_db()
+        self.assertEqual(str(self.user.birth_time), "09:45:00")
 
     def test_same_input_same_kundali(self):
         payload = {
@@ -144,6 +157,28 @@ class AstrologyModuleTests(TestCase):
         evening = calculate_kundali_payload(time_of_birth="18:00", **common)
         self.assertNotEqual(morning["lagna"], evening["lagna"])
 
+    def test_different_location_changes_ascendant_or_houses(self):
+        common = {
+            "date_of_birth": "1998-12-05",
+            "time_of_birth": "10:10",
+        }
+        jaipur = calculate_kundali_payload(
+            place_of_birth="Jaipur, India",
+            latitude=26.9124,
+            longitude=75.7873,
+            **common,
+        )
+        delhi = calculate_kundali_payload(
+            place_of_birth="Delhi, India",
+            latitude=28.6139,
+            longitude=77.2090,
+            **common,
+        )
+        self.assertTrue(
+            jaipur["chart_data"]["ascendant_degree"] != delhi["chart_data"]["ascendant_degree"]
+            or jaipur["chart_data"]["houses"] != delhi["chart_data"]["houses"]
+        )
+
     def test_horoscope_cached_for_day(self):
         self.client.post(
             "/api/astrology/birth-details/",
@@ -163,6 +198,40 @@ class AstrologyModuleTests(TestCase):
         self.assertEqual(first.data.get("date"), date.today().isoformat())
         self.assertEqual(first.data, second.data)
 
+    def test_horoscope_cache_refreshes_after_birth_edit(self):
+        create_response = self.client.post(
+            "/api/astrology/birth-details/",
+            {
+                "date_of_birth": "1995-02-14",
+                "time_of_birth": "08:45",
+                "place_of_birth": "Mumbai, India",
+                "latitude": "19.076000",
+                "longitude": "72.877700",
+            },
+            format="json",
+        )
+        self.assertEqual(create_response.status_code, 200)
+
+        first = self.client.get("/api/astrology/daily-horoscope/")
+        self.assertEqual(first.status_code, 200)
+
+        update_response = self.client.put(
+            "/api/astrology/birth-details/",
+            {
+                "date_of_birth": "1995-02-14",
+                "time_of_birth": "09:45",
+                "place_of_birth": "Mumbai, India",
+                "latitude": "19.076000",
+                "longitude": "72.877700",
+            },
+            format="json",
+        )
+        self.assertEqual(update_response.status_code, 200)
+
+        second = self.client.get("/api/astrology/daily-horoscope/")
+        self.assertEqual(second.status_code, 200)
+        self.assertNotEqual(first.data.get("transits"), second.data.get("transits"))
+
     def test_planet_degrees_within_bounds(self):
         payload = calculate_kundali_payload(
             date_of_birth="1995-02-14",
@@ -176,6 +245,44 @@ class AstrologyModuleTests(TestCase):
             degree = float(data["degree"])
             self.assertGreaterEqual(degree, 0.0, msg=f"{name} below 0")
             self.assertLess(degree, 360.0, msg=f"{name} >= 360")
+
+    def test_house_assignments_are_internally_consistent(self):
+        payload = calculate_kundali_payload(
+            date_of_birth="1995-02-14",
+            time_of_birth="08:45",
+            place_of_birth="Mumbai, India",
+            latitude=19.0760,
+            longitude=72.8777,
+        )
+        houses = payload["chart_data"]["houses"]
+        planets = payload["chart_data"]["planets"]
+        house_signs = {
+            int(house_no): str(house_data["sign"])
+            for house_no, house_data in houses.items()
+        }
+        for name, planet in planets.items():
+            house = int(planet["house"])
+            self.assertIn(house, house_signs, msg=f"{name} assigned to invalid house {house}")
+            self.assertEqual(
+                house_signs[house],
+                planet["sign"],
+                msg=f"{name} sign {planet['sign']} does not match house {house} sign {house_signs[house]}",
+            )
+
+    def test_birth_details_rejects_underage_date(self):
+        response = self.client.post(
+            "/api/astrology/birth-details/",
+            {
+                "date_of_birth": "2010-01-01",
+                "time_of_birth": "08:45",
+                "place_of_birth": "Mumbai, India",
+                "latitude": "19.076000",
+                "longitude": "72.877700",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["date_of_birth"][0], "You must be 18+ to use Tara.")
 
     @override_settings(ASTRO_BIRTH_DETAILS_GEOCODE_FALLBACK=False)
     def test_birth_details_rejects_missing_coordinates_when_fallback_disabled(self):

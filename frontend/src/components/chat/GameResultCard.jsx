@@ -41,7 +41,10 @@ export default function GameResultCard({
   const questions = Array.isArray(result?.questions) ? result.questions : [];
 
   return (
-    <section className="rounded-[1.7rem] border border-[#2b2f7c]/70 bg-[#0b0e45]/80 p-4 shadow-[0_14px_40px_rgba(6,8,34,0.42)] backdrop-blur">
+    <section
+      className="rounded-[1.7rem] border border-[#2b2f7c]/70 bg-[#0b0e45]/80 p-4 shadow-[0_14px_40px_rgba(6,8,34,0.42)] backdrop-blur"
+      data-testid="game-result-card"
+    >
       <div className="flex items-center justify-between text-[#d7be72]">
         <h3 className="text-[0.84rem] tracking-[0.28em]">
           <span className="mr-2">{gameEmoji(category)}</span>

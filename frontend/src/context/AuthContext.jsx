@@ -7,11 +7,17 @@ import {
   signup as signupApi,
 } from "../services/authService";
 import {
+  AUTH_CHANGED_EVENT,
   clearStoredAuth,
   getStoredToken,
   getStoredUser,
   setStoredAuth,
 } from "../services/tokenStorage";
+import {
+  hasOnboardingProfile,
+  initializeOnboardingForSignup,
+  markOnboardingCompleteForLogin,
+} from "../services/onboardingStorage";
 
 export const AuthContext = createContext(null);
 
@@ -28,10 +34,28 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(getStoredUser());
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    const syncFromStorage = () => {
+      setToken(getStoredToken());
+      setUser(getStoredUser());
+    };
+
+    window.addEventListener("storage", syncFromStorage);
+    window.addEventListener(AUTH_CHANGED_EVENT, syncFromStorage);
+
+    return () => {
+      window.removeEventListener("storage", syncFromStorage);
+      window.removeEventListener(AUTH_CHANGED_EVENT, syncFromStorage);
+    };
+  }, []);
+
   const fetchCurrentUser = async () => {
     const profile = await getUser();
     setUser(profile);
     setStoredAuth({ access: getStoredToken(), user: profile });
+    if (!hasOnboardingProfile(profile?.id)) {
+      markOnboardingCompleteForLogin(profile, profile?.id);
+    }
     return profile;
   };
 
@@ -46,6 +70,10 @@ export function AuthProvider({ children }) {
       setStoredAuth(response);
       setToken(response.access);
       setUser(response.user || null);
+
+      if (response.user) {
+        markOnboardingCompleteForLogin(response.user, response.user.id);
+      }
 
       if (!response.user) {
         await fetchCurrentUser();
@@ -68,6 +96,9 @@ export function AuthProvider({ children }) {
       setStoredAuth(response);
       setToken(response.access);
       setUser(response.user || null);
+      if (response.user) {
+        initializeOnboardingForSignup(response.user, response.user.id);
+      }
       return response;
     } finally {
       setLoading(false);

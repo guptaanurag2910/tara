@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.utils import timezone
@@ -8,10 +9,52 @@ from decimal import Decimal
 import re
 from uuid import uuid4
 
+from apps.matching.models import DailyRecommendation, Match, Swipe
 from .models import KundaliProfile, PersonalityOption, PersonalityQuestion, PersonalityResponse, Trait, UserProfileImage
 
 User = get_user_model()
 HARD_CODED_OTP = "123456"
+
+
+def detect_image_format(uploaded_file) -> str | None:
+    try:
+        original_position = uploaded_file.tell()
+    except Exception:
+        original_position = None
+
+    try:
+        uploaded_file.seek(0)
+    except Exception:
+        pass
+
+    try:
+        header = uploaded_file.read(32) or b""
+    finally:
+        try:
+            if original_position is not None:
+                uploaded_file.seek(original_position)
+            else:
+                uploaded_file.seek(0)
+        except Exception:
+            pass
+
+    if header.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "png"
+    if header.startswith(b"\xff\xd8\xff"):
+        return "jpeg"
+    if header.startswith((b"GIF87a", b"GIF89a")):
+        return "gif"
+    if header.startswith(b"RIFF") and header[8:12] == b"WEBP":
+        return "webp"
+    if header.startswith(b"BM"):
+        return "bmp"
+    if header.startswith((b"II*\x00", b"MM\x00*")):
+        return "tiff"
+    if len(header) >= 12 and header[4:8] == b"ftyp":
+        brand = header[8:12]
+        if brand in {b"heic", b"heix", b"hevc", b"hevx", b"heim", b"heis", b"mif1", b"msf1", b"avif", b"avis"}:
+            return brand.decode("ascii", errors="ignore")
+    return None
 
 
 def normalize_phone_number(value: str) -> str:
@@ -204,6 +247,13 @@ class ForgotPasswordResetSerializer(serializers.Serializer):
         return attrs
 
 
+class PhoneStatusSerializer(serializers.Serializer):
+    phone_number = serializers.CharField(max_length=20)
+
+    def validate_phone_number(self, value):
+        return normalize_phone_number(value)
+
+
 class AuthResponseSerializer(serializers.Serializer):
     user = UserSerializer()
     access = serializers.CharField()
@@ -225,8 +275,12 @@ class ProfileBasicSerializer(serializers.ModelSerializer):
         fields = ["name", "date_of_birth", "gender", "preference"]
 
     def validate_date_of_birth(self, value):
-        if value >= timezone.localdate():
+        today = timezone.localdate()
+        if value >= today:
             raise serializers.ValidationError("date_of_birth must be in the past.")
+        age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
+        if age < 18:
+            raise serializers.ValidationError("You must be 18+ to use Tara.")
         return value
 
 
@@ -373,8 +427,12 @@ class BirthDetailsUpsertSerializer(serializers.ModelSerializer):
         ]
 
     def validate_date_of_birth(self, value):
-        if value >= timezone.localdate():
+        today = timezone.localdate()
+        if value >= today:
             raise serializers.ValidationError("date_of_birth must be in the past.")
+        age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
+        if age < 18:
+            raise serializers.ValidationError("You must be 18+ to use Tara.")
         return value
 
     def validate(self, attrs):
@@ -382,6 +440,14 @@ class BirthDetailsUpsertSerializer(serializers.ModelSerializer):
         has_longitude = "longitude" in attrs and attrs.get("longitude") is not None
         if has_latitude != has_longitude:
             raise serializers.ValidationError("latitude and longitude must be provided together.")
+
+        submitted_place = str(attrs.get("birth_place", "") or "").strip()
+        existing_place = str(getattr(self.instance, "birth_place", "") or "").strip()
+        place_changed = bool(submitted_place) and submitted_place != existing_place
+        if place_changed and not (has_latitude and has_longitude):
+            raise serializers.ValidationError(
+                {"place_of_birth": "latitude and longitude are required when changing place_of_birth."}
+            )
         return attrs
 
     def validate_latitude(self, value):
@@ -526,6 +592,7 @@ class ProfileMeSerializer(serializers.Serializer):
     traits = serializers.SerializerMethodField()
     profile_extras = serializers.SerializerMethodField()
     photos = serializers.SerializerMethodField()
+    stats = serializers.SerializerMethodField()
 
     def get_basic_info(self, obj):
         return ProfileBasicSerializer(obj).data
@@ -550,6 +617,27 @@ class ProfileMeSerializer(serializers.Serializer):
     def get_photos(self, obj):
         images = obj.profile_images.all().order_by("display_order", "id")
         return UserProfileImageSerializer(images, many=True, context=self.context).data
+
+    def get_stats(self, obj):
+        match_filter = Q(user_a=obj) | Q(user_b=obj)
+        matches_count = Match.objects.filter(
+            match_filter,
+            status=Match.Status.MATCHED,
+            is_visible=True,
+        ).count()
+        likes_received_count = Swipe.objects.filter(
+            target_user=obj,
+            action=Swipe.Action.LIKE,
+        ).count()
+        profile_impressions_count = DailyRecommendation.objects.filter(
+            recommended_user=obj,
+        ).count()
+
+        return {
+            "matches_count": matches_count,
+            "likes_received_count": likes_received_count,
+            "profile_impressions_count": profile_impressions_count,
+        }
 
 
 class ProfileExtrasSerializer(serializers.ModelSerializer):
@@ -598,25 +686,30 @@ class UserProfileImageUploadSerializer(serializers.Serializer):
         content_type = str(getattr(value, "content_type", "") or "").lower()
         if content_type and not content_type.startswith("image/"):
             raise serializers.ValidationError("Only image uploads are allowed.")
+        if detect_image_format(value) is None:
+            raise serializers.ValidationError("Upload a valid image file.")
         return value
 
     def create(self, validated_data):
         user = self.context["request"].user
-        existing_count = UserProfileImage.objects.filter(user=user).count()
-        if existing_count >= UserProfileImage.MAX_PHOTOS_PER_USER:
-            raise serializers.ValidationError(
-                {"image": f"You can upload up to {UserProfileImage.MAX_PHOTOS_PER_USER} photos."}
+        with transaction.atomic():
+            existing_images = list(
+                UserProfileImage.objects.select_for_update()
+                .filter(user=user)
+                .order_by("display_order", "id")
             )
+            if len(existing_images) >= UserProfileImage.MAX_PHOTOS_PER_USER:
+                raise serializers.ValidationError(
+                    {"image": f"You can upload up to {UserProfileImage.MAX_PHOTOS_PER_USER} photos."}
+                )
 
-        next_order = (
-            UserProfileImage.objects.filter(user=user).order_by("-display_order").values_list("display_order", flat=True).first()
-        )
-        image = UserProfileImage.objects.create(
-            user=user,
-            image=validated_data["image"],
-            file_token=uuid4().hex,
-            display_order=(0 if next_order is None else next_order + 1),
-        )
+            next_order = existing_images[-1].display_order + 1 if existing_images else 0
+            image = UserProfileImage.objects.create(
+                user=user,
+                image=validated_data["image"],
+                file_token=uuid4().hex,
+                display_order=next_order,
+            )
         return image
 
 
@@ -637,16 +730,22 @@ class UserProfileImageReorderSerializer(serializers.Serializer):
     def save(self, **kwargs):
         user = self.context["request"].user
         ids = self.validated_data["photo_ids"]
-        photo_map = {
-            image.id: image
-            for image in UserProfileImage.objects.filter(user=user, id__in=ids)
-        }
         with transaction.atomic():
+            locked_images = list(
+                UserProfileImage.objects.select_for_update()
+                .filter(user=user, id__in=ids)
+                .order_by("display_order", "id")
+            )
+            photo_map = {image.id: image for image in locked_images}
+
+            temporary_offset = len(ids)
+            for image in locked_images:
+                UserProfileImage.objects.filter(id=image.id).update(
+                    display_order=image.display_order + temporary_offset
+                )
+
             for order, photo_id in enumerate(ids):
-                image = photo_map[photo_id]
-                if image.display_order != order:
-                    image.display_order = order
-                    image.save(update_fields=["display_order"])
+                UserProfileImage.objects.filter(id=photo_id, user=user).update(display_order=order)
 
         return list(
             UserProfileImage.objects.filter(user=user).order_by("display_order", "id")

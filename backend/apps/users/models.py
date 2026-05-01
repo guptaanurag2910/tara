@@ -139,6 +139,12 @@ class UserProfileImage(models.Model):
 
     class Meta:
         ordering = ["display_order", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "display_order"],
+                name="unique_user_profile_image_order",
+            ),
+        ]
         indexes = [
             models.Index(fields=["user", "display_order"], name="usr_prof_img_user_order_idx"),
         ]

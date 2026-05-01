@@ -89,4 +89,12 @@ class MatchMessageCreateView(APIView):
         payload = MessageSerializer(message).data
         if client_message_id:
             payload["client_message_id"] = client_message_id
+        safe_group_send(
+            f"match_{match.id}",
+            {
+                "type": "ws.event",
+                "event": "new_message",
+                "data": payload,
+            },
+        )
         return Response(payload, status=status.HTTP_201_CREATED)

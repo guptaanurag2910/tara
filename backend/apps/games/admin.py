@@ -7,7 +7,16 @@ from django.template.response import TemplateResponse
 from django.urls import path
 
 from .forms import GameQuestionUploadForm
-from .models import Game, GameCategory, GameOption, GameQuestion, QuestionExposure
+from .models import (
+    Game,
+    GameCategory,
+    GameOption,
+    GameQuestion,
+    GameResponse,
+    GameSession,
+    GameSessionQuestion,
+    QuestionExposure,
+)
 from .question_import_service import import_game_questions_rows, load_rows_from_uploaded_json
 
 
@@ -169,4 +178,51 @@ class QuestionExposureAdmin(admin.ModelAdmin):
     autocomplete_fields = ("user", "question")
     list_select_related = ("user", "question", "question__category")
     ordering = ("-seen_at", "id")
+    list_per_page = 100
+
+
+@admin.register(GameSession)
+class GameSessionAdmin(admin.ModelAdmin):
+    list_display = ("id", "match", "game", "category", "started_by", "status", "current_question_index", "created_at")
+    list_filter = ("status", "game", "category", "created_at")
+    search_fields = (
+        "match__user_a__email",
+        "match__user_b__email",
+        "match__user_a__name",
+        "match__user_b__name",
+        "game__name",
+        "category__name",
+        "started_by__email",
+        "started_by__name",
+    )
+    autocomplete_fields = ("match", "game", "category", "started_by", "created_by")
+    list_select_related = ("match", "game", "category", "started_by", "created_by")
+    ordering = ("-created_at", "id")
+    list_per_page = 100
+
+
+@admin.register(GameSessionQuestion)
+class GameSessionQuestionAdmin(admin.ModelAdmin):
+    list_display = ("id", "session", "question", "order")
+    list_filter = ("session__game", "session__status")
+    search_fields = ("question__question_text", "session__match__user_a__name", "session__match__user_b__name")
+    autocomplete_fields = ("session", "question")
+    list_select_related = ("session", "question")
+    ordering = ("session_id", "order", "id")
+    list_per_page = 100
+
+
+@admin.register(GameResponse)
+class GameResponseAdmin(admin.ModelAdmin):
+    list_display = ("id", "session", "user", "question", "selected_option", "created_at")
+    list_filter = ("session__game", "session__status", "created_at")
+    search_fields = (
+        "user__email",
+        "user__name",
+        "question__question_text",
+        "selected_option__option_text",
+    )
+    autocomplete_fields = ("session", "user", "question", "selected_option")
+    list_select_related = ("session", "user", "question", "selected_option")
+    ordering = ("-created_at", "id")
     list_per_page = 100

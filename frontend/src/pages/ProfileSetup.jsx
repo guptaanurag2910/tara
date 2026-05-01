@@ -16,6 +16,7 @@ import {
 } from "../services/onboardingService";
 import {
   getOnboardingProfile,
+  isGeneratedPhoneName,
   markOnboardingComplete,
   saveOnboardingProfile,
 } from "../services/onboardingStorage";
@@ -34,6 +35,20 @@ const PERSONALITY_QUESTION_LIMIT = 3;
 const TOTAL_PROGRESS_UNITS = 10;
 const MAX_PROFILE_PHOTOS = 5;
 
+function isPastDate(dobText) {
+  if (!dobText) {
+    return false;
+  }
+  const dob = new Date(dobText);
+  if (Number.isNaN(dob.getTime())) {
+    return false;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return dob < today;
+}
+
 function isAdult(dobText) {
   if (!dobText) {
     return false;
@@ -48,6 +63,19 @@ function isAdult(dobText) {
     today.getMonth() > dob.getMonth() ||
     (today.getMonth() === dob.getMonth() && today.getDate() >= dob.getDate());
   return hadBirthday ? age >= 18 : age - 1 >= 18;
+}
+
+function getDobValidationMessage(dobText) {
+  if (!dobText) {
+    return "";
+  }
+  if (!isPastDate(dobText)) {
+    return "Date of birth must be in the past.";
+  }
+  if (!isAdult(dobText)) {
+    return "You must be 18+ to use Tara.";
+  }
+  return "";
 }
 
 function toPositiveInteger(value) {
@@ -90,6 +118,67 @@ function normalizePhotoItems(items) {
       };
     })
     .filter(Boolean);
+}
+
+function normalizeResponsesMap(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+
+  return Object.entries(value).reduce((acc, [questionId, optionId]) => {
+    const normalizedQuestionId = toPositiveInteger(questionId);
+    const normalizedOptionId = toPositiveInteger(optionId);
+    if (normalizedQuestionId && normalizedOptionId) {
+      acc[String(normalizedQuestionId)] = normalizedOptionId;
+    }
+    return acc;
+  }, {});
+}
+
+function normalizeStoredStep(value) {
+  const numeric = Number(value);
+  if (Number.isInteger(numeric) && numeric >= STEP_NAME && numeric <= STEP_VIBE) {
+    return numeric;
+  }
+  return null;
+}
+
+function deriveInitialStep(storedProfile) {
+  const storedStep = normalizeStoredStep(storedProfile?.currentStep);
+  if (storedStep !== null) {
+    return storedStep;
+  }
+
+  if (!String(storedProfile?.name || "").trim()) {
+    return STEP_NAME;
+  }
+  if (!String(storedProfile?.date_of_birth || "").trim()) {
+    return STEP_DOB;
+  }
+  if (!String(storedProfile?.gender || "").trim()) {
+    return STEP_GENDER;
+  }
+  if (!String(storedProfile?.preference || "").trim()) {
+    return STEP_PREFERENCE;
+  }
+
+  const hasBirthLocation =
+    String(storedProfile?.birth_place || "").trim().length > 0 &&
+    String(storedProfile?.latitude || "").trim().length > 0 &&
+    String(storedProfile?.longitude || "").trim().length > 0;
+  if (!hasBirthLocation) {
+    return STEP_PLACE;
+  }
+
+  if (!storedProfile?.birthSaved) {
+    return STEP_TIME;
+  }
+
+  if (!Array.isArray(storedProfile?.photos) || storedProfile.photos.length === 0) {
+    return STEP_PHOTOS;
+  }
+
+  return STEP_PERSONALITY;
 }
 
 function normalizeTraitCards(traits, name) {
@@ -166,11 +255,13 @@ export default function ProfileSetup() {
   const cameraInputRef = useRef(null);
 
   const stored = getOnboardingProfile(user?.id);
-  const [step, setStep] = useState(STEP_NAME);
+  const initialName =
+    stored.name || (isGeneratedPhoneName(user) ? "" : user?.name || "");
+  const [step, setStep] = useState(() => deriveInitialStep(stored));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [profile, setProfile] = useState({
-    name: stored.name || user?.name || "",
+    name: initialName,
     date_of_birth: stored.date_of_birth || user?.date_of_birth || "",
     gender: stored.gender || user?.gender || "",
     preference: stored.preference || user?.preference || "",
@@ -189,17 +280,30 @@ export default function ProfileSetup() {
   });
 
   const [questions, setQuestions] = useState([]);
-  const [questionIndex, setQuestionIndex] = useState(0);
-  const [responsesByQuestion, setResponsesByQuestion] = useState({});
+  const [questionIndex, setQuestionIndex] = useState(() => {
+    const numeric = Number(stored.currentQuestionIndex);
+    return Number.isInteger(numeric) && numeric >= 0 ? numeric : 0;
+  });
+  const [responsesByQuestion, setResponsesByQuestion] = useState(() =>
+    normalizeResponsesMap(stored.responsesByQuestion),
+  );
   const [vibeSummary, setVibeSummary] = useState(() => normalizeTraitCards({}, stored.name || user?.name));
 
   useEffect(() => {
+    const persisted = getOnboardingProfile(user?.id);
+    if (persisted?.completed && persisted?.basicSaved && persisted?.birthSaved) {
+      return;
+    }
+
     saveOnboardingProfile({
       ...profile,
+      currentStep: step,
+      currentQuestionIndex: step === STEP_PERSONALITY ? questionIndex : 0,
+      responsesByQuestion,
       completed: false,
       completedAt: null,
     }, user?.id);
-  }, [profile, user?.id]);
+  }, [profile, questionIndex, responsesByQuestion, step, user?.id]);
 
   useEffect(() => {
     let active = true;
@@ -234,6 +338,13 @@ export default function ProfileSetup() {
   const currentQuestion = questions[questionIndex] || null;
   const selectedOptionId = currentQuestion ? responsesByQuestion[String(currentQuestion.id)] : null;
 
+  useEffect(() => {
+    if (!questions.length) {
+      return;
+    }
+    setQuestionIndex((prev) => Math.min(Math.max(prev, 0), questions.length - 1));
+  }, [questions]);
+
   const progressUnit = useMemo(() => {
     if (step <= STEP_PHOTOS) {
       return step + 1;
@@ -248,6 +359,16 @@ export default function ProfileSetup() {
     () => Math.min(100, Math.max(0, (progressUnit / TOTAL_PROGRESS_UNITS) * 100)),
     [progressUnit],
   );
+
+  const clientValidationMessage = useMemo(() => {
+    if (step === STEP_NAME && profile.name.length > 0 && !profile.name.trim()) {
+      return "Please enter your first name.";
+    }
+    if (step === STEP_DOB) {
+      return getDobValidationMessage(profile.date_of_birth);
+    }
+    return "";
+  }, [profile.date_of_birth, profile.name, step]);
 
   const canProceed = useMemo(() => {
     if (step === STEP_NAME) {
@@ -342,8 +463,59 @@ export default function ProfileSetup() {
       throw new Error("Could not load personality questions.");
     }
     setQuestions(sliced);
-    setQuestionIndex(0);
   };
+
+  useEffect(() => {
+    if (step < STEP_PERSONALITY) {
+      return;
+    }
+
+    let active = true;
+    (async () => {
+      try {
+        await loadQuestionsIfNeeded();
+      } catch {
+        return;
+      }
+
+      try {
+        const summary = await fetchProfileSummary();
+        if (!active) {
+          return;
+        }
+
+        const responseMap = Array.isArray(summary?.personality_responses)
+          ? summary.personality_responses.reduce((acc, item) => {
+              const questionId = toPositiveInteger(item?.question_id);
+              const optionId = toPositiveInteger(item?.selected_option?.id);
+              if (questionId && optionId) {
+                acc[String(questionId)] = optionId;
+              }
+              return acc;
+            }, {})
+          : {};
+
+        if (Object.keys(responseMap).length > 0) {
+          setResponsesByQuestion((prev) => ({
+            ...responseMap,
+            ...prev,
+          }));
+        }
+
+        if (summary?.traits && typeof summary.traits === "object") {
+          setVibeSummary(normalizeTraitCards(summary.traits || {}, profile.name));
+        }
+      } catch {
+        if (active && step === STEP_VIBE) {
+          setVibeSummary(normalizeTraitCards({}, profile.name));
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [profile.name, step]); // intentionally rehydrate when resuming personality/vibe
 
   const onPhotoSelect = async (event) => {
     const files = Array.from(event.target.files || []);
@@ -439,6 +611,8 @@ export default function ProfileSetup() {
   const completeOnboarding = async () => {
     markOnboardingComplete({
       ...profile,
+      currentStep: STEP_VIBE,
+      currentQuestionIndex: Math.max(questionIndex, 0),
       completed: true,
       completedAt: Date.now(),
     }, user?.id);
@@ -527,7 +701,7 @@ export default function ProfileSetup() {
   const personalityLabel = `${questionIndex + 1} of ${Math.max(questions.length, PERSONALITY_QUESTION_LIMIT)}`;
 
   return (
-    <main className="tara-container flex min-h-screen flex-col px-6 pb-8 pt-10">
+    <main className="tara-container flex min-h-[100dvh] flex-col px-6 pb-8 pt-10">
       <header className="mb-10 flex items-center gap-4">
         <button aria-label="Back" className="tara-back-btn" onClick={onBack} type="button">
           ←
@@ -794,6 +968,12 @@ export default function ProfileSetup() {
         {error ? (
           <p className="mt-4 rounded-2xl border border-rose-300/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
             {error}
+          </p>
+        ) : null}
+
+        {!error && clientValidationMessage ? (
+          <p className="mt-4 rounded-2xl border border-amber-300/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
+            {clientValidationMessage}
           </p>
         ) : null}
 

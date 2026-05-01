@@ -14,9 +14,10 @@ function SectionCard({ title, children }) {
   );
 }
 
-function Toggle({ checked, onChange }) {
+function Toggle({ checked, onChange, ariaLabel }) {
   return (
     <button
+      aria-label={ariaLabel}
       aria-pressed={checked}
       className={`relative h-7 w-12 rounded-full transition ${
         checked ? "bg-emerald-500/80" : "bg-white/20"
@@ -67,7 +68,7 @@ export default function Settings() {
       return;
     }
     logout();
-    navigate("/", { replace: true });
+    window.location.replace("/");
   };
 
   return (
@@ -89,6 +90,7 @@ export default function Settings() {
             label="Min Age"
             right={
               <input
+                aria-label="Minimum age"
                 className="w-16 rounded-lg border border-white/20 bg-white/10 px-2 py-1 text-right text-sm text-white"
                 min={18}
                 onChange={(event) =>
@@ -109,6 +111,7 @@ export default function Settings() {
             label="Max Age"
             right={
               <input
+                aria-label="Maximum age"
                 className="w-16 rounded-lg border border-white/20 bg-white/10 px-2 py-1 text-right text-sm text-white"
                 min={settings.discovery.minAge}
                 onChange={(event) =>
@@ -130,6 +133,7 @@ export default function Settings() {
             right={<span className="text-sm text-slate-100">{settings.discovery.distanceKm} km</span>}
           />
           <input
+            aria-label="Discovery distance"
             className="w-full accent-cyan-400"
             max={500}
             min={1}
@@ -148,6 +152,7 @@ export default function Settings() {
           <label className="block text-sm">
             <span className="mb-1.5 block font-medium text-slate-200">Gender Preference</span>
             <select
+              aria-label="Gender preference"
               className="w-full rounded-xl border border-white/20 bg-white/10 px-3 py-3 text-sm text-white"
               onChange={(event) =>
                 updateSettings({
@@ -178,6 +183,7 @@ export default function Settings() {
             label="New Matches"
             right={
               <Toggle
+                ariaLabel="Toggle new matches notifications"
                 checked={settings.notifications.matches}
                 onChange={() =>
                   updateSettings({
@@ -195,6 +201,7 @@ export default function Settings() {
             label="Messages"
             right={
               <Toggle
+                ariaLabel="Toggle messages notifications"
                 checked={settings.notifications.messages}
                 onChange={() =>
                   updateSettings({
@@ -212,6 +219,7 @@ export default function Settings() {
             label="Likes"
             right={
               <Toggle
+                ariaLabel="Toggle likes notifications"
                 checked={settings.notifications.likes}
                 onChange={() =>
                   updateSettings({
@@ -258,6 +266,7 @@ export default function Settings() {
             label="Profile Visibility"
             right={
               <Toggle
+                ariaLabel="Toggle profile visibility"
                 checked={settings.privacy.profileVisible}
                 onChange={() =>
                   updateSettings({
@@ -286,7 +295,7 @@ export default function Settings() {
           <Button
             onClick={() => {
               logout();
-              navigate("/", { replace: true });
+              window.location.replace("/");
             }}
             variant="ghost"
           >

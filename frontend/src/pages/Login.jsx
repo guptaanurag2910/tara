@@ -4,6 +4,7 @@ import { ArrowLeft, ChevronDown } from "lucide-react";
 
 import Logo from "../components/tara/Logo";
 import { useAuth } from "../hooks/useAuth";
+import { getPhoneStatus } from "../services/authService";
 import { isOnboardingComplete } from "../services/onboardingStorage";
 
 const OTP_CODE = "123456";
@@ -52,6 +53,7 @@ export default function Login() {
   const [seconds, setSeconds] = useState(RESEND_SECONDS);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
+  const [checkingPhone, setCheckingPhone] = useState(false);
 
   const otpRefs = useRef([]);
 
@@ -127,16 +129,32 @@ export default function Login() {
     navigate(-1);
   };
 
-  const onSendCodeSignup = () => {
+  const onSendCodeSignup = async () => {
     resetMessages();
     if (!canUsePhone) {
       setError("Enter a valid phone number.");
       return;
     }
-    setOtp("");
-    setSeconds(RESEND_SECONDS);
-    setSignupStep("otp");
-    setPickerOpen(false);
+    try {
+      setCheckingPhone(true);
+      const response = await getPhoneStatus({ phone_number: fullPhone });
+
+      if (response?.exists) {
+        switchMode("login");
+        setInfo("This number already has an account. Enter your password to log in.");
+        return;
+      }
+
+      setOtp("");
+      setSeconds(RESEND_SECONDS);
+      setSignupStep("otp");
+      setPickerOpen(false);
+      setInfo("New number detected. Verify with OTP to continue.");
+    } catch (apiError) {
+      setError(apiError?.message || "Could not verify this phone number.");
+    } finally {
+      setCheckingPhone(false);
+    }
   };
 
   const onVerifySignupOtp = () => {
@@ -190,7 +208,24 @@ export default function Login() {
         password: password.trim(),
       });
     } catch (apiError) {
-      setError(apiError?.message || "Login failed.");
+      const message = apiError?.message || "Login failed.";
+
+      if (/invalid phone number or password/i.test(message)) {
+        try {
+          const response = await getPhoneStatus({ phone_number: fullPhone });
+          if (response?.exists) {
+            setError("Incorrect password. Reset it if you've forgotten it.");
+            return;
+          }
+          setError("No account found for this number. Create an account to continue.");
+          return;
+        } catch (statusError) {
+          setError(statusError?.message || message);
+          return;
+        }
+      }
+
+      setError(message);
     }
   };
 
@@ -375,11 +410,11 @@ export default function Login() {
   );
 
   return (
-    <main className="relative mx-auto min-h-screen w-full max-w-[390px] overflow-hidden bg-cosmic px-6 pb-8 pt-12">
+    <main className="relative mx-auto min-h-[100dvh] w-full max-w-[390px] overflow-hidden bg-cosmic px-6 pb-8 pt-12">
       <div className="star-field pointer-events-none absolute inset-0 opacity-60" />
       <div className="pointer-events-none absolute left-1/2 top-16 h-72 w-72 -translate-x-1/2 rounded-full bg-glow blur-3xl" />
 
-      <div className="relative z-10 flex min-h-screen flex-col">
+      <div className="relative z-10 flex min-h-[100dvh] flex-col">
         <header className="flex items-center justify-between">
           <button
             onClick={onBack}
@@ -397,12 +432,12 @@ export default function Login() {
           <section className="mt-12 flex flex-1 flex-col animate-fade-up">
             <p className="text-xs uppercase tracking-[0.32em] text-[color:var(--tara-gold)]">Step 1 of 3</p>
             <h1 className="tara-heading mt-3 text-6xl leading-tight">
-              What&apos;s your
+              Enter your
               <br />
               <span className="text-aurora italic">number?</span>
             </h1>
             <p className="mt-3 text-[15px] text-[color:var(--tara-text-secondary)]">
-              We&apos;ll send a 6-digit code to confirm it&apos;s you. No spam, ever.
+              We&apos;ll first check whether this number already has an account. New numbers continue to OTP verification.
             </p>
 
             {renderPhoneInput()}
@@ -415,11 +450,11 @@ export default function Login() {
             <div className="mt-auto">
               <button
                 onClick={onSendCodeSignup}
-                disabled={!canUsePhone || loading}
+                disabled={!canUsePhone || loading || checkingPhone}
                 className="flex h-14 w-full items-center justify-center rounded-full bg-aurora text-base font-semibold text-white shadow-glow transition-all active:scale-[0.98] disabled:opacity-40 disabled:shadow-none"
                 type="button"
               >
-                Send code
+                {checkingPhone ? "Checking..." : "Continue"}
               </button>
               <p className="mt-4 text-center text-xs text-[color:var(--tara-text-secondary)]">
                 Already have an account?{" "}
@@ -511,12 +546,12 @@ export default function Login() {
           <section className="mt-12 flex flex-1 flex-col animate-fade-up">
             <p className="text-xs uppercase tracking-[0.32em] text-[color:var(--tara-gold)]">Welcome back</p>
             <h1 className="tara-heading mt-3 text-6xl leading-tight">
-              Sign in with
+              Login with
               <br />
               <span className="text-aurora italic">phone</span>
             </h1>
             <p className="mt-3 text-[15px] text-[color:var(--tara-text-secondary)]">
-              Existing users can login using phone number and password.
+              Existing users only need their phone number and password.
             </p>
 
             {renderPhoneInput("90000 00001")}
@@ -544,6 +579,26 @@ export default function Login() {
             >
               Forgot password?
             </button>
+
+            {mode === "login" && /incorrect password/i.test(error) ? (
+              <button
+                type="button"
+                onClick={() => switchMode("forgot")}
+                className="mt-2 self-start text-sm text-[color:var(--tara-gold)]"
+              >
+                Reset password instead
+              </button>
+            ) : null}
+
+            {mode === "login" && /no account found/i.test(error) ? (
+              <button
+                type="button"
+                onClick={() => switchMode("signup")}
+                className="mt-2 self-start text-sm text-[color:var(--tara-gold)]"
+              >
+                Create a new account
+              </button>
+            ) : null}
 
             <div className="mt-auto">
               <button
@@ -589,7 +644,7 @@ export default function Login() {
                 className="flex h-14 w-full items-center justify-center rounded-full bg-aurora text-base font-semibold text-white shadow-glow transition-all active:scale-[0.98] disabled:opacity-40 disabled:shadow-none"
                 type="button"
               >
-                Send code
+                Continue
               </button>
             </div>
           </section>
