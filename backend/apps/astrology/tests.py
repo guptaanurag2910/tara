@@ -134,6 +134,27 @@ class AstrologyModuleTests(TestCase):
         self.user.refresh_from_db()
         self.assertEqual(str(self.user.birth_time), "09:45:00")
 
+    def test_generated_insights_reference_actual_chart_placements(self):
+        response = self.client.post(
+            "/api/astrology/birth-details/",
+            {
+                "date_of_birth": "1995-02-14",
+                "time_of_birth": "08:45",
+                "place_of_birth": "Mumbai, India",
+                "latitude": "19.076000",
+                "longitude": "72.877700",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+
+        kundali = Kundali.objects.get(user=self.user)
+        insights = kundali.insights
+        self.assertIn("Mercury", insights["personality"])
+        self.assertIn("Moon in", insights["emotions"])
+        self.assertIn("Venus", insights["relationships"])
+        self.assertIn("Rahu in House", insights["growth"])
+
     def test_same_input_same_kundali(self):
         payload = {
             "date_of_birth": "1998-12-05",

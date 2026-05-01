@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
+import { ChatThreadSkeleton, ConversationListSkeleton } from "../components/AppSkeletons";
+import Button from "../components/Button";
 import GameModal from "../components/chat/GameModal";
 import GameResultCard from "../components/chat/GameResultCard";
 import EmptyState from "../components/EmptyState";
 import Icebreaker from "../components/Icebreaker";
-import Loader from "../components/Loader";
 import MessageBubble from "../components/MessageBubble";
 import { useAuth } from "../hooks/useAuth";
 import { useChatSocket } from "../hooks/useChatSocket";
@@ -267,12 +268,20 @@ function ConversationsList({ loading, error, conversations, query, setQuery }) {
         />
       </div>
 
-      {loading ? <Loader text="Loading conversations..." /> : null}
+      {loading ? <ConversationListSkeleton /> : null}
       {error ? <p className="mt-4 rounded-xl bg-rose-500/20 px-3 py-2 text-sm text-rose-100">{error}</p> : null}
 
       {!loading && !error && conversations.length === 0 ? (
         <div className="mt-8">
-          <EmptyState title="Start a conversation 👀" />
+          <EmptyState
+            title="No conversations yet"
+            subtitle="Your matches will show up here once you start talking. When you're ready, head to matches and break the ice."
+            action={(
+              <Link to="/matches">
+                <Button type="button">View matches</Button>
+              </Link>
+            )}
+          />
         </div>
       ) : null}
 
@@ -682,7 +691,7 @@ export default function ChatScreen() {
       </header>
 
       <section className="flex-1 overflow-y-auto px-4 py-4">
-        {loading ? <Loader text="Loading messages..." /> : null}
+        {loading ? <ChatThreadSkeleton /> : null}
         {error ? <p className="mb-3 rounded-lg bg-rose-500/20 px-3 py-2 text-xs text-rose-100">{error}</p> : null}
         {!error && socket.lastError ? (
           <p className="mb-3 rounded-lg bg-amber-500/20 px-3 py-2 text-xs text-amber-100">{socket.lastError}</p>
@@ -691,7 +700,33 @@ export default function ChatScreen() {
         {!loading && messages.length === 0 ? (
           <div className="flex h-full items-center justify-center text-center">
             <div className="w-full max-w-xs">
-              <EmptyState compact title="Start a conversation 👀" />
+              <EmptyState
+                compact
+                title="This chat is waiting for the first message"
+                subtitle="Keep it simple. Say hello, mention something from their profile, or start a quick game together."
+                action={(
+                  <div className="grid gap-2">
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setDraft(`Hey ${matchInfo?.user?.name?.split?.(" ")?.[0] || ""}, I finally made the first move ✨`.trim());
+                        draftInputRef.current?.focus();
+                      }}
+                    >
+                      Send a hello
+                    </Button>
+                    <Button
+                      fullWidth
+                      type="button"
+                      variant="ghost"
+                      disabled={!socket.isConnected || Boolean(startingGame)}
+                      onClick={() => onStartGame(selectedGame)}
+                    >
+                      Start a game
+                    </Button>
+                  </div>
+                )}
+              />
             </div>
           </div>
         ) : (

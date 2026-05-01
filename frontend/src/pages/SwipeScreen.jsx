@@ -3,7 +3,7 @@ import { SlidersHorizontal, Star } from "lucide-react";
 
 import Button from "../components/Button";
 import EmptyState from "../components/EmptyState";
-import Loader from "../components/Loader";
+import { DiscoverSkeleton } from "../components/AppSkeletons";
 import MatchPopup from "../components/MatchPopup";
 import SwipeCard from "../components/SwipeCard";
 import Logo from "../components/tara/Logo";
@@ -129,7 +129,7 @@ export default function SwipeScreen() {
       </header>
 
       {loading ? (
-        <Loader text="Pulling matches..." />
+        <DiscoverSkeleton />
       ) : (
         <div className="relative flex-1">
           {!error ? <NextCardPreview profile={nextProfile} /> : null}
@@ -152,7 +152,15 @@ export default function SwipeScreen() {
           ) : (
             <div className="flex h-[67vh] max-h-[590px] items-center justify-center">
               <div className="w-full max-w-sm">
-                <EmptyState title="Check back later for new matches ✨" />
+                <EmptyState
+                  title="No more souls nearby right now"
+                  subtitle="You've seen everyone in your current pool. Refresh the feed now, or check back a little later for fresh recommendations."
+                  action={(
+                    <Button fullWidth onClick={loadProfiles} type="button">
+                      Refresh feed
+                    </Button>
+                  )}
+                />
               </div>
             </div>
           )}

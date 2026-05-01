@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, Sparkles } from "lucide-react";
 
+import { MatchesSkeleton } from "../components/AppSkeletons";
+import Button from "../components/Button";
 import EmptyState from "../components/EmptyState";
-import Loader from "../components/Loader";
 import { fetchMatches } from "../services/matchingService";
 
 function firstName(name) {
@@ -64,15 +65,25 @@ export default function MatchesPage() {
       <header>
         <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--tara-gold)]">Your constellations</p>
         <h1 className="tara-heading mt-2 text-6xl leading-none">Matches</h1>
-        <p className="mt-1 text-[15px] text-[color:var(--tara-text-secondary)]">{matches.length} souls aligned with yours.</p>
+        <p className="mt-1 text-[15px] text-[color:var(--tara-text-secondary)]">
+          {loading ? "Reading your alignments..." : `${matches.length} souls aligned with yours.`}
+        </p>
       </header>
 
-      {loading ? <Loader text="Loading your matches..." /> : null}
+      {loading ? <MatchesSkeleton /> : null}
       {error ? <p className="mt-4 rounded-xl border border-rose-300/25 bg-rose-500/10 px-3 py-2 text-sm text-rose-100">{error}</p> : null}
 
       {!loading && !error && matches.length === 0 ? (
         <div className="mt-8">
-          <EmptyState title="Your next match is on the way 🔮" />
+          <EmptyState
+            title="No matches yet"
+            subtitle="When two people like each other, the connection lands here. Keep exploring and your first conversation will be one tap away."
+            action={(
+              <Link to="/discover">
+                <Button type="button">Go to Discover</Button>
+              </Link>
+            )}
+          />
         </div>
       ) : null}
 

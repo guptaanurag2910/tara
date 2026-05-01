@@ -10,6 +10,7 @@ from .models import BirthDetails, Kundali
 from .serializers import BirthDetailsSerializer, KundaliSerializer
 from .services.ephemeris_service import get_coordinates
 from .services.horoscope_engine import get_cached_daily_horoscope
+from .services.interpretation_service import generate_insights, generate_scores
 from .services.location_service import reverse_geocode, search_places
 
 logger = logging.getLogger(__name__)
@@ -84,6 +85,25 @@ class KundaliView(APIView):
         kundali = Kundali.objects.filter(user=request.user).first()
         if kundali is None:
             return Response({"detail": "Kundali not generated yet."}, status=status.HTTP_404_NOT_FOUND)
+
+        payload = {
+            "lagna": kundali.lagna,
+            "moon_sign": kundali.moon_sign,
+            "sun_sign": kundali.sun_sign,
+            "chart_data": kundali.chart_data or {},
+        }
+        refreshed_insights = generate_insights(payload)
+        refreshed_scores = generate_scores(payload)
+        changed_fields = []
+        if kundali.insights != refreshed_insights:
+            kundali.insights = refreshed_insights
+            changed_fields.append("insights")
+        if kundali.scores != refreshed_scores:
+            kundali.scores = refreshed_scores
+            changed_fields.append("scores")
+        if changed_fields:
+            kundali.save(update_fields=[*changed_fields, "updated_at"])
+
         return Response(KundaliSerializer(kundali).data, status=status.HTTP_200_OK)
 
 

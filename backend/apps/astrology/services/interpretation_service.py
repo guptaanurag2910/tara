@@ -60,6 +60,36 @@ HEALTH_HINTS_BY_SATURN_HOUSE = {
     12: "Nervous system reset through rest and silence can prevent burnout.",
 }
 
+HOUSE_THEMES = {
+    1: "self-expression and personal direction",
+    2: "money, speech, and values",
+    3: "communication, effort, and courage",
+    4: "home, comfort, and emotional roots",
+    5: "romance, creativity, and joy",
+    6: "work habits, service, and health routines",
+    7: "partnerships and one-to-one bonds",
+    8: "shared emotions, secrecy, and transformation",
+    9: "beliefs, travel, and higher learning",
+    10: "career, status, and public life",
+    11: "friends, gains, and long-term goals",
+    12: "rest, retreat, and inner healing",
+}
+
+SEVENTH_SIGN_RELATION_STYLE = {
+    "Aries": "do best with partners who are direct, warm, and emotionally brave",
+    "Taurus": "look for steadiness, sensuality, and dependable follow-through",
+    "Gemini": "need conversation, wit, and a feeling of mental movement",
+    "Cancer": "open up most when care feels safe, private, and emotionally steady",
+    "Leo": "thrive with affection, loyalty, and visible appreciation",
+    "Virgo": "trust partners who are thoughtful, consistent, and grounded in daily life",
+    "Libra": "seek reciprocity, grace, and emotional balance",
+    "Scorpio": "want depth, trust, and strong emotional honesty",
+    "Sagittarius": "need freedom, truth, and shared growth",
+    "Capricorn": "value reliability, maturity, and long-term intent",
+    "Aquarius": "need space, friendship, and intellectual openness",
+    "Pisces": "soften around partners who are empathic and spiritually open",
+}
+
 
 def _safe_int(value, default: int) -> int:
     try:
@@ -72,10 +102,162 @@ def _clamp_score(value: int, minimum: int = 1, maximum: int = 10) -> int:
     return max(minimum, min(maximum, value))
 
 
+def _safe_chart_data(kundali_payload: Mapping[str, object]) -> Mapping[str, object]:
+    chart_data = kundali_payload.get("chart_data")
+    if isinstance(chart_data, dict):
+        return chart_data
+    return {}
+
+
+def _safe_planets(kundali_payload: Mapping[str, object]) -> Mapping[str, Mapping[str, object]]:
+    planets = _safe_chart_data(kundali_payload).get("planets")
+    if isinstance(planets, dict):
+        return planets
+    return {}
+
+
+def _planet_house(planets: Mapping[str, Mapping[str, object]], name: str) -> int:
+    return _safe_int((planets.get(name) or {}).get("house"), 0)
+
+
+def _planet_sign(planets: Mapping[str, Mapping[str, object]], name: str) -> str:
+    return str((planets.get(name) or {}).get("sign") or "")
+
+
+def _house_sign(chart_data: Mapping[str, object], house_number: int) -> str:
+    houses = chart_data.get("houses")
+    if not isinstance(houses, dict):
+        return ""
+    payload = houses.get(str(house_number)) or houses.get(house_number) or {}
+    return str(payload.get("sign") or "")
+
+
+def _house_theme(house_number: int) -> str:
+    return HOUSE_THEMES.get(house_number, "this area of life")
+
+
+def _placement_prefix(planet: str, sign: str, house: int) -> str:
+    bits = [planet]
+    if sign:
+        bits.append(f"in {sign}")
+    if house > 0:
+        bits.append(f"in House {house}")
+    return " ".join(bits)
+
+
+def _build_personality_insight(*, lagna: str, moon_sign: str, mercury_sign: str, mercury_house: int) -> str:
+    base = PERSONALITY_BY_LAGNA.get(
+        lagna,
+        "You carry a distinctive mix of emotional depth and practical intelligence.",
+    )
+    if mercury_house > 0 and mercury_sign:
+        return (
+            f"{base} {_placement_prefix('Mercury', mercury_sign, mercury_house)} makes your mind strongest around "
+            f"{_house_theme(mercury_house)}."
+        )
+    if moon_sign:
+        return f"{base} Your Moon in {moon_sign} adds a visible emotional tone to how people experience you."
+    return base
+
+
+def _build_emotional_insight(*, moon_sign: str, moon_house: int) -> str:
+    base = EMOTIONAL_HINTS_BY_MOON.get(
+        moon_sign,
+        "Emotional awareness and honest communication are your growth keys.",
+    )
+    if moon_sign and moon_house > 0:
+        return f"Moon in {moon_sign} in House {moon_house} puts your feelings close to {_house_theme(moon_house)}. {base}"
+    if moon_sign:
+        return f"Moon in {moon_sign} shapes your emotional style. {base}"
+    return base
+
+
+def _build_career_insight(*, sun_sign: str, sun_house: int, jupiter_sign: str, jupiter_house: int, saturn_house: int) -> str:
+    if sun_house in {10, 11}:
+        lead = f"{_placement_prefix('Sun', sun_sign, sun_house)} puts visibility, leadership, and public momentum high on your path."
+    elif sun_house in {6, 8, 12}:
+        lead = f"{_placement_prefix('Sun', sun_sign, sun_house)} favors strategic, behind-the-scenes, or high-responsibility work over constant spotlight."
+    elif sun_house > 0:
+        lead = f"{_placement_prefix('Sun', sun_sign, sun_house)} ties career growth to {_house_theme(sun_house)}."
+    else:
+        lead = CAREER_HINTS["Sun"]
+
+    if jupiter_house in {2, 10, 11}:
+        follow_up = (
+            f"{_placement_prefix('Jupiter', jupiter_sign, jupiter_house)} helps you grow through learning, guidance, and long-term trust."
+        )
+    elif saturn_house in {6, 8, 10}:
+        follow_up = f"Saturn in House {saturn_house} says results come when you structure {_house_theme(saturn_house)} patiently."
+    else:
+        follow_up = CAREER_HINTS["Jupiter"]
+    return f"{lead} {follow_up}"
+
+
+def _build_relationship_insight(
+    *,
+    moon_sign: str,
+    venus_sign: str,
+    venus_house: int,
+    seventh_house_sign: str,
+) -> str:
+    if venus_house > 0:
+        lead = (
+            f"{_placement_prefix('Venus', venus_sign, venus_house)} shows that you bond through {_house_theme(venus_house)}."
+        )
+    else:
+        lead = RELATIONSHIP_HINTS_BY_VENUS_HOUSE.get(
+            venus_house,
+            "Mutual respect and consistent communication will keep your relationships strong.",
+        )
+
+    if seventh_house_sign:
+        follow_up = (
+            f"Your 7th house in {seventh_house_sign} means you usually {SEVENTH_SIGN_RELATION_STYLE.get(seventh_house_sign, 'need clarity and reciprocity in partnership')}."
+        )
+    elif moon_sign:
+        follow_up = f"With Moon in {moon_sign}, emotional honesty matters more to you than surface chemistry."
+    else:
+        follow_up = "Clarity and reciprocity matter more to you than surface chemistry."
+    return f"{lead} {follow_up}"
+
+
+def _build_wellbeing_insight(*, moon_sign: str, saturn_sign: str, saturn_house: int) -> str:
+    lead = HEALTH_HINTS_BY_SATURN_HOUSE.get(
+        saturn_house,
+        f"{_placement_prefix('Saturn', saturn_sign, saturn_house)} asks for patient pacing around {_house_theme(saturn_house)}."
+        if saturn_house > 0
+        else "Sustainable routines and stress boundaries are key for long-term wellbeing.",
+    )
+    if moon_sign in {"Gemini", "Virgo", "Aquarius"}:
+        follow_up = "Mental overstimulation can tire you faster than physical effort, so protect quiet time."
+    elif moon_sign in {"Cancer", "Scorpio", "Pisces"}:
+        follow_up = "Your body responds quickly to emotional atmosphere, so rest and emotional boundaries matter."
+    else:
+        follow_up = "Steady sleep, food, movement, and recovery will keep your energy from swinging too much."
+    return f"{lead} {follow_up}"
+
+
+def _build_growth_insight(*, lagna: str, rahu_house: int, ketu_house: int) -> str:
+    if rahu_house > 0 and ketu_house > 0:
+        base = (
+            f"Rahu in House {rahu_house} grows you through {_house_theme(rahu_house)}, while Ketu in House {ketu_house} asks you to loosen old habits around {_house_theme(ketu_house)}."
+        )
+    else:
+        base = "Your next phase opens when you combine emotional honesty with disciplined action."
+
+    if lagna in {"Scorpio", "Capricorn", "Virgo"}:
+        ending = "Slow progress will serve you better than forcing instant results."
+    elif lagna in {"Sagittarius", "Aquarius", "Gemini"}:
+        ending = "Learning, new circles, and open dialogue will unlock your next chapter."
+    else:
+        ending = "The more conscious you are about your patterns, the faster your chart starts working in your favor."
+    return f"{base} {ending}"
+
+
 def generate_scores(kundali_payload: Mapping[str, object]) -> Dict[str, int]:
     moon_sign = str(kundali_payload.get("moon_sign") or "")
     lagna = str(kundali_payload.get("lagna") or "")
-    planets = kundali_payload.get("chart_data", {}).get("planets", {}) if isinstance(kundali_payload.get("chart_data"), dict) else {}
+    planets = _safe_planets(kundali_payload)
 
     career = 6
     love = 6
@@ -112,39 +294,54 @@ def generate_scores(kundali_payload: Mapping[str, object]) -> Dict[str, int]:
 def generate_insights(kundali_payload: Mapping[str, object]) -> Dict[str, str]:
     lagna = str(kundali_payload.get("lagna") or "")
     moon_sign = str(kundali_payload.get("moon_sign") or "")
-    chart_data = kundali_payload.get("chart_data")
-    planets = chart_data.get("planets") if isinstance(chart_data, dict) else {}
+    sun_sign = str(kundali_payload.get("sun_sign") or "")
+    chart_data = _safe_chart_data(kundali_payload)
+    planets = _safe_planets(kundali_payload)
 
-    sun_house = None
-    venus_house = None
-    saturn_house = None
-    if isinstance(planets, dict):
-        sun_house = (planets.get("sun") or {}).get("house")
-        venus_house = _safe_int((planets.get("venus") or {}).get("house"), 0)
-        saturn_house = _safe_int((planets.get("saturn") or {}).get("house"), 0)
+    sun_house = _planet_house(planets, "sun")
+    mercury_sign = _planet_sign(planets, "mercury")
+    mercury_house = _planet_house(planets, "mercury")
+    moon_house = _planet_house(planets, "moon")
+    venus_sign = _planet_sign(planets, "venus")
+    venus_house = _planet_house(planets, "venus")
+    jupiter_sign = _planet_sign(planets, "jupiter")
+    jupiter_house = _planet_house(planets, "jupiter")
+    saturn_sign = _planet_sign(planets, "saturn")
+    saturn_house = _planet_house(planets, "saturn")
+    rahu_house = _planet_house(planets, "rahu")
+    ketu_house = _planet_house(planets, "ketu")
+    seventh_house_sign = _house_sign(chart_data, 7)
 
-    personality = PERSONALITY_BY_LAGNA.get(lagna, "You carry a unique blend of emotional and intellectual strengths.")
-    emotions = EMOTIONAL_HINTS_BY_MOON.get(moon_sign, "Emotional awareness and honest communication are your growth keys.")
-
-    career = CAREER_HINTS["Sun"]
-    if sun_house in {10, 11}:
-        career = "Public visibility and collaboration can accelerate your career momentum."
-    elif sun_house in {6, 8}:
-        career = "Complex responsibilities can become your edge when paced strategically."
-
-    relationships = RELATIONSHIP_HINTS_BY_VENUS_HOUSE.get(
-        venus_house,
-        "Mutual respect and consistent communication will keep your relationships strong.",
+    personality = _build_personality_insight(
+        lagna=lagna,
+        moon_sign=moon_sign,
+        mercury_sign=mercury_sign,
+        mercury_house=mercury_house,
     )
-    wellbeing = HEALTH_HINTS_BY_SATURN_HOUSE.get(
-        saturn_house,
-        "Sustainable routines and stress boundaries are key for long-term wellbeing.",
+    emotions = _build_emotional_insight(moon_sign=moon_sign, moon_house=moon_house)
+    career = _build_career_insight(
+        sun_sign=sun_sign,
+        sun_house=sun_house,
+        jupiter_sign=jupiter_sign,
+        jupiter_house=jupiter_house,
+        saturn_house=saturn_house,
     )
-    growth = "Your next phase opens when you combine emotional honesty with disciplined action."
-    if lagna in {"Scorpio", "Capricorn", "Virgo"}:
-        growth = "Deep transformation is available when you trust slow, consistent progress."
-    elif lagna in {"Sagittarius", "Aquarius", "Gemini"}:
-        growth = "Expansion comes through learning, travel of mind, and open dialogue."
+    relationships = _build_relationship_insight(
+        moon_sign=moon_sign,
+        venus_sign=venus_sign,
+        venus_house=venus_house,
+        seventh_house_sign=seventh_house_sign,
+    )
+    wellbeing = _build_wellbeing_insight(
+        moon_sign=moon_sign,
+        saturn_sign=saturn_sign,
+        saturn_house=saturn_house,
+    )
+    growth = _build_growth_insight(
+        lagna=lagna,
+        rahu_house=rahu_house,
+        ketu_house=ketu_house,
+    )
 
     return {
         "personality": personality,
