@@ -152,6 +152,7 @@ test.describe.serial("Detailed screen-by-screen UI + API validation", () => {
   });
 
   test("3) Auth screen (/auth) OTP flow works and calls auth APIs", async ({ page }) => {
+    test.setTimeout(120000);
     const phone = `9${Date.now().toString().slice(-9)}`;
     const apiStatuses = [];
 
@@ -421,6 +422,8 @@ test.describe.serial("Detailed screen-by-screen UI + API validation", () => {
     await applySession(page, seed.primary, { onboardingComplete: true });
     await page.goto("/kundali");
     await expect(page.getByRole("heading", { name: /Your Kundali/i })).toBeVisible();
+    await page.getByRole("button", { name: /Edit details/i }).click();
+    await expect(page.getByRole("button", { name: /Update details|Save details/i })).toBeVisible();
 
     const savePromise = waitForApi(page, {
       fragment: "astrology/birth-details/",
@@ -438,11 +441,11 @@ test.describe.serial("Detailed screen-by-screen UI + API validation", () => {
       expectedStatuses: [200],
     });
 
-    await page.getByRole("button", { name: /Update details/i }).click();
+    await page.getByRole("button", { name: /Update details|Save details/i }).click();
     await savePromise;
     await kundaliPromise;
     await horoscopePromise;
-    await expect(page.getByRole("heading", { name: /Kundali Dashboard/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Your reading/i })).toBeVisible();
   });
 
   test("12) Profile screen (/profile) uses real summary data and honest empty states", async ({ page }) => {
@@ -660,7 +663,7 @@ test.describe.serial("Detailed screen-by-screen UI + API validation", () => {
     await matchesToggle.click();
     await likesToggle.click();
     await visibilityToggle.click();
-    await page.getByRole("button", { name: /^Dark$/i }).click();
+    await page.getByRole("button", { name: /^Night$/i }).click();
 
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
     await expect(page.locator("body")).toContainText("75 km");

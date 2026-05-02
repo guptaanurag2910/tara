@@ -17,36 +17,39 @@ export default function EditProfile() {
   const navigate = useNavigate();
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 py-5">
-      <header className="mb-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-white">Edit Profile</h1>
-          <p className="text-xs text-slate-300">Update one section at a time</p>
+    <main className="tara-page-shell-compact px-5 pb-28 pt-6">
+      <header className="tara-screen-intro mb-4 px-5 py-5">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="tara-kicker">Profile details</p>
+            <h1 className="tara-type-section mt-2 text-[2.2rem]">Edit Profile</h1>
+            <p className="tara-copy mt-2 text-sm">Update one section at a time.</p>
+          </div>
+          <Button fullWidth={false} onClick={() => navigate("/profile")} variant="ghost">
+            Done
+          </Button>
         </div>
-        <Button fullWidth={false} onClick={() => navigate("/profile")} variant="ghost">
-          Done
-        </Button>
       </header>
 
-      <section className="space-y-2 rounded-2xl border border-white/15 bg-slate-900/65 p-3 shadow-xl shadow-black/20">
+      <section className="tara-screen-panel space-y-2 p-3">
         {EDIT_ITEMS.map((item) => (
           <Link
-            className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-3 transition hover:border-white/25"
+            className="tara-list-row flex items-center justify-between gap-3 px-4 py-3"
             key={item.key}
             to={`/profile/edit/${item.key}`}
           >
             <div>
-              <p className="text-sm font-medium text-white">{item.label}</p>
-              <p className="text-xs text-slate-300">{item.hint}</p>
+              <p className="text-sm font-medium text-[color:var(--tara-text-primary)]">{item.label}</p>
+              <p className="text-xs text-[color:var(--tara-text-secondary)]">{item.hint}</p>
             </div>
-            <span className="text-sm text-slate-300">›</span>
+            <span className="text-sm text-[color:var(--tara-text-faint)]">›</span>
           </Link>
         ))}
       </section>
 
       <div className="mt-4">
         <Link
-          className="block rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-center text-sm font-medium text-slate-100"
+          className="tara-secondary-btn tara-motion-pressable flex items-center justify-center px-4 py-3 text-sm font-medium"
           to="/profile"
         >
           Preview Profile

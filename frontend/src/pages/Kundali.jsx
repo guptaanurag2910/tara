@@ -18,24 +18,31 @@ export default function KundaliPage() {
   };
 
   return (
-    <main className="tara-container px-5 pb-28 pt-8">
-      <motion.header initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-        <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--tara-gold)]">Astrology module</p>
-        <h1 className="tara-heading mt-2 text-5xl sm:text-6xl">
+    <main className="tara-page-shell tara-scene-shell px-5 pb-28 pt-8">
+      <motion.header
+        className="tara-scene-hero tara-screen-intro tara-scene-motif"
+        data-scene="night"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <div className="tara-scene-safe-center">
+        <p className="tara-kicker">Astrology module</p>
+        <h1 className="tara-type-hero mt-2">
           Your <span className="text-aurora italic">Kundali</span>
         </h1>
-        <p className="mt-2 text-sm text-[color:var(--tara-text-secondary)]">
+        <p className="tara-copy mt-3 text-sm">
           A calmer reading view with your chart, daily guidance, and all the deeper details one tap away.
         </p>
+        </div>
       </motion.header>
 
       <section className="mt-5 space-y-3">
-        <div className="rounded-3xl border border-white/10 bg-slate-900/45 p-4">
+        <div className="tara-screen-panel p-4">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.24em] text-[color:var(--tara-gold)]">Birth details</p>
-              <h2 className="mt-2 text-lg font-semibold text-white">Keep this tucked away until you need to edit it</h2>
-              <p className="mt-1 text-sm leading-relaxed text-slate-300">
+              <p className="tara-kicker">Birth details</p>
+              <h2 className="mt-2 text-lg font-semibold text-[color:var(--tara-text-primary)]">Keep this tucked away until you need to edit it</h2>
+              <p className="mt-1 text-sm leading-relaxed text-[color:var(--tara-text-secondary)]">
                 Your date, time, and place of birth are still here. We have simply moved the form behind one action so
                 the tab feels like a reading screen first.
               </p>
@@ -64,14 +71,17 @@ export default function KundaliPage() {
         </AnimatePresence>
 
         {saveMessage ? (
-          <p className="mt-3 rounded-2xl border border-emerald-300/20 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100">
+          <p className="tara-alert tara-alert-success mt-3">
             {saveMessage}
           </p>
         ) : null}
       </section>
 
       <section className="mt-6">
-        <KundaliDashboard reloadSignal={reloadSignal} />
+        <KundaliDashboard
+          reloadSignal={reloadSignal}
+          onOpenBirthEditor={() => setShowEditor(true)}
+        />
       </section>
     </main>
   );

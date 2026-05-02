@@ -30,14 +30,14 @@ function NextCardPreview({ profile }) {
   }
 
   return (
-    <article className="pointer-events-none absolute inset-x-3 top-3 h-[68vh] max-h-[640px] rounded-[2rem] border border-white/10 bg-slate-900/50 opacity-70 blur-[0.2px]">
+    <article className="pointer-events-none absolute inset-x-3 top-3 h-[68vh] max-h-[640px] rounded-[2rem] border border-[color:var(--tara-card-border)] bg-[color:color-mix(in_srgb,var(--tara-card-bg)_82%,transparent)] opacity-70 blur-[0.2px]">
       <div className="absolute inset-0 overflow-hidden rounded-[1.7rem]">
         {profile.user?.photo ? (
           <img alt={profile.user.name} className="h-full w-full object-cover opacity-80" src={profile.user.photo} />
         ) : (
-          <div className="h-full w-full bg-[radial-gradient(circle_at_80%_10%,#22d3ee_0%,#fb7185_45%,#1e1b4b_100%)]" />
+          <div className="h-full w-full bg-[radial-gradient(circle_at_80%_10%,color-mix(in_srgb,var(--tara-color-info)_72%,transparent)_0%,color-mix(in_srgb,var(--tara-color-destructive)_62%,transparent)_45%,color-mix(in_srgb,var(--tara-violet)_58%,transparent)_100%)]" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[color:var(--tara-bg-surface)]/95 to-transparent" />
       </div>
     </article>
   );
@@ -116,11 +116,18 @@ export default function SwipeScreen() {
   }
 
   return (
-    <main className="tara-container flex min-h-[calc(100dvh-132px)] flex-col px-5 pt-6">
-      <header className="mb-5 flex items-center justify-between">
-        <Logo size={32} />
+    <main className="tara-page-shell tara-scene-shell flex min-h-[calc(100dvh-132px)] flex-col px-5 pt-6">
+      <header className="tara-screen-intro mb-5 flex items-center justify-between px-4 py-4">
+        <div className="flex items-center gap-3">
+          <Logo size={28} />
+          <div>
+            <p className="tara-kicker">Discovery</p>
+            <h1 className="tara-type-section mt-1 text-[2rem] leading-none">Find your next spark</h1>
+            <p className="tara-type-helper mt-1">Atmosphere around the card, clarity inside it.</p>
+          </div>
+        </div>
         <button
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full glass"
+          className="tara-icon-button inline-flex h-10 w-10 items-center justify-center"
           type="button"
           aria-label="Filters"
         >
@@ -132,6 +139,12 @@ export default function SwipeScreen() {
         <DiscoverSkeleton />
       ) : (
         <div className="relative flex-1">
+          {!error ? (
+            <>
+              <div className="pointer-events-none absolute inset-x-6 top-10 h-40 rounded-full bg-[radial-gradient(circle_at_center,color-mix(in_srgb,var(--tara-violet)_28%,transparent)_0%,transparent_72%)] blur-3xl" />
+              <div className="pointer-events-none absolute inset-x-2 top-2 h-[70vh] max-h-[650px] rounded-[2.5rem] border border-[color:var(--tara-card-border)] bg-[color:color-mix(in_srgb,var(--tara-card-bg-strong)_66%,transparent)] opacity-60" />
+            </>
+          ) : null}
           {!error ? <NextCardPreview profile={nextProfile} /> : null}
           {error ? (
             <div className="flex h-[67vh] max-h-[590px] items-center justify-center">
@@ -153,6 +166,9 @@ export default function SwipeScreen() {
             <div className="flex h-[67vh] max-h-[590px] items-center justify-center">
               <div className="w-full max-w-sm">
                 <EmptyState
+                  kind="discovery"
+                  eyebrow="Discovery pause"
+                  icon="✦"
                   title="No more souls nearby right now"
                   subtitle="You've seen everyone in your current pool. Refresh the feed now, or check back a little later for fresh recommendations."
                   action={(
@@ -169,7 +185,7 @@ export default function SwipeScreen() {
 
       <div className="mt-5 flex items-center justify-center gap-4 pb-2">
         <button
-          className="inline-flex h-14 w-14 items-center justify-center rounded-full glass-strong text-[2rem] text-[color:var(--tara-text-secondary)] disabled:opacity-50"
+          className="tara-icon-button inline-flex h-14 w-14 items-center justify-center text-[2rem] text-[color:var(--tara-text-secondary)] disabled:opacity-50"
           disabled={loading || submitting || isDone || Boolean(error)}
           onClick={() => cardRef.current?.swipeLeft()}
           type="button"
@@ -177,7 +193,7 @@ export default function SwipeScreen() {
           ✕
         </button>
         <button
-          className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-gold-gradient text-[1.05rem] text-[#0f163f] shadow-[0_0_20px_rgba(230,179,76,0.5)] disabled:opacity-50"
+          className="tara-chip tara-chip-gold inline-flex h-12 w-12 items-center justify-center p-0 text-[1.05rem] shadow-[0_0_20px_rgba(230,179,76,0.25)] disabled:opacity-50"
           disabled={loading || submitting || isDone || Boolean(error)}
           type="button"
         >

@@ -81,7 +81,7 @@ export default function GameModal({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/65 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center">
       <div
-        className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-[2rem] border border-[#2f3178]/70 bg-[#121248]/94 p-5 shadow-[0_26px_80px_rgba(2,3,18,0.68)] backdrop-blur-xl animate-scale-in"
+        className="tara-motion-modal-enter max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-[2rem] border border-[#2f3178]/70 bg-[#121248]/94 p-5 shadow-[0_26px_80px_rgba(2,3,18,0.68)] backdrop-blur-xl"
         data-testid="game-modal"
       >
         <div className="flex items-start justify-between">
@@ -92,7 +92,7 @@ export default function GameModal({
             <p className="mt-1 text-sm text-white/45">Both answers will be shared with your match.</p>
           </div>
           <button
-            className="grid h-10 w-10 place-items-center rounded-full border border-white/15 text-lg text-white/65 transition-colors hover:text-white"
+            className="tara-motion-pressable grid h-10 w-10 place-items-center rounded-full border border-white/15 text-lg text-white/65 transition-colors hover:text-white"
             onClick={onClose}
             type="button"
           >
@@ -118,7 +118,7 @@ export default function GameModal({
           <div className={`mt-5 grid gap-3 ${options.length === 2 ? "grid-cols-2" : "grid-cols-1"}`}>
             {options.map((option) => (
               <button
-                className="rounded-3xl border border-[#30347d]/80 bg-[#11154b]/70 px-4 py-5 text-center font-serif text-[1.45rem] leading-tight text-white transition-all duration-200 hover:border-[#d7be72]/90 hover:bg-[#171d5f] disabled:cursor-not-allowed disabled:opacity-60 sm:text-[1.9rem] sm:leading-none"
+                className="tara-motion-pressable rounded-3xl border border-[#30347d]/80 bg-[#11154b]/70 px-4 py-5 text-center font-serif text-[1.45rem] leading-tight text-white transition-all duration-200 hover:border-[#d7be72]/90 hover:bg-[#171d5f] disabled:cursor-not-allowed disabled:opacity-60 sm:text-[1.9rem] sm:leading-none"
                 data-testid="game-option-button"
                 disabled={submitting}
                 key={option.key}

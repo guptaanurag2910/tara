@@ -104,7 +104,7 @@ async function assertNoHorizontalOverflow(page) {
 }
 
 async function readScrollerMetrics(page) {
-  return page.locator("div.overflow-y-auto.overscroll-contain").first().evaluate((el) => ({
+  return page.locator(".tara-app-scroll").first().evaluate((el) => ({
     scrollTop: el.scrollTop,
     scrollHeight: el.scrollHeight,
     clientHeight: el.clientHeight,
@@ -159,7 +159,7 @@ test.describe.serial("Mobile-first layout validation", () => {
       const metricsBefore = await readScrollerMetrics(page);
 
       if (metricsBefore.scrollHeight > metricsBefore.clientHeight + 20) {
-        await page.locator("div.overflow-y-auto.overscroll-contain").first().evaluate((el) => {
+        await page.locator(".tara-app-scroll").first().evaluate((el) => {
           el.scrollTop = el.scrollHeight;
         });
         await page.waitForTimeout(150);

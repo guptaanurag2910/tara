@@ -20,7 +20,7 @@ const RadioGroupItem = React.forwardRef(({ className, ...props }, ref) => {
     <RadioGroupPrimitive.Item
       ref={ref}
       className={cn(
-        "aspect-square h-4 w-4 rounded-full border border-[color:var(--tara-violet)] text-[color:var(--tara-violet)] shadow focus:outline-none focus-visible:ring-1 focus-visible:ring-[color:var(--tara-violet)] disabled:cursor-not-allowed disabled:opacity-50",
+        "aspect-square h-4 w-4 rounded-full border border-[color:var(--tara-violet)] text-[color:var(--tara-violet)] shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--tara-focus-ring)] disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
       {...props}
@@ -34,4 +34,3 @@ const RadioGroupItem = React.forwardRef(({ className, ...props }, ref) => {
 RadioGroupItem.displayName = RadioGroupPrimitive.Item.displayName;
 
 export { RadioGroup, RadioGroupItem };
-

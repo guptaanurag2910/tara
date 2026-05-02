@@ -149,13 +149,14 @@ export default function BirthDetailsForm({ initialValues = null, onSaved }) {
   return (
     <motion.section
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-xl shadow-black/20"
+      className="tara-screen-panel p-5"
       initial={{ opacity: 0, y: 10 }}
       transition={{ duration: 0.25 }}
     >
       <div className="mb-4">
-        <h2 className="font-serif text-2xl text-white">Birth Details</h2>
-        <p className="mt-1 text-xs text-slate-300">Update once, and we auto-regenerate your chart.</p>
+        <p className="tara-kicker">Birth details</p>
+        <h2 className="font-serif text-2xl text-[color:var(--tara-text-primary)]">Birth Details</h2>
+        <p className="mt-1 text-xs text-[color:var(--tara-text-secondary)]">Update once, and we auto-regenerate your chart.</p>
       </div>
 
       {loading ? <Loader text="Loading your birth details..." /> : null}
@@ -174,8 +175,8 @@ export default function BirthDetailsForm({ initialValues = null, onSaved }) {
             onChange={onLocationChange}
           />
 
-          {error ? <p className="rounded-xl border border-rose-300/20 bg-rose-500/10 px-3 py-2 text-xs text-rose-100">{error}</p> : null}
-          {message ? <p className="rounded-xl border border-emerald-300/20 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100">{message}</p> : null}
+          {error ? <p className="tara-alert tara-alert-error">{error}</p> : null}
+          {message ? <p className="tara-alert tara-alert-success">{message}</p> : null}
 
           <Button loading={saving} type="submit">
             {actionLabel}

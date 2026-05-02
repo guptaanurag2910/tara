@@ -1,13 +1,13 @@
 function ResultRow({ item, userLabel = "You", partnerLabel = "Partner" }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-[#0a0e3f]/65 p-3">
-      <p className="text-sm text-white/90">{item?.question}</p>
-      <div className="mt-1 space-y-1 text-[0.83rem] text-white/80">
+    <div className="tara-support-surface rounded-2xl px-3 py-3">
+      <p className="text-sm text-[color:var(--tara-text-primary)]">{item?.question}</p>
+      <div className="mt-1 space-y-1 text-[0.83rem] text-[color:var(--tara-text-secondary)]">
         <p>
-          <span className="font-semibold text-[#d7be72]">{userLabel}:</span> {item?.user_a || "—"}
+          <span className="font-semibold text-[color:var(--tara-gold)]">{userLabel}:</span> {item?.user_a || "—"}
         </p>
         <p>
-          <span className="font-semibold text-[#d7be72]">{partnerLabel}:</span> {item?.user_b || "—"}
+          <span className="font-semibold text-[color:var(--tara-gold)]">{partnerLabel}:</span> {item?.user_b || "—"}
         </p>
       </div>
     </div>
@@ -42,15 +42,15 @@ export default function GameResultCard({
 
   return (
     <section
-      className="rounded-[1.7rem] border border-[#2b2f7c]/70 bg-[#0b0e45]/80 p-4 shadow-[0_14px_40px_rgba(6,8,34,0.42)] backdrop-blur"
+      className="tara-screen-panel tara-motion-card-enter rounded-[1.7rem] p-4"
       data-testid="game-result-card"
     >
-      <div className="flex items-center justify-between text-[#d7be72]">
-        <h3 className="text-[0.84rem] tracking-[0.28em]">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="tara-kicker text-[0.8rem]">
           <span className="mr-2">{gameEmoji(category)}</span>
           {gameLabel(category)}
         </h3>
-        <span className="text-sm font-semibold text-white/90">
+        <span className="tara-chip tara-chip-gold px-2.5 py-1 text-xs font-semibold">
           {result?.matched ?? 0}/{result?.total ?? 0}
         </span>
       </div>
@@ -66,8 +66,8 @@ export default function GameResultCard({
         ))}
       </div>
 
-      <div className="mt-4 border-t border-white/10 pt-3">
-        <p className="font-serif text-[1.18rem] italic text-white/95">
+      <div className="mt-4 border-t border-[color:var(--tara-card-border)] pt-3">
+        <p className="font-[var(--font-serif)] text-[1.18rem] italic text-[color:var(--tara-text-primary)]">
           {result?.summary || "Result ready."}
         </p>
       </div>

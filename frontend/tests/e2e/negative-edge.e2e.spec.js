@@ -203,10 +203,9 @@ test.describe.serial("Negative and edge-case validation", () => {
     await page.goto("/kundali");
 
     await expect(page.getByRole("heading", { name: /Your Kundali/i })).toBeVisible();
-    await expect(page.getByRole("heading", { name: /Birth Details/i })).toBeVisible();
-    await expect(
-      page.getByText(/Kundali is not generated yet\. Save your birth details to generate your chart\./i),
-    ).toBeVisible();
+    await expect(page.getByText(/Chart pending/i)).toBeVisible();
+    await expect(page.getByText(/Your kundali is waiting on birth details/i)).toBeVisible();
+    await expect(page.getByRole("button", { name: /Open birth details/i })).toBeVisible();
   });
 
   test("discover shows a clean backend-500 fallback", async ({ page }) => {

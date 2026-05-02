@@ -12,7 +12,7 @@ const tabs = [
 export default function BottomNav() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
 
-  const hiddenRoutes = ["/", "/auth", "/login", "/welcome"];
+  const hiddenRoutes = ["/", "/auth", "/login", "/welcome", "/onboarding", "/profile-setup", "/your-vibe"];
   const isHidden = hiddenRoutes.includes(pathname);
 
   if (isHidden) {
@@ -33,11 +33,11 @@ export default function BottomNav() {
               <Link
                 key={to}
                 to={to}
-                className="group relative flex flex-1 flex-col items-center gap-1 rounded-2xl px-2 py-2 transition-all"
+                className="tara-nav-tab group relative flex flex-1 flex-col items-center gap-1 rounded-2xl px-2 py-2 transition-all"
               >
                 <div
-                  className={`relative flex h-10 w-10 items-center justify-center rounded-2xl transition-all ${
-                    active ? "bg-aurora shadow-glow" : "bg-transparent"
+                  className={`tara-nav-orb relative flex h-10 w-10 items-center justify-center rounded-2xl transition-all ${
+                    active ? "tara-nav-orb-active bg-aurora shadow-glow" : "bg-transparent"
                   }`}
                 >
                   <Icon
@@ -48,8 +48,10 @@ export default function BottomNav() {
                   />
                 </div>
                 <span
-                  className={`text-[10px] font-medium tracking-wide transition-colors ${
-                    active ? "text-[color:var(--tara-text-primary)]" : "text-[color:var(--tara-text-faint)]"
+                  className={`tara-nav-copy text-[10px] font-medium tracking-wide transition-colors ${
+                    active
+                      ? "tara-nav-copy-active text-[color:var(--tara-text-primary)]"
+                      : "text-[color:var(--tara-text-faint)]"
                   }`}
                 >
                   {label}

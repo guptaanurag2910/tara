@@ -3,15 +3,15 @@ import { cva } from "class-variance-authority";
 import { cn } from "../../lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors",
+  "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors",
   {
     variants: {
       variant: {
-        default: "border-transparent bg-[color:var(--tara-violet)] text-white",
-        secondary:
-          "border-transparent bg-[color:var(--tara-surface-elevated)] text-[color:var(--tara-text-primary)]",
-        destructive: "border-transparent bg-rose-500 text-white",
-        outline: "border-[color:var(--tara-card-border)] text-[color:var(--tara-text-primary)]",
+        default: "tara-chip tara-chip-accent border-[color:var(--tara-chip-border-accent)]",
+        secondary: "tara-chip",
+        destructive:
+          "tara-chip border-[color:var(--tara-color-destructive)]/35 bg-[color:var(--tara-color-destructive-soft)] text-[color:var(--tara-text-primary)]",
+        outline: "tara-chip bg-transparent",
       },
     },
     defaultVariants: {
@@ -25,4 +25,3 @@ function Badge({ className, variant, ...props }) {
 }
 
 export { Badge, badgeVariants };
-

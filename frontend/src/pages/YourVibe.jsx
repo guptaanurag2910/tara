@@ -120,7 +120,7 @@ export default function YourVibe() {
   const hasVibes = vibes.length > 0;
 
   return (
-    <main className="mx-auto flex min-h-[100dvh] w-full max-w-md items-center px-5 py-8">
+    <main className="tara-page-shell-compact flex min-h-[100dvh] items-center px-5 py-8">
       <Card
         title="Your Vibe"
         subtitle={
@@ -136,20 +136,20 @@ export default function YourVibe() {
             <div className="space-y-3">
               {vibes.map((item, index) => (
                 <article
-                  className="vibe-card rounded-2xl border border-white/15 bg-white/[0.08] px-4 py-3 text-slate-100"
+                  className="tara-screen-panel vibe-card px-4 py-3"
                   data-testid={`vibe-card-${item.id}`}
                   key={item.id}
                   style={{ animationDelay: `${index * 120}ms` }}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
-                      <p className="text-sm font-medium">
+                      <p className="text-sm font-medium text-[color:var(--tara-text-primary)]">
                         <span className="mr-2 text-base">{item.emoji}</span>
                         {item.title}
                       </p>
-                      <p className="mt-1 text-xs leading-5 text-slate-300">{item.note}</p>
+                      <p className="mt-1 text-xs leading-5 text-[color:var(--tara-text-secondary)]">{item.note}</p>
                     </div>
-                    <div className="rounded-full border border-white/15 px-2.5 py-1 text-[11px] font-medium text-cyan-100">
+                    <div className="tara-chip tara-chip-gold px-2.5 py-1 text-[11px] font-medium">
                       {item.score.toFixed(1)}/10
                     </div>
                   </div>
@@ -158,11 +158,11 @@ export default function YourVibe() {
             </div>
           ) : (
             <div
-              className="rounded-2xl border border-dashed border-white/15 bg-white/[0.05] px-4 py-5 text-sm text-slate-200"
+              className="tara-support-surface rounded-2xl border-dashed px-4 py-5 text-sm"
               data-testid="your-vibe-empty"
             >
-              <p className="font-medium text-white">No vibe summary yet</p>
-              <p className="mt-1 text-xs leading-5 text-slate-300">
+              <p className="font-medium text-[color:var(--tara-text-primary)]">No vibe summary yet</p>
+              <p className="mt-1 text-xs leading-5 text-[color:var(--tara-text-secondary)]">
                 We&apos;ll show your strongest traits here once you answer the onboarding personality questions.
               </p>
             </div>
@@ -170,9 +170,7 @@ export default function YourVibe() {
         ) : null}
 
         {error ? (
-          <p className="mt-4 rounded-xl border border-rose-300/20 bg-rose-400/10 px-3 py-2 text-xs text-rose-200">
-            {error}
-          </p>
+          <p className="tara-alert tara-alert-error mt-4 text-xs">{error}</p>
         ) : null}
 
         <div className="mt-5">

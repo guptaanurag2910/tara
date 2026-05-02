@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import Settings from "../pages/Settings";
+import { lazyRouteComponent } from "./_lazyRoute";
 import { RequireAuth } from "./_guards";
+
+const Settings = lazyRouteComponent(() => import("../pages/Settings"), "settings");
 
 function SettingsRoute() {
   return (
@@ -14,4 +16,3 @@ function SettingsRoute() {
 export const Route = createFileRoute("/settings")({
   component: SettingsRoute,
 });
-

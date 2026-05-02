@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import Chat from "../pages/Chat";
+import { lazyRouteComponent } from "./_lazyRoute";
 import { RequireAuth } from "./_guards";
+
+const Chat = lazyRouteComponent(() => import("../pages/Chat"), "chat-detail");
 
 function ChatDetailRoute() {
   return (
@@ -14,4 +16,3 @@ function ChatDetailRoute() {
 export const Route = createFileRoute("/chat/$matchId")({
   component: ChatDetailRoute,
 });
-

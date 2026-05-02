@@ -1,18 +1,26 @@
 export default function EmptyState({
+  eyebrow = "",
+  icon = null,
   title,
   subtitle = "",
   action = null,
   compact = false,
+  kind = "generic",
 }) {
   return (
     <section
-      className={`rounded-2xl border border-white/15 bg-slate-900/55 text-center shadow-lg shadow-black/20 ${
+      data-empty-kind={kind}
+      className={`tara-empty-state ${
         compact ? "p-4" : "p-6"
       }`}
     >
-      <p className="text-base font-semibold text-white">{title}</p>
-      {subtitle ? <p className="mt-2 text-sm text-slate-300">{subtitle}</p> : null}
-      {action ? <div className="mt-4">{action}</div> : null}
+      <div className="tara-empty-body">
+        {eyebrow ? <p className="tara-empty-kicker">{eyebrow}</p> : null}
+        {icon ? <div className="tara-empty-icon" aria-hidden="true">{icon}</div> : null}
+        <p className="tara-empty-title">{title}</p>
+        {subtitle ? <p className="tara-empty-copy mt-2">{subtitle}</p> : null}
+        {action ? <div className="mt-4">{action}</div> : null}
+      </div>
     </section>
   );
 }

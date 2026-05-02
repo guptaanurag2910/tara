@@ -327,17 +327,17 @@ export default function EditProfileSection() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 py-5">
+    <main className="tara-page-shell-compact px-4 py-5">
       <header className="mb-4 flex items-center justify-between">
         <Button fullWidth={false} onClick={() => navigate("/profile/edit")} variant="ghost">
           Back
         </Button>
-        <p className="text-xs text-slate-300">Step {stepLabel}</p>
+        <p className="tara-faint">Step {stepLabel}</p>
       </header>
 
-      <section className="rounded-2xl border border-white/15 bg-slate-900/65 p-4 shadow-xl shadow-black/20">
-        <h1 className="text-xl font-semibold text-white">{sectionMeta.title}</h1>
-        <p className="mt-1 text-xs text-slate-300">{sectionMeta.subtitle}</p>
+      <section className="tara-screen-panel p-4">
+        <h1 className="tara-type-card text-xl">{sectionMeta.title}</h1>
+        <p className="mt-1 tara-type-helper">{sectionMeta.subtitle}</p>
 
         <div className="mt-4 space-y-4">
           {section === "name" ? (
@@ -359,7 +359,7 @@ export default function EditProfileSection() {
                 type="date"
                 value={basic.date_of_birth}
               />
-              <p className="text-xs text-slate-300">You must be 18+ to use this app.</p>
+              <p className="tara-faint">You must be 18+ to use this app.</p>
             </>
           ) : null}
 
@@ -371,10 +371,10 @@ export default function EditProfileSection() {
                 { value: "other", label: "Other" },
               ].map((item) => (
                 <button
-                  className={`rounded-xl border px-3 py-3 text-left text-sm font-medium transition ${
+                  className={`tara-option-card min-h-[56px] rounded-[1.15rem] px-3 py-3 text-left text-sm font-medium ${
                     basic.gender === item.value
-                      ? "border-cyan-300/60 bg-cyan-400/20 text-white"
-                      : "border-white/20 bg-white/5 text-slate-100"
+                      ? "active"
+                      : ""
                   }`}
                   key={item.value}
                   onClick={() => persistBasicDraft({ gender: item.value })}
@@ -394,10 +394,10 @@ export default function EditProfileSection() {
                 { value: "everyone", label: "Everyone" },
               ].map((item) => (
                 <button
-                  className={`rounded-xl border px-3 py-3 text-left text-sm font-medium transition ${
+                  className={`tara-option-card min-h-[56px] rounded-[1.15rem] px-3 py-3 text-left text-sm font-medium ${
                     basic.preference === item.value
-                      ? "border-rose-300/60 bg-rose-400/20 text-white"
-                      : "border-white/20 bg-white/5 text-slate-100"
+                      ? "active"
+                      : ""
                   }`}
                   key={item.value}
                   onClick={() => persistBasicDraft({ preference: item.value })}
@@ -411,21 +411,21 @@ export default function EditProfileSection() {
 
           {section === "photos" ? (
             <>
-              <label className="block cursor-pointer rounded-xl border border-dashed border-white/35 bg-white/5 px-4 py-3 text-center text-sm text-slate-100 hover:bg-white/10">
+              <label className="tara-support-surface block cursor-pointer rounded-xl border-dashed px-4 py-3 text-center text-sm text-[color:var(--tara-text-primary)] transition hover:border-[color:var(--tara-focus-ring)] hover:bg-[color:var(--tara-color-info-soft)]">
                 + Add Photos
                 <input accept="image/*" className="hidden" multiple onChange={onPhotoSelect} type="file" />
               </label>
-              <p className="text-xs text-slate-300">Profiles with more photos get more matches.</p>
+              <p className="tara-faint">Profiles with more photos get more matches.</p>
               <div className="space-y-2">
                 {extras.photos.map((photo, index) => (
                   <div
-                    className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 p-2"
+                    className="tara-card flex items-center gap-2 rounded-xl p-2"
                     key={photo.id}
                   >
                     <img alt="Profile upload" className="h-16 w-16 rounded-lg object-cover" src={photo.src} />
                     <div className="ml-auto flex gap-1">
                       <button
-                        className="rounded-md border border-white/20 px-2 py-1 text-xs text-slate-100"
+                        className="tara-icon-button h-10 w-10 text-sm"
                         disabled={index === 0}
                         onClick={() => movePhoto(index, "left")}
                         type="button"
@@ -433,7 +433,7 @@ export default function EditProfileSection() {
                         ←
                       </button>
                       <button
-                        className="rounded-md border border-white/20 px-2 py-1 text-xs text-slate-100"
+                        className="tara-icon-button h-10 w-10 text-sm"
                         disabled={index === extras.photos.length - 1}
                         onClick={() => movePhoto(index, "right")}
                         type="button"
@@ -441,7 +441,7 @@ export default function EditProfileSection() {
                         →
                       </button>
                       <button
-                        className="rounded-md border border-rose-300/30 px-2 py-1 text-xs text-rose-200"
+                        className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-[color:var(--tara-color-destructive)]/35 bg-[color:var(--tara-color-destructive-soft)] px-3 text-xs font-medium text-[color:var(--tara-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--tara-focus-ring)]"
                         onClick={() => removePhoto(photo.id)}
                         type="button"
                       >
@@ -465,7 +465,7 @@ export default function EditProfileSection() {
 
           {section === "bio" ? (
             <textarea
-              className="min-h-[140px] w-full rounded-xl border border-white/20 bg-white/5 px-3 py-3 text-sm text-white placeholder:text-slate-400 focus:border-rose-300/60 focus:outline-none"
+              className="tara-textarea text-sm"
               onChange={(event) => updateExtras({ bio: event.target.value })}
               placeholder="Tell people about your vibe..."
               value={extras.bio}
@@ -478,10 +478,10 @@ export default function EditProfileSection() {
                 const selected = extras.interests.includes(interest);
                 return (
                   <button
-                    className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                    className={`tara-chip px-3 py-1.5 text-xs font-medium ${
                       selected
-                        ? "border-cyan-300/60 bg-cyan-400/20 text-white"
-                        : "border-white/20 bg-white/5 text-slate-200 hover:border-white/35"
+                        ? "tara-chip-accent"
+                        : ""
                     }`}
                     key={interest}
                     onClick={() => toggleInterest(interest)}
@@ -496,12 +496,12 @@ export default function EditProfileSection() {
         </div>
 
         {error ? (
-          <p className="mt-4 rounded-xl border border-rose-300/20 bg-rose-500/15 px-3 py-2 text-xs text-rose-200">
+          <p className="tara-alert tara-alert-error mt-4 text-xs">
             {error}
           </p>
         ) : null}
         {success ? (
-          <p className="mt-4 rounded-xl border border-emerald-300/20 bg-emerald-500/15 px-3 py-2 text-xs text-emerald-100">
+          <p className="tara-alert tara-alert-success mt-4 text-xs">
             {success}
           </p>
         ) : null}

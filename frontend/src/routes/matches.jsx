@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import Matches from "../pages/Matches";
+import { lazyRouteComponent } from "./_lazyRoute";
 import { RequireAuth } from "./_guards";
+
+const Matches = lazyRouteComponent(() => import("../pages/Matches"), "matches");
 
 function MatchesRoute() {
   return (
@@ -14,4 +16,3 @@ function MatchesRoute() {
 export const Route = createFileRoute("/matches")({
   component: MatchesRoute,
 });
-

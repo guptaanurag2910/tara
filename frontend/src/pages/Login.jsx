@@ -64,6 +64,7 @@ export default function Login() {
   const fullPhone = `${country.code}${phoneDigits}`;
   const canUsePhone = phoneDigits.length >= country.minDigits;
   const canUseOtp = otp.length === OTP_LENGTH;
+  const panelClass = "tara-screen-intro tara-scene-header rounded-[2rem] px-5 py-6";
 
   useEffect(() => {
     if (!token) {
@@ -315,7 +316,7 @@ export default function Login() {
       <div className="flex items-stretch gap-2">
         <button
           onClick={() => setPickerOpen((prev) => !prev)}
-          className="flex min-w-[116px] items-center gap-2 rounded-2xl glass-strong px-4 text-base font-medium text-[color:var(--tara-text-primary)]"
+          className="tara-card-strong flex min-h-[56px] min-w-[116px] items-center gap-2 rounded-2xl px-4 text-base font-medium text-[color:var(--tara-text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--tara-focus-ring)]"
           type="button"
           aria-label="Select country"
         >
@@ -323,7 +324,7 @@ export default function Login() {
           <span>{country.code}</span>
           <ChevronDown className="h-4 w-4 text-[color:var(--tara-text-faint)]" />
         </button>
-        <div className="flex flex-1 items-center rounded-2xl glass-strong px-4">
+        <div className="tara-card-strong flex flex-1 items-center rounded-2xl px-4">
           <input
             type="tel"
             inputMode="numeric"
@@ -334,13 +335,13 @@ export default function Login() {
               setPhone(onlyDigits(event.target.value).slice(0, country.maxDigits));
               setError("");
             }}
-            className="w-full bg-transparent py-4 text-base tracking-wider text-[color:var(--tara-text-primary)] placeholder:text-[color:var(--tara-text-faint)] focus:outline-none"
+            className="tara-inline-field py-4 text-base tracking-wider"
           />
         </div>
       </div>
 
       {pickerOpen ? (
-        <div className="mt-2 overflow-hidden rounded-2xl glass-strong animate-fade-up">
+        <div className="tara-card-strong mt-2 overflow-hidden rounded-2xl animate-fade-up">
           {COUNTRIES.map((item) => (
             <button
               key={item.code}
@@ -350,7 +351,7 @@ export default function Login() {
                 setPickerOpen(false);
                 setError("");
               }}
-              className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-[color:var(--tara-text-primary)] transition-colors hover:bg-white/5"
+              className="flex min-h-[44px] w-full items-center gap-3 px-4 py-3 text-left text-sm text-[color:var(--tara-text-primary)] transition-colors hover:bg-[color:var(--tara-color-info-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--tara-focus-ring)]"
               type="button"
             >
               <span className="text-lg">{item.flag}</span>
@@ -381,10 +382,10 @@ export default function Login() {
             onPaste={onOtpPaste}
             disabled={loading}
             aria-label={`Digit ${index + 1}`}
-            className={`h-14 w-12 rounded-2xl text-center font-[var(--font-serif)] text-2xl text-[color:var(--tara-text-primary)] transition-all focus:outline-none ${
+            className={`h-14 w-12 rounded-2xl text-center font-[var(--font-serif)] text-2xl text-[color:var(--tara-text-primary)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--tara-focus-ring)] ${
               error
                 ? "border border-rose-300/55 bg-rose-500/10"
-                : otp[index]
+                  : otp[index]
                   ? "border border-[color:var(--tara-gold)]/70 bg-[color:var(--tara-gold)]/10 shadow-[0_0_20px_rgba(226,181,79,0.25)]"
                   : "glass-strong"
             }`}
@@ -398,7 +399,7 @@ export default function Login() {
             Resend code in <span className="text-[color:var(--tara-text-primary)]">0:{String(seconds).padStart(2, "0")}</span>
           </>
         ) : (
-          <button onClick={resendCode} className="text-[color:var(--tara-gold)]" type="button">
+          <button onClick={resendCode} className="tara-inline-link text-sm" type="button">
             Resend code
           </button>
         )}
@@ -410,16 +411,16 @@ export default function Login() {
   );
 
   return (
-    <main className="relative mx-auto min-h-[100dvh] w-full max-w-[390px] overflow-hidden bg-cosmic px-6 pb-8 pt-12">
+    <main className="tara-scene-shell tara-scene-safe tara-scene-safe-top tara-scene-safe-bottom relative mx-auto min-h-[100dvh] w-full max-w-[390px] overflow-hidden bg-cosmic pt-6">
       <div className="star-field pointer-events-none absolute inset-0 opacity-60" />
       <div className="pointer-events-none absolute left-1/2 top-16 h-72 w-72 -translate-x-1/2 rounded-full bg-glow blur-3xl" />
 
-      <div className="relative z-10 flex min-h-[100dvh] flex-col">
+      <div className="relative z-10 flex min-h-[100dvh] flex-col pb-8">
         <header className="flex items-center justify-between">
           <button
             onClick={onBack}
             aria-label="Back"
-            className="flex h-10 w-10 items-center justify-center rounded-full glass"
+            className="tara-icon-button flex h-10 w-10 items-center justify-center"
             type="button"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -429,29 +430,31 @@ export default function Login() {
         </header>
 
         {mode === "signup" && signupStep === "phone" ? (
-          <section className="mt-12 flex flex-1 flex-col animate-fade-up">
-            <p className="text-xs uppercase tracking-[0.32em] text-[color:var(--tara-gold)]">Step 1 of 3</p>
-            <h1 className="tara-heading mt-3 text-6xl leading-tight">
-              Enter your
-              <br />
-              <span className="text-aurora italic">number?</span>
-            </h1>
-            <p className="mt-3 text-[15px] text-[color:var(--tara-text-secondary)]">
-              We&apos;ll first check whether this number already has an account. New numbers continue to OTP verification.
-            </p>
+          <section className="mt-10 flex flex-1 flex-col animate-fade-up">
+            <div className={panelClass}>
+              <p className="tara-kicker">Step 1 of 3</p>
+              <h1 className="tara-type-hero mt-3 leading-[1.02]">
+                Enter your
+                <br />
+                <span className="text-aurora italic">number?</span>
+              </h1>
+              <p className="tara-copy mt-3">
+                We&apos;ll first check whether this number already has an account. New numbers continue to OTP verification.
+              </p>
 
-            {renderPhoneInput()}
+              {renderPhoneInput()}
 
-            <p className="mt-4 text-[11px] leading-relaxed text-[color:var(--tara-text-secondary)]">
-              By continuing, you agree to Tara&apos;s <span className="text-[color:var(--tara-gold)]">Terms</span> and{" "}
-              <span className="text-[color:var(--tara-gold)]">Privacy Policy</span>.
-            </p>
+              <p className="tara-faint mt-4 leading-relaxed">
+                By continuing, you agree to Tara&apos;s <span className="text-[color:var(--tara-gold)]">Terms</span> and{" "}
+                <span className="text-[color:var(--tara-gold)]">Privacy Policy</span>.
+              </p>
+            </div>
 
             <div className="mt-auto">
               <button
                 onClick={onSendCodeSignup}
                 disabled={!canUsePhone || loading || checkingPhone}
-                className="flex h-14 w-full items-center justify-center rounded-full bg-aurora text-base font-semibold text-white shadow-glow transition-all active:scale-[0.98] disabled:opacity-40 disabled:shadow-none"
+                className="tara-primary-btn mt-6 flex h-14 w-full items-center justify-center text-base text-white disabled:opacity-40 disabled:shadow-none"
                 type="button"
               >
                 {checkingPhone ? "Checking..." : "Continue"}
@@ -461,7 +464,7 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={() => switchMode("login")}
-                  className="text-[color:var(--tara-gold)]"
+                  className="tara-inline-link text-xs"
                 >
                   Login
                 </button>
@@ -471,27 +474,29 @@ export default function Login() {
         ) : null}
 
         {mode === "signup" && signupStep === "otp" ? (
-          <section className="mt-12 flex flex-1 flex-col animate-fade-up">
-            <p className="text-xs uppercase tracking-[0.32em] text-[color:var(--tara-gold)]">Step 2 of 3</p>
-            <h1 className="tara-heading mt-3 text-6xl leading-tight">
-              Enter the
-              <br />
-              <span className="text-aurora italic">six digits</span>
-            </h1>
-            <p className="mt-3 text-[15px] text-[color:var(--tara-text-secondary)]">
-              Sent to <span className="text-[color:var(--tara-text-primary)]">{fullPhone}</span>.{" "}
-              <button type="button" className="text-[color:var(--tara-gold)]" onClick={() => setSignupStep("phone")}>
-                Edit
-              </button>
-            </p>
+          <section className="mt-10 flex flex-1 flex-col animate-fade-up">
+            <div className={panelClass}>
+              <p className="tara-kicker">Step 2 of 3</p>
+              <h1 className="tara-type-hero mt-3 leading-[1.02]">
+                Enter the
+                <br />
+                <span className="text-aurora italic">six digits</span>
+              </h1>
+              <p className="tara-copy mt-3">
+                Sent to <span className="text-[color:var(--tara-text-primary)]">{fullPhone}</span>.{" "}
+                <button type="button" className="tara-inline-link text-sm" onClick={() => setSignupStep("phone")}>
+                  Edit
+                </button>
+              </p>
 
-            {renderOtpInputs()}
+              {renderOtpInputs()}
+            </div>
 
             <div className="mt-auto">
               <button
                 onClick={onVerifySignupOtp}
                 disabled={!canUseOtp || loading}
-                className="flex h-14 w-full items-center justify-center rounded-full bg-aurora text-base font-semibold text-white shadow-glow transition-all active:scale-[0.98] disabled:opacity-40 disabled:shadow-none"
+                className="tara-primary-btn mt-6 flex h-14 w-full items-center justify-center text-base text-white disabled:opacity-40 disabled:shadow-none"
                 type="button"
               >
                 {loading ? "Verifying..." : "Verify"}
@@ -501,39 +506,41 @@ export default function Login() {
         ) : null}
 
         {mode === "signup" && signupStep === "password" ? (
-          <section className="mt-12 flex flex-1 flex-col animate-fade-up">
-            <p className="text-xs uppercase tracking-[0.32em] text-[color:var(--tara-gold)]">Step 3 of 3</p>
-            <h1 className="tara-heading mt-3 text-6xl leading-tight">
-              Create your
-              <br />
-              <span className="text-aurora italic">password</span>
-            </h1>
-            <p className="mt-3 text-[15px] text-[color:var(--tara-text-secondary)]">
-              You&apos;ll use <span className="text-[color:var(--tara-text-primary)]">{fullPhone}</span> + password for login.
-            </p>
+          <section className="mt-10 flex flex-1 flex-col animate-fade-up">
+            <div className={panelClass}>
+              <p className="tara-kicker">Step 3 of 3</p>
+              <h1 className="tara-type-hero mt-3 leading-[1.02]">
+                Create your
+                <br />
+                <span className="text-aurora italic">password</span>
+              </h1>
+              <p className="tara-copy mt-3">
+                You&apos;ll use <span className="text-[color:var(--tara-text-primary)]">{fullPhone}</span> + password for login.
+              </p>
 
-            <div className="mt-10 rounded-2xl glass-strong px-4 py-3">
-              <label className="mb-1 block text-[11px] uppercase tracking-[0.22em] text-[color:var(--tara-text-faint)]">
-                Password
-              </label>
-              <input
-                type="password"
-                autoFocus
-                value={password}
-                onChange={(event) => {
-                  setPassword(event.target.value);
-                  setError("");
-                }}
-                placeholder="At least 8 characters"
-                className="w-full bg-transparent py-2 text-base text-[color:var(--tara-text-primary)] placeholder:text-[color:var(--tara-text-faint)] focus:outline-none"
-              />
+              <div className="tara-screen-panel mt-10 px-4 py-3">
+                <label className="mb-1 block text-[11px] uppercase tracking-[0.22em] text-[color:var(--tara-text-faint)]">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  autoFocus
+                  value={password}
+                  onChange={(event) => {
+                    setPassword(event.target.value);
+                    setError("");
+                  }}
+                  placeholder="At least 8 characters"
+                  className="tara-inline-field py-2 text-base"
+                />
+              </div>
             </div>
 
             <div className="mt-auto">
               <button
                 onClick={onCreateAccount}
                 disabled={password.trim().length < 8 || loading}
-                className="flex h-14 w-full items-center justify-center rounded-full bg-aurora text-base font-semibold text-white shadow-glow transition-all active:scale-[0.98] disabled:opacity-40 disabled:shadow-none"
+                className="tara-primary-btn mt-6 flex h-14 w-full items-center justify-center text-base text-white disabled:opacity-40 disabled:shadow-none"
                 type="button"
               >
                 {loading ? "Creating..." : "Create account"}
@@ -543,68 +550,69 @@ export default function Login() {
         ) : null}
 
         {mode === "login" ? (
-          <section className="mt-12 flex flex-1 flex-col animate-fade-up">
-            <p className="text-xs uppercase tracking-[0.32em] text-[color:var(--tara-gold)]">Welcome back</p>
-            <h1 className="tara-heading mt-3 text-6xl leading-tight">
-              Login with
-              <br />
-              <span className="text-aurora italic">phone</span>
-            </h1>
-            <p className="mt-3 text-[15px] text-[color:var(--tara-text-secondary)]">
-              Existing users only need their phone number and password.
-            </p>
+          <section className="mt-10 flex flex-1 flex-col animate-fade-up">
+            <div className={panelClass}>
+              <p className="tara-kicker">Welcome back</p>
+              <h1 className="tara-type-hero mt-3 leading-[1.02]">
+                Login with
+                <br />
+                <span className="text-aurora italic">phone</span>
+              </h1>
+              <p className="tara-copy mt-3">
+                Existing users only need their phone number and password.
+              </p>
 
-            {renderPhoneInput("90000 00001")}
+              {renderPhoneInput("90000 00001")}
 
-            <div className="mt-3 rounded-2xl glass-strong px-4 py-3">
-              <label className="mb-1 block text-[11px] uppercase tracking-[0.22em] text-[color:var(--tara-text-faint)]">
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(event) => {
-                  setPassword(event.target.value);
-                  setError("");
-                }}
-                placeholder="Enter your password"
-                className="w-full bg-transparent py-2 text-base text-[color:var(--tara-text-primary)] placeholder:text-[color:var(--tara-text-faint)] focus:outline-none"
-              />
-            </div>
+              <div className="tara-screen-panel mt-3 px-4 py-3">
+                <label className="mb-1 block text-[11px] uppercase tracking-[0.22em] text-[color:var(--tara-text-faint)]">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(event) => {
+                    setPassword(event.target.value);
+                    setError("");
+                  }}
+                  placeholder="Enter your password"
+                  className="tara-inline-field py-2 text-base"
+                />
+              </div>
 
-            <button
-              type="button"
-              onClick={() => switchMode("forgot")}
-              className="mt-3 self-start text-sm text-[color:var(--tara-gold)]"
-            >
-              Forgot password?
-            </button>
-
-            {mode === "login" && /incorrect password/i.test(error) ? (
               <button
                 type="button"
                 onClick={() => switchMode("forgot")}
-                className="mt-2 self-start text-sm text-[color:var(--tara-gold)]"
+                className="tara-inline-link mt-3 self-start text-sm"
               >
-                Reset password instead
+                Forgot password?
               </button>
-            ) : null}
 
-            {mode === "login" && /no account found/i.test(error) ? (
-              <button
-                type="button"
-                onClick={() => switchMode("signup")}
-                className="mt-2 self-start text-sm text-[color:var(--tara-gold)]"
-              >
-                Create a new account
-              </button>
-            ) : null}
+              {mode === "login" && /incorrect password/i.test(error) ? (
+                <button
+                  type="button"
+                  onClick={() => switchMode("forgot")}
+                  className="tara-inline-link mt-2 self-start text-sm"
+                >
+                  Reset password instead
+                </button>
+              ) : null}
 
+              {mode === "login" && /no account found/i.test(error) ? (
+                <button
+                  type="button"
+                  onClick={() => switchMode("signup")}
+                  className="tara-inline-link mt-2 self-start text-sm"
+                >
+                  Create a new account
+                </button>
+              ) : null}
+            </div>
             <div className="mt-auto">
               <button
                 onClick={onLogin}
                 disabled={!canUsePhone || !password.trim() || loading}
-                className="flex h-14 w-full items-center justify-center rounded-full bg-aurora text-base font-semibold text-white shadow-glow transition-all active:scale-[0.98] disabled:opacity-40 disabled:shadow-none"
+                className="tara-primary-btn mt-6 flex h-14 w-full items-center justify-center text-base text-white disabled:opacity-40 disabled:shadow-none"
                 type="button"
               >
                 {loading ? "Logging in..." : "Login"}
@@ -614,7 +622,7 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={() => switchMode("signup")}
-                  className="text-[color:var(--tara-gold)]"
+                  className="tara-inline-link text-xs"
                 >
                   Begin your journey
                 </button>
@@ -624,24 +632,26 @@ export default function Login() {
         ) : null}
 
         {mode === "forgot" && forgotStep === "phone" ? (
-          <section className="mt-12 flex flex-1 flex-col animate-fade-up">
-            <p className="text-xs uppercase tracking-[0.32em] text-[color:var(--tara-gold)]">Step 1 of 2</p>
-            <h1 className="tara-heading mt-3 text-6xl leading-tight">
-              Reset
-              <br />
-              <span className="text-aurora italic">password</span>
-            </h1>
-            <p className="mt-3 text-[15px] text-[color:var(--tara-text-secondary)]">
-              Enter your number and we&apos;ll verify with a 6-digit OTP.
-            </p>
+          <section className="mt-10 flex flex-1 flex-col animate-fade-up">
+            <div className={panelClass}>
+              <p className="tara-kicker">Step 1 of 2</p>
+              <h1 className="tara-type-hero mt-3 leading-[1.02]">
+                Reset
+                <br />
+                <span className="text-aurora italic">password</span>
+              </h1>
+              <p className="tara-copy mt-3">
+                Enter your number and we&apos;ll verify with a 6-digit OTP.
+              </p>
 
-            {renderPhoneInput("90000 00001")}
+              {renderPhoneInput("90000 00001")}
+            </div>
 
             <div className="mt-auto">
               <button
                 onClick={onSendCodeForgot}
                 disabled={!canUsePhone || loading}
-                className="flex h-14 w-full items-center justify-center rounded-full bg-aurora text-base font-semibold text-white shadow-glow transition-all active:scale-[0.98] disabled:opacity-40 disabled:shadow-none"
+                className="tara-primary-btn mt-6 flex h-14 w-full items-center justify-center text-base text-white disabled:opacity-40 disabled:shadow-none"
                 type="button"
               >
                 Continue
@@ -651,40 +661,42 @@ export default function Login() {
         ) : null}
 
         {mode === "forgot" && forgotStep === "otp" ? (
-          <section className="mt-12 flex flex-1 flex-col animate-fade-up">
-            <p className="text-xs uppercase tracking-[0.32em] text-[color:var(--tara-gold)]">Step 2 of 2</p>
-            <h1 className="tara-heading mt-3 text-6xl leading-tight">
-              Verify and
-              <br />
-              <span className="text-aurora italic">reset</span>
-            </h1>
-            <p className="mt-3 text-[15px] text-[color:var(--tara-text-secondary)]">
-              OTP sent to <span className="text-[color:var(--tara-text-primary)]">{fullPhone}</span>.
-            </p>
+          <section className="mt-10 flex flex-1 flex-col animate-fade-up">
+            <div className={panelClass}>
+              <p className="tara-kicker">Step 2 of 2</p>
+              <h1 className="tara-type-hero mt-3 leading-[1.02]">
+                Verify and
+                <br />
+                <span className="text-aurora italic">reset</span>
+              </h1>
+              <p className="tara-copy mt-3">
+                OTP sent to <span className="text-[color:var(--tara-text-primary)]">{fullPhone}</span>.
+              </p>
 
-            {renderOtpInputs()}
+              {renderOtpInputs()}
 
-            <div className="mt-6 rounded-2xl glass-strong px-4 py-3">
-              <label className="mb-1 block text-[11px] uppercase tracking-[0.22em] text-[color:var(--tara-text-faint)]">
-                New password
-              </label>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(event) => {
-                  setNewPassword(event.target.value);
-                  setError("");
-                }}
-                placeholder="At least 8 characters"
-                className="w-full bg-transparent py-2 text-base text-[color:var(--tara-text-primary)] placeholder:text-[color:var(--tara-text-faint)] focus:outline-none"
-              />
+              <div className="tara-screen-panel mt-6 px-4 py-3">
+                <label className="mb-1 block text-[11px] uppercase tracking-[0.22em] text-[color:var(--tara-text-faint)]">
+                  New password
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(event) => {
+                    setNewPassword(event.target.value);
+                    setError("");
+                  }}
+                  placeholder="At least 8 characters"
+                  className="tara-inline-field py-2 text-base"
+                />
+              </div>
             </div>
 
             <div className="mt-auto">
               <button
                 onClick={onResetPassword}
                 disabled={!canUseOtp || newPassword.trim().length < 8 || loading}
-                className="flex h-14 w-full items-center justify-center rounded-full bg-aurora text-base font-semibold text-white shadow-glow transition-all active:scale-[0.98] disabled:opacity-40 disabled:shadow-none"
+                className="tara-primary-btn mt-6 flex h-14 w-full items-center justify-center text-base text-white disabled:opacity-40 disabled:shadow-none"
                 type="button"
               >
                 {loading ? "Resetting..." : "Reset password"}
@@ -694,12 +706,12 @@ export default function Login() {
         ) : null}
 
         {error ? (
-          <p className="mt-4 rounded-xl border border-rose-300/25 bg-rose-500/10 px-3 py-2 text-sm text-rose-100">
+          <p className="tara-alert tara-alert-error mt-4">
             {error}
           </p>
         ) : null}
         {info ? (
-          <p className="mt-4 rounded-xl border border-emerald-300/25 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100">
+          <p className="tara-alert tara-alert-success mt-4">
             {info}
           </p>
         ) : null}

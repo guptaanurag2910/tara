@@ -21,7 +21,7 @@ const TabsTrigger = React.forwardRef(({ className, ...props }, ref) => (
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--tara-violet)] disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-[color:var(--tara-card-bg)] data-[state=active]:text-[color:var(--tara-text-primary)] data-[state=active]:shadow",
+      "inline-flex min-h-[44px] items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--tara-focus-ring)] disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-[color:var(--tara-card-bg)] data-[state=active]:text-[color:var(--tara-text-primary)] data-[state=active]:shadow",
       className,
     )}
     {...props}
@@ -33,7 +33,7 @@ const TabsContent = React.forwardRef(({ className, ...props }, ref) => (
   <TabsPrimitive.Content
     ref={ref}
     className={cn(
-      "mt-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--tara-violet)]",
+      "mt-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--tara-focus-ring)]",
       className,
     )}
     {...props}
@@ -42,4 +42,3 @@ const TabsContent = React.forwardRef(({ className, ...props }, ref) => (
 TabsContent.displayName = TabsPrimitive.Content.displayName;
 
 export { Tabs, TabsList, TabsTrigger, TabsContent };
-

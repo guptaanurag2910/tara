@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { ChevronRight, Sparkles } from "lucide-react";
 
 import { MatchesSkeleton } from "../components/AppSkeletons";
-import Button from "../components/Button";
 import EmptyState from "../components/EmptyState";
 import { fetchMatches } from "../services/matchingService";
 
@@ -24,7 +23,7 @@ function MatchAvatar({ name, photo, large = false }) {
   return (
     <div className={`relative ${size} shrink-0`}>
       <div className="absolute inset-0 rounded-full bg-[color:var(--tara-violet)] opacity-40 blur-md" />
-      <div className={`relative ${size} overflow-hidden rounded-full ring-2 ring-[color:var(--tara-gold)]/60 ring-offset-2 ring-offset-[#090338]`}>
+      <div className={`relative ${size} overflow-hidden rounded-full ring-2 ring-[color:var(--tara-gold)]/60 ring-offset-2 ring-offset-[color:var(--tara-bg-surface)]`}>
         {photo ? (
           <img src={photo} alt={name || "Match"} className="h-full w-full object-cover" />
         ) : (
@@ -61,26 +60,32 @@ export default function MatchesPage() {
   const featured = useMemo(() => matches.slice(0, 4), [matches]);
 
   return (
-    <main className="tara-container px-5 pb-28 pt-8">
-      <header>
-        <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--tara-gold)]">Your constellations</p>
-        <h1 className="tara-heading mt-2 text-6xl leading-none">Matches</h1>
-        <p className="mt-1 text-[15px] text-[color:var(--tara-text-secondary)]">
+    <main className="tara-page-shell tara-scene-shell px-5 pb-28 pt-8">
+      <header className="tara-screen-intro px-5 py-5">
+        <p className="tara-kicker">Your constellations</p>
+        <h1 className="tara-type-page mt-2 leading-none">Matches</h1>
+        <p className="tara-copy mt-2 max-w-xs">
           {loading ? "Reading your alignments..." : `${matches.length} souls aligned with yours.`}
         </p>
       </header>
 
       {loading ? <MatchesSkeleton /> : null}
-      {error ? <p className="mt-4 rounded-xl border border-rose-300/25 bg-rose-500/10 px-3 py-2 text-sm text-rose-100">{error}</p> : null}
+      {error ? <p className="tara-alert tara-alert-error mt-4">{error}</p> : null}
 
       {!loading && !error && matches.length === 0 ? (
         <div className="mt-8">
           <EmptyState
+            kind="matches"
+            eyebrow="Connections pending"
+            icon="♡"
             title="No matches yet"
-            subtitle="When two people like each other, the connection lands here. Keep exploring and your first conversation will be one tap away."
+            subtitle="Mutual likes gather here. Keep exploring and your first conversation will be one tap away."
             action={(
-              <Link to="/discover">
-                <Button type="button">Go to Discover</Button>
+              <Link
+                className="tara-primary-btn tara-motion-pressable inline-flex w-full items-center justify-center px-4 py-3 text-sm font-semibold"
+                to="/discover"
+              >
+                Go to Discover
               </Link>
             )}
           />
@@ -91,7 +96,7 @@ export default function MatchesPage() {
         <>
           <section className="mt-6">
             <h2 className="mb-3 text-xs uppercase tracking-[0.2em] text-[color:var(--tara-text-faint)]">New</h2>
-            <div className="-mx-5 flex gap-3 overflow-x-auto px-5 pb-2">
+            <div className="tara-screen-panel -mx-1 flex gap-3 overflow-x-auto px-4 py-4 pb-4">
               {featured.map((match) => (
                 <Link key={`new-${match.match_id}`} to={`/matches/${match.match_id}`} className="flex w-20 shrink-0 flex-col items-center gap-2">
                   <MatchAvatar large name={match?.user?.name} photo={match?.user?.photo} />
@@ -108,7 +113,7 @@ export default function MatchesPage() {
                 <Link
                   key={match.match_id}
                   to={`/matches/${match.match_id}`}
-                  className="group flex items-center gap-4 rounded-3xl glass p-3 transition-all active:scale-[0.99]"
+                  className="tara-list-row group flex items-center gap-4 p-3 active:scale-[0.99]"
                 >
                   <div className="relative h-16 w-16 shrink-0">
                     <div className="absolute inset-0 rounded-2xl bg-[color:var(--tara-violet)] opacity-30 blur-md" />
@@ -125,11 +130,11 @@ export default function MatchesPage() {
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between">
-                      <h3 className="tara-heading text-3xl leading-none text-[color:var(--tara-text-primary)]">
+                      <h3 className="tara-type-section text-[2rem] leading-none text-[color:var(--tara-text-primary)]">
                         {match?.user?.name || "Match"}
                         {match?.user?.age ? `, ${match.user.age}` : ""}
                       </h3>
-                      <span className="text-sm font-semibold text-gold-gradient">{match?.compatibility_score ?? 0}%</span>
+                      <span className="tara-chip tara-chip-gold text-[0.72rem]">{match?.compatibility_score ?? 0}% aligned</span>
                     </div>
                     <p className="mt-1 flex items-center gap-1 truncate text-sm italic text-[color:var(--tara-text-secondary)]">
                       <Sparkles className="h-3 w-3 shrink-0 text-[color:var(--tara-gold)]" />

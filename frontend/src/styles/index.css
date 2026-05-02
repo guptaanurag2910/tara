@@ -4,63 +4,272 @@
 
 :root {
   font-family: "Inter", "Avenir Next", "Segoe UI", sans-serif;
-  --font-serif: "Cormorant Garamond", "Playfair Display", Georgia, serif;
+  --font-sans: "Inter", "Avenir Next", "Segoe UI", sans-serif;
+  --font-display: "Cormorant Garamond", "Playfair Display", Georgia, serif;
+  --font-serif: var(--font-display);
 
-  --tara-bg: radial-gradient(circle at 50% -26%, #2f2581 0%, #11064f 46%, #070432 100%);
+  --tara-type-hero-size: clamp(2.55rem, 8.8vw, 4.6rem);
+  --tara-type-page-size: clamp(2.15rem, 7.6vw, 3.5rem);
+  --tara-type-section-size: clamp(1.5rem, 5.2vw, 2.2rem);
+  --tara-type-card-size: clamp(1rem, 3.8vw, 1.2rem);
+  --tara-type-body-size: 0.95rem;
+  --tara-type-helper-size: 0.75rem;
+  --tara-type-kicker-size: 0.68rem;
+
+  --tara-line-hero: 0.98;
+  --tara-line-page: 1.02;
+  --tara-line-section: 1.08;
+  --tara-line-card: 1.2;
+  --tara-line-body: 1.62;
+  --tara-line-helper: 1.45;
+
+  --tara-track-display: -0.012em;
+  --tara-track-page: -0.01em;
+  --tara-track-kicker: 0.3em;
+  --tara-space-heading-block: 0.65rem;
+  --tara-space-copy-block: 0.45rem;
+
+  --tara-motion-atmosphere-twinkle: 18s;
+  --tara-motion-atmosphere-drift: 36s;
+  --tara-motion-atmosphere-pulse: 16s;
+  --tara-motion-atmosphere-shimmer: 20s;
+  --tara-motion-ui-fast: 180ms;
+  --tara-motion-ui-medium: 280ms;
+  --tara-motion-ui-slow: 460ms;
+  --tara-motion-interaction-fast: 120ms;
+  --tara-motion-interaction-medium: 200ms;
+  --tara-motion-interaction-slow: 260ms;
+  --tara-ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --tara-ease-soft: cubic-bezier(0.33, 1, 0.68, 1);
+  --tara-ease-press: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --tara-ease-tab: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --tara-color-bg: #070432;
+  --tara-color-surface: rgba(11, 7, 49, 0.84);
+  --tara-color-card: rgba(13, 11, 54, 0.92);
+  --tara-color-border: rgba(70, 78, 136, 0.34);
+  --tara-color-text: #f3f0ea;
+  --tara-color-text-muted: #8f91af;
+  --tara-color-text-faint: #74769a;
+  --tara-color-accent-glow: #6f63f7;
+  --tara-color-gold: #e2b54f;
+  --tara-color-sky: #120846;
+  --tara-color-cloud: rgba(242, 240, 255, 0.12);
+  --tara-color-cream: #f3f0ea;
+  --tara-color-soft-blue: #9eaef8;
+  --tara-shadow-warm: 0 14px 40px rgba(0, 0, 0, 0.28);
+  --tara-focus-ring: color-mix(in srgb, var(--tara-color-accent-glow) 78%, white 12%);
+  --tara-focus-ring-soft: color-mix(in srgb, var(--tara-color-accent-glow) 26%, transparent);
+  --tara-focus-ring-strong: color-mix(in srgb, var(--tara-color-gold) 18%, var(--tara-color-accent-glow) 82%);
+  --tara-control-min-touch: 44px;
+
+  --tara-color-success: #63d9a6;
+  --tara-color-success-soft: rgba(99, 217, 166, 0.16);
+  --tara-color-warning: #f1c463;
+  --tara-color-warning-soft: rgba(241, 196, 99, 0.16);
+  --tara-color-destructive: #fb7185;
+  --tara-color-destructive-soft: rgba(251, 113, 133, 0.16);
+  --tara-color-info: #74b9ff;
+  --tara-color-info-soft: rgba(116, 185, 255, 0.16);
+
+  --tara-gradient-night-sky: radial-gradient(circle at 50% -26%, #2f2581 0%, #11064f 46%, #070432 100%);
+  --tara-gradient-moon-glow:
+    radial-gradient(circle at 50% 14%, rgba(134, 150, 255, 0.28) 0%, rgba(134, 150, 255, 0.12) 24%, transparent 56%),
+    radial-gradient(circle at 68% 8%, rgba(244, 226, 168, 0.12) 0%, transparent 34%);
+  --tara-gradient-dawn: linear-gradient(180deg, #fdf6ef 0%, #f5edff 44%, #e7efff 100%);
+  --tara-gradient-sunlight:
+    radial-gradient(circle at 18% 12%, rgba(255, 215, 123, 0.36) 0%, rgba(255, 215, 123, 0.12) 26%, transparent 56%),
+    radial-gradient(circle at 82% 14%, rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0.16) 22%, transparent 48%);
+
+  --tara-bg: var(--tara-gradient-night-sky);
   --tara-bg-surface:
     radial-gradient(circle at 52% 6%, rgba(114, 87, 247, 0.36), transparent 45%),
     radial-gradient(circle at 13% 17%, rgba(102, 82, 225, 0.18), transparent 42%),
     radial-gradient(circle at 88% 18%, rgba(37, 32, 107, 0.48), transparent 37%),
     linear-gradient(180deg, #0b0542 0%, #090338 42%, #07022f 100%);
-  --tara-star-opacity: 0.24;
+  --tara-star-opacity: 0;
+  --tara-world-stars: none;
+  --tara-world-constellations: none;
+  --tara-world-atmosphere:
+    var(--tara-gradient-moon-glow),
+    radial-gradient(circle at 10% 82%, rgba(79, 103, 233, 0.12) 0%, transparent 28%),
+    radial-gradient(circle at 88% 72%, rgba(92, 71, 189, 0.1) 0%, transparent 32%);
+  --tara-world-clouds: none;
+  --tara-world-horizon:
+    radial-gradient(circle at 50% 112%, rgba(104, 90, 214, 0.26) 0%, transparent 40%),
+    radial-gradient(circle at 12% 100%, rgba(44, 38, 124, 0.22) 0%, transparent 32%),
+    radial-gradient(circle at 88% 100%, rgba(44, 38, 124, 0.22) 0%, transparent 32%);
+  --tara-world-vignette:
+    radial-gradient(circle at 50% 42%, transparent 0%, transparent 28%, rgba(6, 4, 31, 0.06) 56%, rgba(4, 3, 24, 0.2) 100%);
+  --tara-world-decoration-opacity: 0.78;
+  --tara-world-hero-opacity: 0.68;
+  --tara-world-motif-opacity: 0;
+  --tara-world-stars-animation: taraStarsTwinkle var(--tara-motion-atmosphere-twinkle) ease-in-out infinite alternate;
+  --tara-world-atmosphere-animation:
+    taraWorldDrift var(--tara-motion-atmosphere-drift) linear infinite alternate,
+    taraMoonGlowPulse var(--tara-motion-atmosphere-pulse) ease-in-out infinite alternate;
+  --tara-world-hero-animation:
+    taraWorldDrift 30s linear infinite alternate,
+    taraMoonGlowPulse 14s ease-in-out infinite alternate;
+  --tara-world-safe-inline: 22px;
+  --tara-world-safe-top: 78px;
+  --tara-world-safe-bottom: 132px;
 
-  --tara-text-primary: #f3f0ea;
-  --tara-text-secondary: #8f91af;
-  --tara-text-faint: #74769a;
+  --tara-text-primary: var(--tara-color-text);
+  --tara-text-secondary: var(--tara-color-text-muted);
+  --tara-text-faint: var(--tara-color-text-faint);
+  --tara-surface-soft: color-mix(in srgb, var(--tara-card-bg) 82%, transparent);
+  --tara-surface-elevated: color-mix(in srgb, var(--tara-card-bg-strong) 92%, transparent);
+  --tara-surface-border-strong: color-mix(in srgb, var(--tara-card-border) 94%, transparent);
+  --tara-chip-bg: color-mix(in srgb, var(--tara-card-bg-strong) 84%, transparent);
+  --tara-chip-bg-accent: color-mix(in srgb, var(--tara-violet) 16%, transparent);
+  --tara-chip-bg-gold: color-mix(in srgb, var(--tara-gold) 16%, transparent);
+  --tara-chip-border: color-mix(in srgb, var(--tara-card-border) 92%, transparent);
+  --tara-chip-border-accent: color-mix(in srgb, var(--tara-violet) 46%, transparent);
+  --tara-chip-border-gold: color-mix(in srgb, var(--tara-gold) 52%, transparent);
+  --tara-chip-text: var(--tara-text-primary);
+  --tara-empty-bg: color-mix(in srgb, var(--tara-card-bg-strong) 88%, transparent);
+  --tara-empty-border: color-mix(in srgb, var(--tara-card-border) 90%, transparent);
+  --tara-overlay-surface: color-mix(in srgb, var(--tara-overlay) 92%, transparent);
+  --tara-skeleton-base: color-mix(in srgb, var(--tara-card-bg-strong) 72%, transparent);
+  --tara-skeleton-highlight: color-mix(in srgb, var(--tara-color-cream) 18%, transparent);
 
   --tara-card-bg: linear-gradient(135deg, rgba(13, 11, 54, 0.9), rgba(10, 9, 46, 0.98));
   --tara-card-bg-strong: linear-gradient(135deg, rgba(17, 14, 63, 0.94), rgba(11, 10, 49, 0.99));
-  --tara-card-border: rgba(70, 78, 136, 0.34);
+  --tara-card-border: var(--tara-color-border);
   --tara-input-bg: linear-gradient(135deg, rgba(16, 14, 59, 0.95), rgba(12, 10, 50, 0.98));
 
   --tara-nav-bg: rgba(8, 10, 43, 0.83);
   --tara-nav-pill: radial-gradient(circle at 38% 12%, rgba(132, 126, 255, 0.6), rgba(134, 150, 255, 0.22) 58%, rgba(134, 150, 255, 0.04));
+  --tara-nav-icon: var(--tara-text-faint);
+  --tara-nav-icon-active: #ffffff;
+  --tara-nav-label: var(--tara-text-faint);
+  --tara-nav-label-active: var(--tara-text-primary);
+  --tara-card-hover-border: rgba(120, 129, 196, 0.34);
+  --tara-card-hover-glow: 0 12px 24px rgba(111, 99, 247, 0.12);
+  --tara-card-active-border: rgba(226, 181, 79, 0.46);
+  --tara-card-active-glow: 0 14px 28px rgba(226, 181, 79, 0.14);
 
-  --tara-violet: #6f63f7;
-  --tara-gold: #e2b54f;
+  --tara-violet: var(--tara-color-accent-glow);
+  --tara-gold: var(--tara-color-gold);
   --tara-primary-grad: linear-gradient(92deg, #7c5df6 0%, #5d73fb 52%, #e4be65 100%);
 
   --tara-overlay: rgba(3, 3, 20, 0.76);
-  --tara-shadow: 0 18px 55px rgba(0, 0, 0, 0.34);
+  --tara-shadow: var(--tara-shadow-warm);
 }
 
 :root[data-theme="light"] {
-  --tara-bg: radial-gradient(circle at 8% 0%, #fff7f2 0%, #efeaff 50%, #e5edff 100%);
+  --tara-color-bg: #edf4ff;
+  --tara-color-surface: rgba(255, 250, 244, 0.92);
+  --tara-color-card: rgba(255, 255, 255, 0.94);
+  --tara-color-border: rgba(124, 131, 189, 0.26);
+  --tara-color-text: #212850;
+  --tara-color-text-muted: #4a5180;
+  --tara-color-text-faint: #69709e;
+  --tara-color-accent-glow: #6f5be8;
+  --tara-color-gold: #c69232;
+  --tara-color-sky: #e7efff;
+  --tara-color-cloud: rgba(255, 255, 255, 0.86);
+  --tara-color-cream: #fff8ef;
+  --tara-color-soft-blue: #d9e7ff;
+  --tara-shadow-warm: 0 10px 28px rgba(59, 66, 122, 0.12);
+  --tara-focus-ring: color-mix(in srgb, var(--tara-color-accent-glow) 70%, #23305c 30%);
+  --tara-focus-ring-soft: color-mix(in srgb, var(--tara-color-accent-glow) 18%, transparent);
+  --tara-focus-ring-strong: color-mix(in srgb, var(--tara-color-gold) 22%, var(--tara-color-accent-glow) 78%);
+
+  --tara-color-success: #1f9d63;
+  --tara-color-success-soft: rgba(31, 157, 99, 0.12);
+  --tara-color-warning: #c98b24;
+  --tara-color-warning-soft: rgba(201, 139, 36, 0.12);
+  --tara-color-destructive: #d84d67;
+  --tara-color-destructive-soft: rgba(216, 77, 103, 0.12);
+  --tara-color-info: #3d7ee8;
+  --tara-color-info-soft: rgba(61, 126, 232, 0.12);
+
+  --tara-gradient-night-sky: radial-gradient(circle at 50% -26%, #2f2581 0%, #11064f 46%, #070432 100%);
+  --tara-gradient-moon-glow:
+    radial-gradient(circle at 50% 14%, rgba(134, 150, 255, 0.28) 0%, rgba(134, 150, 255, 0.12) 24%, transparent 56%),
+    radial-gradient(circle at 68% 8%, rgba(244, 226, 168, 0.12) 0%, transparent 34%);
+  --tara-gradient-dawn: linear-gradient(180deg, #fdf6ef 0%, #f5edff 44%, #e7efff 100%);
+  --tara-gradient-sunlight:
+    radial-gradient(circle at 18% 12%, rgba(255, 206, 102, 0.42) 0%, rgba(255, 206, 102, 0.16) 24%, transparent 54%),
+    radial-gradient(circle at 82% 14%, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0.2) 22%, transparent 48%);
+
+  --tara-bg: var(--tara-gradient-dawn);
   --tara-bg-surface:
     radial-gradient(circle at 52% 5%, rgba(141, 114, 244, 0.2), transparent 44%),
     radial-gradient(circle at 11% 15%, rgba(172, 144, 236, 0.17), transparent 48%),
     radial-gradient(circle at 90% 13%, rgba(182, 203, 255, 0.43), transparent 40%),
     linear-gradient(180deg, #f8f5ff 0%, #edf0ff 50%, #e7eeff 100%);
-  --tara-star-opacity: 0.14;
+  --tara-star-opacity: 0;
+  --tara-world-stars: none;
+  --tara-world-constellations: none;
+  --tara-world-atmosphere:
+    var(--tara-gradient-sunlight),
+    radial-gradient(circle at 22% 10%, rgba(255, 236, 182, 0.28) 0%, transparent 28%),
+    radial-gradient(circle at 88% 26%, rgba(222, 236, 255, 0.6) 0%, transparent 32%);
+  --tara-world-clouds: none;
+  --tara-world-horizon:
+    radial-gradient(circle at 50% 110%, rgba(255, 212, 144, 0.36) 0%, transparent 42%),
+    radial-gradient(circle at 14% 102%, rgba(255, 235, 195, 0.28) 0%, transparent 32%),
+    radial-gradient(circle at 88% 102%, rgba(211, 228, 255, 0.28) 0%, transparent 32%);
+  --tara-world-vignette:
+    radial-gradient(circle at 50% 44%, transparent 0%, transparent 30%, rgba(221, 233, 255, 0.16) 58%, rgba(201, 216, 249, 0.24) 100%);
+  --tara-world-decoration-opacity: 0.76;
+  --tara-world-hero-opacity: 0.66;
+  --tara-world-motif-opacity: 0;
+  --tara-world-stars-animation: taraSkySparkle 22s ease-in-out infinite alternate;
+  --tara-world-atmosphere-animation:
+    taraWorldDrift 38s linear infinite alternate,
+    taraSunlightShimmer var(--tara-motion-atmosphere-shimmer) ease-in-out infinite alternate;
+  --tara-world-hero-animation:
+    taraWorldDrift 32s linear infinite alternate,
+    taraSunlightShimmer 16s ease-in-out infinite alternate;
+  --tara-world-safe-inline: 22px;
+  --tara-world-safe-top: 78px;
+  --tara-world-safe-bottom: 132px;
 
-  --tara-text-primary: #212850;
-  --tara-text-secondary: #4a5180;
-  --tara-text-faint: #69709e;
+  --tara-text-primary: var(--tara-color-text);
+  --tara-text-secondary: var(--tara-color-text-muted);
+  --tara-text-faint: var(--tara-color-text-faint);
+  --tara-surface-soft: color-mix(in srgb, var(--tara-card-bg) 88%, transparent);
+  --tara-surface-elevated: color-mix(in srgb, var(--tara-card-bg-strong) 96%, transparent);
+  --tara-surface-border-strong: color-mix(in srgb, var(--tara-card-border) 96%, transparent);
+  --tara-chip-bg: color-mix(in srgb, var(--tara-card-bg-strong) 84%, transparent);
+  --tara-chip-bg-accent: color-mix(in srgb, var(--tara-violet) 10%, white 4%);
+  --tara-chip-bg-gold: color-mix(in srgb, var(--tara-gold) 10%, white 8%);
+  --tara-chip-border: color-mix(in srgb, var(--tara-card-border) 92%, transparent);
+  --tara-chip-border-accent: color-mix(in srgb, var(--tara-violet) 32%, transparent);
+  --tara-chip-border-gold: color-mix(in srgb, var(--tara-gold) 38%, transparent);
+  --tara-chip-text: var(--tara-text-primary);
+  --tara-empty-bg: color-mix(in srgb, var(--tara-card-bg-strong) 92%, transparent);
+  --tara-empty-border: color-mix(in srgb, var(--tara-card-border) 92%, transparent);
+  --tara-overlay-surface: color-mix(in srgb, white 74%, var(--tara-overlay));
+  --tara-skeleton-base: color-mix(in srgb, var(--tara-card-bg-strong) 78%, transparent);
+  --tara-skeleton-highlight: color-mix(in srgb, white 58%, transparent);
 
   --tara-card-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.86), rgba(246, 248, 255, 0.96));
   --tara-card-bg-strong: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 255, 0.98));
-  --tara-card-border: rgba(124, 131, 189, 0.26);
+  --tara-card-border: var(--tara-color-border);
   --tara-input-bg: rgba(255, 255, 255, 0.92);
 
   --tara-nav-bg: rgba(255, 255, 255, 0.88);
   --tara-nav-pill: radial-gradient(circle at 40% 10%, rgba(115, 113, 241, 0.38), rgba(115, 113, 241, 0.1));
+  --tara-nav-icon: var(--tara-text-faint);
+  --tara-nav-icon-active: #ffffff;
+  --tara-nav-label: var(--tara-text-faint);
+  --tara-nav-label-active: var(--tara-text-primary);
+  --tara-card-hover-border: rgba(124, 131, 189, 0.32);
+  --tara-card-hover-glow: 0 10px 22px rgba(111, 91, 232, 0.08);
+  --tara-card-active-border: rgba(198, 146, 50, 0.38);
+  --tara-card-active-glow: 0 12px 24px rgba(198, 146, 50, 0.1);
 
-  --tara-violet: #6f5be8;
-  --tara-gold: #c69232;
+  --tara-violet: var(--tara-color-accent-glow);
+  --tara-gold: var(--tara-color-gold);
   --tara-primary-grad: linear-gradient(92deg, #6f5be8 0%, #7a75f1 52%, #d4af5f 100%);
 
   --tara-overlay: rgba(241, 244, 255, 0.68);
-  --tara-shadow: 0 12px 34px rgba(59, 66, 122, 0.16);
+  --tara-shadow: var(--tara-shadow-warm);
 }
 
 body {
@@ -71,7 +280,14 @@ body {
   min-height: 100dvh;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-  font-family: "Inter", "Avenir Next", "Segoe UI", sans-serif;
+  font-family: var(--font-sans);
+  line-height: var(--tara-line-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  transition:
+    background var(--tara-motion-ui-slow) var(--tara-ease-standard),
+    color var(--tara-motion-ui-medium) var(--tara-ease-soft);
 }
 
 #root {
@@ -82,20 +298,36 @@ body {
 .bg-app {
   background: var(--tara-bg-surface);
   position: relative;
+  isolation: isolate;
+  transition: background var(--tara-motion-ui-slow) var(--tara-ease-standard);
 }
 
-.bg-app::before {
+.bg-app::before,
+.bg-cosmic::before {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background:
-    radial-gradient(circle at 12% 17%, rgba(255, 255, 255, 0.35) 0 1px, transparent 2px),
-    radial-gradient(circle at 79% 24%, rgba(255, 255, 255, 0.3) 0 1px, transparent 2px),
-    radial-gradient(circle at 67% 78%, rgba(255, 255, 255, 0.24) 0 1px, transparent 2px),
-    radial-gradient(circle at 27% 64%, rgba(255, 255, 255, 0.22) 0 1px, transparent 2px);
+  background: var(--tara-world-stars), var(--tara-world-constellations);
   z-index: 0;
   opacity: var(--tara-star-opacity);
+  animation: var(--tara-world-stars-animation);
+  will-change: opacity;
+  transition: opacity var(--tara-motion-ui-slow) var(--tara-ease-soft);
+}
+
+.bg-app::after,
+.bg-cosmic::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: var(--tara-world-atmosphere), var(--tara-world-clouds), var(--tara-world-horizon), var(--tara-world-vignette);
+  z-index: 0;
+  opacity: var(--tara-world-decoration-opacity);
+  animation: var(--tara-world-atmosphere-animation);
+  will-change: opacity, background-position;
+  transition: opacity var(--tara-motion-ui-slow) var(--tara-ease-soft);
 }
 
 .bg-app > *:not(.tara-fixed-nav) {
@@ -106,16 +338,201 @@ body {
 .bg-cosmic {
   background: var(--tara-bg-surface);
   position: relative;
+  isolation: isolate;
+  transition: background var(--tara-motion-ui-slow) var(--tara-ease-standard);
 }
 
 .star-field {
-  background-image:
-    radial-gradient(circle at 12% 17%, rgba(255, 255, 255, 0.35) 0 1px, transparent 2px),
-    radial-gradient(circle at 79% 24%, rgba(255, 255, 255, 0.3) 0 1px, transparent 2px),
-    radial-gradient(circle at 67% 78%, rgba(255, 255, 255, 0.24) 0 1px, transparent 2px),
-    radial-gradient(circle at 27% 64%, rgba(255, 255, 255, 0.22) 0 1px, transparent 2px),
-    radial-gradient(circle at 41% 31%, rgba(255, 255, 255, 0.24) 0 1px, transparent 2px);
-  background-size: 100% 100%;
+  background: none;
+  will-change: opacity;
+}
+
+.tara-scene-shell {
+  position: relative;
+  isolation: isolate;
+}
+
+.tara-scene-shell::before,
+.tara-scene-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.tara-scene-shell::before {
+  background: var(--tara-world-stars), var(--tara-world-constellations);
+  opacity: calc(var(--tara-star-opacity) * 0.9);
+  z-index: 0;
+  animation: var(--tara-world-stars-animation);
+  transition: opacity var(--tara-motion-ui-slow) var(--tara-ease-soft);
+  will-change: opacity;
+}
+
+.tara-scene-shell::after {
+  background: var(--tara-world-atmosphere), var(--tara-world-clouds), var(--tara-world-horizon), var(--tara-world-vignette);
+  opacity: calc(var(--tara-world-decoration-opacity) * 0.62);
+  z-index: 0;
+  animation: var(--tara-world-atmosphere-animation);
+  transition: opacity var(--tara-motion-ui-slow) var(--tara-ease-soft);
+  will-change: opacity, background-position;
+}
+
+.tara-scene-shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+.tara-scene-safe {
+  padding-left: var(--tara-world-safe-inline);
+  padding-right: var(--tara-world-safe-inline);
+}
+
+.tara-scene-safe-top {
+  padding-top: var(--tara-world-safe-top);
+}
+
+.tara-scene-safe-bottom {
+  padding-bottom: var(--tara-world-safe-bottom);
+}
+
+.tara-scene-hero {
+  min-height: min(42vh, 320px);
+  border-radius: 2rem;
+  overflow: hidden;
+  position: relative;
+  padding-top: clamp(1.75rem, 6vw, 3.25rem);
+  padding-left: clamp(1.25rem, 4vw, 2.25rem);
+  padding-right: clamp(1.25rem, 4vw, 2.25rem);
+  padding-bottom: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.tara-scene-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--tara-world-atmosphere), var(--tara-world-clouds), var(--tara-world-horizon), var(--tara-world-vignette);
+  opacity: var(--tara-world-hero-opacity);
+  animation: var(--tara-world-hero-animation);
+  transition: opacity var(--tara-motion-ui-slow) var(--tara-ease-soft);
+  will-change: opacity, background-position;
+}
+
+.tara-scene-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--tara-world-stars), var(--tara-world-constellations);
+  opacity: calc(var(--tara-star-opacity) * 0.9);
+  animation: var(--tara-world-stars-animation);
+  transition: opacity var(--tara-motion-ui-slow) var(--tara-ease-soft);
+  will-change: opacity;
+}
+
+.tara-scene-safe-center {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 31rem);
+  margin-inline: auto;
+}
+
+.tara-scene-header {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.75rem;
+}
+
+.tara-scene-header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 12% 12%, color-mix(in srgb, var(--tara-color-cloud) 78%, transparent) 0%, transparent 26%),
+    radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--tara-color-soft-blue) 32%, transparent) 0%, transparent 28%);
+  opacity: 0.52;
+  transition: opacity var(--tara-motion-ui-medium) var(--tara-ease-soft);
+}
+
+.tara-scene-motif {
+  position: relative;
+}
+
+.tara-scene-motif::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  transition:
+    opacity var(--tara-motion-ui-medium) var(--tara-ease-soft),
+    transform var(--tara-motion-ui-slow) var(--tara-ease-soft),
+    filter var(--tara-motion-ui-slow) var(--tara-ease-soft);
+  will-change: opacity, transform;
+}
+
+.tara-scene-motif > * {
+  position: relative;
+  z-index: 1;
+}
+
+.tara-scene-motif::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 auto;
+  width: clamp(72px, 18vw, 132px);
+  height: clamp(72px, 18vw, 132px);
+  pointer-events: none;
+  opacity: var(--tara-world-motif-opacity);
+  background:
+    radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--tara-color-cream) 36%, transparent) 0%, transparent 62%);
+  filter: blur(16px);
+  transition:
+    opacity var(--tara-motion-ui-medium) var(--tara-ease-soft),
+    filter var(--tara-motion-ui-slow) var(--tara-ease-soft);
+  will-change: opacity;
+}
+
+.tara-scene-motif[data-scene="night"]::after {
+  top: 0.75rem;
+  right: 0.75rem;
+}
+
+.tara-scene-motif[data-scene="night"]::before {
+  opacity: 0;
+}
+
+.tara-scene-motif[data-scene="day"]::after {
+  top: 1rem;
+  left: auto;
+  right: 0.75rem;
+}
+
+.tara-scene-motif[data-scene="day"]::before {
+  opacity: 0;
+}
+
+:root[data-theme="light"] .tara-scene-motif[data-scene="night"]::before {
+  opacity: 0;
+  filter: none;
+}
+
+:root[data-theme="dark"] .tara-scene-motif[data-scene="night"]::before {
+  filter: none;
+}
+
+:root[data-theme="light"] .tara-scene-motif[data-scene="day"]::before {
+  opacity: 0;
+  filter: none;
+}
+
+:root[data-theme="dark"] .tara-scene-motif[data-scene="day"]::before {
+  opacity: 0;
+  filter: none;
 }
 
 .bg-glow {
@@ -128,21 +545,31 @@ body {
 }
 
 .glass {
-  background: color-mix(in srgb, var(--tara-card-bg-strong) 85%, transparent);
-  border: 1px solid color-mix(in srgb, var(--tara-card-border) 86%, transparent);
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.24);
-  backdrop-filter: blur(10px);
+  background: color-mix(in srgb, var(--tara-card-bg-strong) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tara-card-border) 78%, transparent);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(8px);
+  transition:
+    transform var(--tara-motion-interaction-medium) var(--tara-ease-standard),
+    box-shadow var(--tara-motion-interaction-medium) var(--tara-ease-standard),
+    border-color var(--tara-motion-interaction-medium) var(--tara-ease-soft),
+    background var(--tara-motion-interaction-slow) var(--tara-ease-soft);
 }
 
 .glass-strong {
-  background: color-mix(in srgb, var(--tara-card-bg-strong) 94%, transparent);
-  border: 1px solid color-mix(in srgb, var(--tara-card-border) 90%, transparent);
-  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(14px);
+  background: color-mix(in srgb, var(--tara-card-bg-strong) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tara-card-border) 82%, transparent);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(10px);
+  transition:
+    transform var(--tara-motion-interaction-medium) var(--tara-ease-standard),
+    box-shadow var(--tara-motion-interaction-medium) var(--tara-ease-standard),
+    border-color var(--tara-motion-interaction-medium) var(--tara-ease-soft),
+    background var(--tara-motion-interaction-slow) var(--tara-ease-soft);
 }
 
 .shadow-glow {
-  box-shadow: 0 0 30px color-mix(in srgb, var(--tara-violet) 34%, transparent);
+  box-shadow: 0 14px 28px color-mix(in srgb, var(--tara-violet) 20%, transparent);
 }
 
 .shadow-elevated {
@@ -150,7 +577,7 @@ body {
 }
 
 .shadow-card-mystic {
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(78, 74, 140, 0.24);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.24), 0 0 0 1px rgba(78, 74, 140, 0.16);
 }
 
 .bg-aurora {
@@ -195,39 +622,741 @@ main {
   margin: 0 auto;
 }
 
+.tara-app-shell {
+  position: relative;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--tara-bg-surface);
+  color: var(--tara-text-primary);
+}
+
+.tara-app-scroll {
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: calc(7rem + env(safe-area-inset-bottom));
+}
+
+.tara-page-shell {
+  width: 100%;
+  max-width: 390px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.tara-page-shell-compact {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.tara-page-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 .tara-card {
   background: var(--tara-card-bg);
   border: 1px solid var(--tara-card-border);
   box-shadow: var(--tara-shadow);
+  transition:
+    transform var(--tara-motion-interaction-medium) var(--tara-ease-standard),
+    box-shadow var(--tara-motion-interaction-medium) var(--tara-ease-standard),
+    border-color var(--tara-motion-interaction-medium) var(--tara-ease-soft),
+    background var(--tara-motion-interaction-slow) var(--tara-ease-soft);
 }
 
 .tara-card-strong {
   background: var(--tara-card-bg-strong);
   border: 1px solid var(--tara-card-border);
   box-shadow: var(--tara-shadow);
+  transition:
+    transform var(--tara-motion-interaction-medium) var(--tara-ease-standard),
+    box-shadow var(--tara-motion-interaction-medium) var(--tara-ease-standard),
+    border-color var(--tara-motion-interaction-medium) var(--tara-ease-soft),
+    background var(--tara-motion-interaction-slow) var(--tara-ease-soft);
+}
+
+.tara-screen-intro {
+  position: relative;
+  overflow: hidden;
+  border-radius: 2rem;
+  background: var(--tara-card-bg-strong);
+  border: 1px solid var(--tara-card-border);
+  box-shadow: var(--tara-shadow);
+}
+
+.tara-screen-intro::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 16% 18%, color-mix(in srgb, var(--tara-color-cloud) 76%, transparent) 0%, transparent 24%),
+    radial-gradient(circle at 84% 14%, color-mix(in srgb, var(--tara-color-soft-blue) 42%, transparent) 0%, transparent 28%),
+    linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--tara-violet) 10%, transparent) 100%);
+  opacity: 0.58;
+}
+
+.tara-screen-panel {
+  border-radius: 1.75rem;
+  background: var(--tara-card-bg);
+  border: 1px solid var(--tara-card-border);
+  box-shadow: var(--tara-shadow);
+  transition:
+    transform var(--tara-motion-interaction-medium) var(--tara-ease-standard),
+    box-shadow var(--tara-motion-interaction-medium) var(--tara-ease-standard),
+    border-color var(--tara-motion-interaction-medium) var(--tara-ease-soft),
+    background var(--tara-motion-interaction-slow) var(--tara-ease-soft);
+}
+
+.tara-list-row {
+  border-radius: 1.5rem;
+  background: var(--tara-card-bg);
+  border: 1px solid var(--tara-card-border);
+  box-shadow: var(--tara-shadow);
+  transition:
+    transform var(--tara-motion-interaction-fast) var(--tara-ease-press),
+    border-color var(--tara-motion-interaction-medium) var(--tara-ease-soft),
+    box-shadow var(--tara-motion-interaction-medium) var(--tara-ease-standard),
+    background var(--tara-motion-interaction-slow) var(--tara-ease-soft);
+}
+
+.tara-list-row:hover {
+  border-color: var(--tara-card-hover-border);
+  box-shadow: var(--tara-shadow), var(--tara-card-hover-glow);
+}
+
+.tara-list-row:focus-visible,
+.tara-screen-panel:focus-within {
+  outline: none;
+  border-color: color-mix(in srgb, var(--tara-focus-ring) 72%, var(--tara-card-border) 28%);
+  box-shadow:
+    0 0 0 1px var(--tara-focus-ring-strong),
+    0 0 0 4px var(--tara-focus-ring-soft),
+    var(--tara-shadow);
+}
+
+.tara-alert {
+  border-radius: 1rem;
+  border: 1px solid transparent;
+  padding: 0.75rem 0.9rem;
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.tara-alert-error {
+  border-color: color-mix(in srgb, var(--tara-color-destructive) 34%, transparent);
+  background: var(--tara-color-destructive-soft);
+  color: var(--tara-text-primary);
+}
+
+.tara-alert-success {
+  border-color: color-mix(in srgb, var(--tara-color-success) 34%, transparent);
+  background: var(--tara-color-success-soft);
+  color: var(--tara-text-primary);
+}
+
+.tara-alert-warning {
+  border-color: color-mix(in srgb, var(--tara-color-warning) 36%, transparent);
+  background: var(--tara-color-warning-soft);
+  color: var(--tara-text-primary);
+}
+
+.tara-alert-info {
+  border-color: color-mix(in srgb, var(--tara-color-info) 34%, transparent);
+  background: var(--tara-color-info-soft);
+  color: var(--tara-text-primary);
 }
 
 .tara-heading {
   color: var(--tara-text-primary);
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-weight: 500;
-  letter-spacing: -0.01em;
+  letter-spacing: var(--tara-track-display);
+  line-height: var(--tara-line-page);
+}
+
+.tara-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--tara-chip-border);
+  background: var(--tara-chip-bg);
+  color: var(--tara-chip-text);
+  padding: 0.45rem 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1;
+  backdrop-filter: blur(10px);
+  transition:
+    transform var(--tara-motion-interaction-fast) var(--tara-ease-press),
+    border-color var(--tara-motion-interaction-medium) var(--tara-ease-soft),
+    background var(--tara-motion-interaction-slow) var(--tara-ease-soft),
+    color var(--tara-motion-interaction-medium) var(--tara-ease-soft),
+    box-shadow var(--tara-motion-interaction-medium) var(--tara-ease-soft);
+}
+
+.tara-chip-accent {
+  border-color: var(--tara-chip-border-accent);
+  background: var(--tara-chip-bg-accent);
+}
+
+.tara-chip-gold {
+  border-color: var(--tara-chip-border-gold);
+  background: var(--tara-chip-bg-gold);
+}
+
+button.tara-chip,
+a.tara-chip {
+  min-height: var(--tara-control-min-touch);
+}
+
+.tara-chip:focus-visible {
+  outline: none;
+  border-color: var(--tara-focus-ring);
+  box-shadow:
+    0 0 0 1px var(--tara-focus-ring-strong),
+    0 0 0 4px var(--tara-focus-ring-soft);
+}
+
+.tara-inline-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tara-control-min-touch);
+  border-radius: 999px;
+  padding-inline: 0.45rem;
+  color: var(--tara-gold);
+  background: transparent;
+  transition:
+    color var(--tara-motion-interaction-medium) var(--tara-ease-soft),
+    background var(--tara-motion-interaction-slow) var(--tara-ease-soft),
+    box-shadow var(--tara-motion-interaction-medium) var(--tara-ease-soft);
+}
+
+.tara-inline-link:focus-visible {
+  outline: none;
+  color: var(--tara-text-primary);
+  background: color-mix(in srgb, var(--tara-gold) 12%, transparent);
+  box-shadow:
+    0 0 0 1px var(--tara-focus-ring-strong),
+    0 0 0 4px var(--tara-focus-ring-soft);
+}
+
+.tara-inline-field {
+  width: 100%;
+  border: 0;
+  border-radius: 1rem;
+  background: transparent;
+  color: var(--tara-text-primary);
+  padding: 0.8rem 0.15rem;
+  outline: none;
+  transition:
+    background var(--tara-motion-interaction-slow) var(--tara-ease-soft),
+    box-shadow var(--tara-motion-interaction-medium) var(--tara-ease-soft),
+    color var(--tara-motion-interaction-medium) var(--tara-ease-soft);
+}
+
+.tara-inline-field::placeholder {
+  color: color-mix(in srgb, var(--tara-text-faint) 88%, transparent);
+}
+
+.tara-inline-field:focus,
+.tara-inline-field:focus-visible {
+  background: color-mix(in srgb, var(--tara-input-bg) 72%, transparent);
+  box-shadow:
+    0 0 0 1px var(--tara-focus-ring-strong),
+    0 0 0 4px var(--tara-focus-ring-soft);
+}
+
+.tara-underline-input {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--tara-card-border);
+  border-radius: 1rem 1rem 0.85rem 0.85rem;
+  background: transparent;
+  color: var(--tara-text-primary);
+  padding: 0 0 0.75rem;
+  outline: none;
+  transition:
+    border-color var(--tara-motion-interaction-medium) var(--tara-ease-soft),
+    background var(--tara-motion-interaction-slow) var(--tara-ease-soft),
+    box-shadow var(--tara-motion-interaction-medium) var(--tara-ease-soft),
+    padding var(--tara-motion-interaction-medium) var(--tara-ease-soft);
+}
+
+.tara-underline-input::placeholder {
+  color: color-mix(in srgb, var(--tara-text-faint) 84%, transparent);
+}
+
+.tara-underline-input:focus,
+.tara-underline-input:focus-visible {
+  border-bottom-color: var(--tara-focus-ring);
+  background: color-mix(in srgb, var(--tara-input-bg) 54%, transparent);
+  box-shadow:
+    0 0 0 1px var(--tara-focus-ring-strong),
+    0 0 0 4px var(--tara-focus-ring-soft);
+  padding-inline: 0.6rem;
+}
+
+.tara-textarea {
+  width: 100%;
+  min-height: 140px;
+  border-radius: 1.35rem;
+  border: 1px solid var(--tara-card-border);
+  background: var(--tara-input-bg);
+  color: var(--tara-text-primary);
+  padding: 0.9rem 1rem;
+  outline: none;
+  resize: vertical;
+  line-height: 1.6;
+  transition:
+    border-color var(--tara-motion-interaction-medium) var(--tara-ease-soft),
+    background var(--tara-motion-interaction-slow) var(--tara-ease-soft),
+    box-shadow var(--tara-motion-interaction-medium) var(--tara-ease-soft);
+}
+
+.tara-textarea::placeholder {
+  color: color-mix(in srgb, var(--tara-text-faint) 88%, transparent);
+}
+
+.tara-textarea:focus,
+.tara-textarea:focus-visible {
+  border-color: var(--tara-focus-ring);
+  box-shadow:
+    0 0 0 1px var(--tara-focus-ring-strong),
+    0 0 0 4px var(--tara-focus-ring-soft);
+}
+
+.tara-support-surface {
+  border-radius: 1rem;
+  border: 1px solid var(--tara-card-border);
+  background: var(--tara-surface-soft);
+  color: var(--tara-text-secondary);
+}
+
+.tara-empty-state {
+  --tara-empty-atmosphere:
+    radial-gradient(circle at 18% 20%, color-mix(in srgb, var(--tara-violet) 22%, transparent) 0%, transparent 32%),
+    radial-gradient(circle at 82% 16%, color-mix(in srgb, var(--tara-gold) 18%, transparent) 0%, transparent 28%),
+    linear-gradient(180deg, color-mix(in srgb, var(--tara-card-bg-strong) 94%, transparent) 0%, color-mix(in srgb, var(--tara-card-bg) 98%, transparent) 100%);
+  --tara-empty-accent:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--tara-color-cloud) 16%, transparent) 0%, transparent 56%);
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 1.75rem;
+  border: 1px solid var(--tara-empty-border);
+  background: var(--tara-empty-bg);
+  box-shadow: var(--tara-shadow);
+  text-align: center;
+  backdrop-filter: blur(12px);
+}
+
+.tara-empty-state::before,
+.tara-empty-state::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.tara-empty-state::before {
+  background: var(--tara-empty-atmosphere);
+  opacity: 0.95;
+}
+
+.tara-empty-state::after {
+  background: var(--tara-empty-accent);
+  opacity: 0.85;
+}
+
+.tara-empty-body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tara-empty-kicker {
+  color: color-mix(in srgb, var(--tara-gold) 80%, transparent);
+  letter-spacing: var(--tara-track-kicker);
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  font-family: "Cinzel", "Times New Roman", serif;
+  margin-bottom: 0.7rem;
+}
+
+.tara-empty-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.8rem;
+  font-size: 1.1rem;
+  color: var(--tara-text-primary);
+  border: 1px solid color-mix(in srgb, var(--tara-gold) 26%, transparent);
+  background: color-mix(in srgb, var(--tara-card-bg-strong) 90%, transparent);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+}
+
+.tara-empty-title {
+  color: var(--tara-text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.tara-empty-copy {
+  color: var(--tara-text-secondary);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+:root[data-theme="light"] .tara-empty-state {
+  --tara-empty-atmosphere:
+    radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--tara-color-cloud) 74%, transparent) 0%, transparent 28%),
+    radial-gradient(circle at 84% 14%, color-mix(in srgb, var(--tara-gold) 18%, transparent) 0%, transparent 24%),
+    linear-gradient(180deg, color-mix(in srgb, white 74%, var(--tara-card-bg-strong) 26%) 0%, color-mix(in srgb, white 42%, var(--tara-card-bg) 58%) 100%);
+  --tara-empty-accent:
+    radial-gradient(circle at 50% -10%, color-mix(in srgb, var(--tara-color-soft-blue) 22%, transparent) 0%, transparent 54%);
+}
+
+:root[data-theme="dark"] .tara-empty-state[data-empty-kind="discovery"] {
+  --tara-empty-atmosphere:
+    radial-gradient(circle at 20% 18%, color-mix(in srgb, var(--tara-violet) 30%, transparent) 0%, transparent 30%),
+    radial-gradient(circle at 82% 16%, color-mix(in srgb, var(--tara-gold) 24%, transparent) 0%, transparent 28%),
+    linear-gradient(180deg, rgba(12, 10, 49, 0.96) 0%, rgba(8, 8, 38, 0.98) 100%);
+  --tara-empty-accent:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.08) 0%, transparent 52%);
+}
+
+:root[data-theme="light"] .tara-empty-state[data-empty-kind="discovery"] {
+  --tara-empty-atmosphere:
+    radial-gradient(circle at 22% 18%, color-mix(in srgb, var(--tara-color-soft-blue) 32%, transparent) 0%, transparent 28%),
+    radial-gradient(circle at 78% 12%, color-mix(in srgb, var(--tara-gold) 26%, transparent) 0%, transparent 22%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(245, 248, 255, 0.98) 100%);
+  --tara-empty-accent:
+    radial-gradient(circle at 50% -6%, rgba(255, 230, 170, 0.28) 0%, transparent 46%);
+}
+
+:root[data-theme="dark"] .tara-empty-state[data-empty-kind="matches"] {
+  --tara-empty-atmosphere:
+    radial-gradient(circle at 18% 22%, color-mix(in srgb, var(--tara-color-destructive) 22%, transparent) 0%, transparent 28%),
+    radial-gradient(circle at 82% 16%, color-mix(in srgb, var(--tara-gold) 20%, transparent) 0%, transparent 24%),
+    linear-gradient(180deg, rgba(17, 12, 47, 0.96) 0%, rgba(9, 10, 35, 0.98) 100%);
+}
+
+:root[data-theme="light"] .tara-empty-state[data-empty-kind="matches"] {
+  --tara-empty-atmosphere:
+    radial-gradient(circle at 18% 20%, color-mix(in srgb, var(--tara-color-destructive) 12%, white 8%) 0%, transparent 26%),
+    radial-gradient(circle at 82% 14%, color-mix(in srgb, var(--tara-gold) 16%, transparent) 0%, transparent 22%),
+    linear-gradient(180deg, rgba(255, 252, 252, 0.94) 0%, rgba(251, 247, 243, 0.98) 100%);
+}
+
+:root[data-theme="dark"] .tara-empty-state[data-empty-kind="chat"] {
+  --tara-empty-atmosphere:
+    radial-gradient(circle at 20% 18%, color-mix(in srgb, var(--tara-color-info) 22%, transparent) 0%, transparent 30%),
+    radial-gradient(circle at 82% 14%, color-mix(in srgb, var(--tara-violet) 20%, transparent) 0%, transparent 28%),
+    linear-gradient(180deg, rgba(10, 13, 42, 0.96) 0%, rgba(7, 10, 31, 0.98) 100%);
+}
+
+:root[data-theme="light"] .tara-empty-state[data-empty-kind="chat"] {
+  --tara-empty-atmosphere:
+    radial-gradient(circle at 20% 18%, color-mix(in srgb, var(--tara-color-info) 18%, transparent) 0%, transparent 28%),
+    radial-gradient(circle at 80% 14%, color-mix(in srgb, var(--tara-color-cloud) 78%, transparent) 0%, transparent 24%),
+    linear-gradient(180deg, rgba(249, 252, 255, 0.94) 0%, rgba(244, 248, 255, 0.98) 100%);
+}
+
+:root[data-theme="dark"] .tara-empty-state[data-empty-kind="kundali"] {
+  --tara-empty-atmosphere:
+    radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--tara-violet) 36%, transparent) 0%, transparent 30%),
+    radial-gradient(circle at 84% 12%, color-mix(in srgb, var(--tara-gold) 24%, transparent) 0%, transparent 24%),
+    radial-gradient(circle at 50% -4%, rgba(255, 255, 255, 0.08) 0%, transparent 46%),
+    linear-gradient(180deg, rgba(13, 10, 50, 0.97) 0%, rgba(7, 8, 35, 0.99) 100%);
+}
+
+:root[data-theme="light"] .tara-empty-state[data-empty-kind="kundali"] {
+  --tara-empty-atmosphere:
+    radial-gradient(circle at 18% 16%, color-mix(in srgb, var(--tara-gold) 18%, transparent) 0%, transparent 22%),
+    radial-gradient(circle at 82% 14%, color-mix(in srgb, var(--tara-color-soft-blue) 20%, transparent) 0%, transparent 26%),
+    linear-gradient(180deg, rgba(255, 252, 244, 0.95) 0%, rgba(248, 250, 255, 0.98) 100%);
+}
+
+:root[data-theme="dark"] .tara-empty-state[data-empty-kind="notifications"] {
+  --tara-empty-atmosphere:
+    radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--tara-color-info) 18%, transparent) 0%, transparent 28%),
+    radial-gradient(circle at 82% 16%, color-mix(in srgb, var(--tara-violet) 16%, transparent) 0%, transparent 24%),
+    linear-gradient(180deg, rgba(10, 13, 38, 0.96) 0%, rgba(8, 10, 28, 0.98) 100%);
+}
+
+:root[data-theme="light"] .tara-empty-state[data-empty-kind="notifications"] {
+  --tara-empty-atmosphere:
+    radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--tara-color-info) 14%, transparent) 0%, transparent 24%),
+    radial-gradient(circle at 82% 16%, color-mix(in srgb, var(--tara-color-cloud) 72%, transparent) 0%, transparent 22%),
+    linear-gradient(180deg, rgba(249, 252, 255, 0.95) 0%, rgba(243, 248, 255, 0.98) 100%);
+}
+
+.tara-skeleton-surface {
+  --tara-skeleton-atmosphere:
+    radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--tara-violet) 16%, transparent) 0%, transparent 30%),
+    radial-gradient(circle at 82% 14%, color-mix(in srgb, var(--tara-gold) 12%, transparent) 0%, transparent 26%),
+    linear-gradient(180deg, color-mix(in srgb, var(--tara-card-bg-strong) 92%, transparent) 0%, color-mix(in srgb, var(--tara-card-bg) 96%, transparent) 100%);
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid var(--tara-empty-border);
+  background: var(--tara-surface-soft);
+  box-shadow: var(--tara-shadow);
+  backdrop-filter: blur(10px);
+}
+
+.tara-skeleton-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--tara-skeleton-atmosphere);
+  opacity: 0.92;
+}
+
+.tara-skeleton-surface > * {
+  position: relative;
+  z-index: 1;
+}
+
+.tara-skeleton-block {
+  position: relative;
+  overflow: hidden;
+  border-radius: inherit;
+  border: 1px solid color-mix(in srgb, var(--tara-empty-border) 76%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 4%, transparent) 0%, transparent 100%),
+    var(--tara-skeleton-base);
+}
+
+.tara-skeleton-block::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    transparent 0%,
+    transparent 32%,
+    var(--tara-skeleton-highlight) 48%,
+    transparent 62%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  opacity: 0.9;
+  filter: blur(0.5px);
+  animation: taraSkeletonSweep 1.5s linear infinite;
+}
+
+:root[data-theme="light"] .tara-skeleton-surface {
+  --tara-skeleton-atmosphere:
+    radial-gradient(circle at 18% 16%, color-mix(in srgb, var(--tara-color-cloud) 72%, transparent) 0%, transparent 28%),
+    radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--tara-gold) 16%, transparent) 0%, transparent 22%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(246, 249, 255, 0.98) 100%);
+}
+
+:root[data-theme="dark"] .tara-skeleton-surface[data-skeleton-kind="discovery"] {
+  --tara-skeleton-atmosphere:
+    radial-gradient(circle at 18% 16%, color-mix(in srgb, var(--tara-violet) 26%, transparent) 0%, transparent 30%),
+    radial-gradient(circle at 80% 12%, color-mix(in srgb, var(--tara-color-info) 18%, transparent) 0%, transparent 26%),
+    linear-gradient(180deg, rgba(13, 11, 52, 0.96) 0%, rgba(9, 10, 38, 0.98) 100%);
+}
+
+:root[data-theme="light"] .tara-skeleton-surface[data-skeleton-kind="discovery"] {
+  --tara-skeleton-atmosphere:
+    radial-gradient(circle at 18% 16%, color-mix(in srgb, var(--tara-color-soft-blue) 24%, transparent) 0%, transparent 28%),
+    radial-gradient(circle at 82% 10%, color-mix(in srgb, var(--tara-gold) 18%, transparent) 0%, transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(241, 247, 255, 0.98) 100%);
+}
+
+:root[data-theme="dark"] .tara-skeleton-surface[data-skeleton-kind="matches"] {
+  --tara-skeleton-atmosphere:
+    radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--tara-color-destructive) 18%, transparent) 0%, transparent 28%),
+    radial-gradient(circle at 82% 14%, color-mix(in srgb, var(--tara-gold) 18%, transparent) 0%, transparent 24%),
+    linear-gradient(180deg, rgba(18, 12, 46, 0.96) 0%, rgba(10, 10, 33, 0.98) 100%);
+}
+
+:root[data-theme="light"] .tara-skeleton-surface[data-skeleton-kind="matches"] {
+  --tara-skeleton-atmosphere:
+    radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--tara-color-destructive) 12%, white 4%) 0%, transparent 26%),
+    radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--tara-gold) 16%, transparent) 0%, transparent 22%),
+    linear-gradient(180deg, rgba(255, 251, 250, 0.94) 0%, rgba(251, 247, 243, 0.98) 100%);
+}
+
+:root[data-theme="dark"] .tara-skeleton-surface[data-skeleton-kind="chat-list"] {
+  --tara-skeleton-atmosphere:
+    radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--tara-color-info) 18%, transparent) 0%, transparent 28%),
+    linear-gradient(180deg, rgba(10, 13, 40, 0.96) 0%, rgba(7, 10, 31, 0.98) 100%);
+}
+
+:root[data-theme="light"] .tara-skeleton-surface[data-skeleton-kind="chat-list"] {
+  --tara-skeleton-atmosphere:
+    radial-gradient(circle at 20% 18%, color-mix(in srgb, var(--tara-color-cloud) 68%, transparent) 0%, transparent 24%),
+    linear-gradient(180deg, rgba(248, 252, 255, 0.95) 0%, rgba(243, 248, 255, 0.98) 100%);
+}
+
+:root[data-theme="dark"] .tara-skeleton-surface[data-skeleton-kind="chat-thread"] {
+  --tara-skeleton-atmosphere:
+    radial-gradient(circle at 18% 16%, color-mix(in srgb, var(--tara-violet) 22%, transparent) 0%, transparent 30%),
+    radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--tara-gold) 12%, transparent) 0%, transparent 24%),
+    linear-gradient(180deg, rgba(11, 11, 41, 0.96) 0%, rgba(8, 9, 28, 0.98) 100%);
+}
+
+:root[data-theme="light"] .tara-skeleton-surface[data-skeleton-kind="chat-thread"] {
+  --tara-skeleton-atmosphere:
+    radial-gradient(circle at 18% 16%, color-mix(in srgb, var(--tara-color-soft-blue) 20%, transparent) 0%, transparent 26%),
+    radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--tara-gold) 14%, transparent) 0%, transparent 22%),
+    linear-gradient(180deg, rgba(252, 253, 255, 0.95) 0%, rgba(246, 249, 255, 0.98) 100%);
+}
+
+:root[data-theme="dark"] .tara-skeleton-surface[data-skeleton-kind="profile"] {
+  --tara-skeleton-atmosphere:
+    radial-gradient(circle at 18% 16%, color-mix(in srgb, var(--tara-violet) 20%, transparent) 0%, transparent 30%),
+    radial-gradient(circle at 82% 14%, color-mix(in srgb, var(--tara-color-destructive) 12%, transparent) 0%, transparent 24%),
+    linear-gradient(180deg, rgba(16, 12, 46, 0.96) 0%, rgba(10, 11, 34, 0.98) 100%);
+}
+
+:root[data-theme="light"] .tara-skeleton-surface[data-skeleton-kind="profile"] {
+  --tara-skeleton-atmosphere:
+    radial-gradient(circle at 18% 16%, color-mix(in srgb, var(--tara-gold) 14%, transparent) 0%, transparent 22%),
+    radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--tara-color-soft-blue) 16%, transparent) 0%, transparent 24%),
+    linear-gradient(180deg, rgba(255, 253, 250, 0.95) 0%, rgba(245, 249, 255, 0.98) 100%);
+}
+
+:root[data-theme="dark"] .tara-skeleton-surface[data-skeleton-kind="kundali"] {
+  --tara-skeleton-atmosphere:
+    radial-gradient(circle at 18% 16%, color-mix(in srgb, var(--tara-violet) 28%, transparent) 0%, transparent 30%),
+    radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--tara-gold) 18%, transparent) 0%, transparent 24%),
+    linear-gradient(180deg, rgba(13, 10, 50, 0.97) 0%, rgba(7, 8, 35, 0.99) 100%);
+}
+
+:root[data-theme="light"] .tara-skeleton-surface[data-skeleton-kind="kundali"] {
+  --tara-skeleton-atmosphere:
+    radial-gradient(circle at 18% 16%, color-mix(in srgb, var(--tara-gold) 18%, transparent) 0%, transparent 24%),
+    radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--tara-color-soft-blue) 18%, transparent) 0%, transparent 26%),
+    linear-gradient(180deg, rgba(255, 252, 244, 0.95) 0%, rgba(248, 250, 255, 0.98) 100%);
+}
+
+.tara-modal-surface {
+  border: 1px solid var(--tara-surface-border-strong);
+  background: var(--tara-surface-elevated);
+  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(14px);
+}
+
+.tara-overlay-surface {
+  background: var(--tara-overlay-surface);
+  backdrop-filter: blur(12px);
+}
+
+.tara-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--tara-control-min-touch);
+  min-height: var(--tara-control-min-touch);
+  border-radius: 999px;
+  border: 1px solid var(--tara-card-border);
+  background: var(--tara-surface-soft);
+  color: var(--tara-text-primary);
+  backdrop-filter: blur(12px);
+  transition:
+    transform var(--tara-motion-interaction-fast) var(--tara-ease-press),
+    border-color var(--tara-motion-interaction-medium) var(--tara-ease-soft),
+    background var(--tara-motion-interaction-slow) var(--tara-ease-soft);
+}
+
+.tara-icon-button:active {
+  transform: translateY(1px) scale(0.985);
+}
+
+.tara-icon-button:focus-visible {
+  outline: none;
+  border-color: var(--tara-focus-ring);
+  box-shadow:
+    0 0 0 1px var(--tara-focus-ring-strong),
+    0 0 0 4px var(--tara-focus-ring-soft);
 }
 
 .tara-copy {
   color: var(--tara-text-secondary);
+  font-family: var(--font-sans);
+  font-size: var(--tara-type-body-size);
+  line-height: var(--tara-line-body);
 }
 
 .tara-faint {
   color: var(--tara-text-faint);
+  font-family: var(--font-sans);
+  font-size: var(--tara-type-helper-size);
+  line-height: var(--tara-line-helper);
 }
 
 .tara-kicker {
   color: color-mix(in srgb, var(--tara-gold) 78%, transparent);
-  letter-spacing: 0.32em;
+  letter-spacing: var(--tara-track-kicker);
   text-transform: uppercase;
-  font-size: 10px;
+  font-size: var(--tara-type-kicker-size);
   font-family: "Cinzel", "Times New Roman", serif;
+}
+
+.tara-type-hero {
+  font-family: var(--font-display);
+  font-size: var(--tara-type-hero-size);
+  line-height: var(--tara-line-hero);
+  letter-spacing: var(--tara-track-display);
+  color: var(--tara-text-primary);
+}
+
+.tara-type-page {
+  font-family: var(--font-display);
+  font-size: var(--tara-type-page-size);
+  line-height: var(--tara-line-page);
+  letter-spacing: var(--tara-track-page);
+  color: var(--tara-text-primary);
+}
+
+.tara-type-section {
+  font-family: var(--font-display);
+  font-size: var(--tara-type-section-size);
+  line-height: var(--tara-line-section);
+  letter-spacing: var(--tara-track-page);
+  color: var(--tara-text-primary);
+}
+
+.tara-type-card {
+  font-family: var(--font-sans);
+  font-size: var(--tara-type-card-size);
+  line-height: var(--tara-line-card);
+  font-weight: 600;
+  color: var(--tara-text-primary);
+}
+
+.tara-type-body {
+  font-family: var(--font-sans);
+  font-size: var(--tara-type-body-size);
+  line-height: var(--tara-line-body);
+  color: var(--tara-text-secondary);
+}
+
+.tara-type-helper {
+  font-family: var(--font-sans);
+  font-size: var(--tara-type-helper-size);
+  line-height: var(--tara-line-helper);
+  color: var(--tara-text-faint);
 }
 
 .tara-input {
@@ -240,15 +1369,31 @@ main {
   padding: 0.95rem 1.2rem;
   outline: none;
   font-size: 1.15rem;
+  transition:
+    border-color var(--tara-motion-interaction-medium) var(--tara-ease-soft),
+    background var(--tara-motion-interaction-slow) var(--tara-ease-soft),
+    box-shadow var(--tara-motion-interaction-medium) var(--tara-ease-soft),
+    color var(--tara-motion-interaction-medium) var(--tara-ease-soft);
 }
 
 .tara-input::placeholder {
   color: color-mix(in srgb, var(--tara-text-faint) 86%, transparent);
 }
 
-.tara-input:focus {
-  border-color: color-mix(in srgb, var(--tara-violet) 62%, white 12%);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--tara-violet) 22%, transparent);
+.tara-input:focus,
+.tara-input:focus-visible {
+  border-color: var(--tara-focus-ring);
+  box-shadow:
+    0 0 0 1px var(--tara-focus-ring-strong),
+    0 0 0 4px var(--tara-focus-ring-soft);
+}
+
+:root[data-theme="dark"] .tara-input[type="date"] {
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] .tara-input[type="date"] {
+  color-scheme: light;
 }
 
 .tara-option-card {
@@ -260,7 +1405,20 @@ main {
   color: var(--tara-text-primary);
   padding: 0.9rem 1.25rem;
   text-align: left;
-  transition: all 0.18s ease;
+  transition:
+    transform var(--tara-motion-interaction-medium) var(--tara-ease-standard),
+    box-shadow var(--tara-motion-interaction-medium) var(--tara-ease-standard),
+    border-color var(--tara-motion-interaction-medium) var(--tara-ease-soft),
+    background var(--tara-motion-interaction-slow) var(--tara-ease-soft),
+    color var(--tara-motion-interaction-medium) var(--tara-ease-soft);
+}
+
+.tara-option-card:focus-visible {
+  outline: none;
+  border-color: var(--tara-focus-ring);
+  box-shadow:
+    0 0 0 1px var(--tara-focus-ring-strong),
+    0 0 0 4px var(--tara-focus-ring-soft);
 }
 
 .tara-option-card.active {
@@ -296,16 +1454,52 @@ main {
   min-height: 72px;
   font-size: 1.08rem;
   letter-spacing: 0.01em;
-  box-shadow: 0 12px 30px color-mix(in srgb, var(--tara-violet) 29%, transparent);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--tara-violet) 18%, transparent);
+  transition:
+    transform var(--tara-motion-interaction-fast) var(--tara-ease-press),
+    box-shadow var(--tara-motion-interaction-medium) var(--tara-ease-standard),
+    filter var(--tara-motion-interaction-medium) var(--tara-ease-soft),
+    opacity var(--tara-motion-interaction-medium) var(--tara-ease-soft);
+}
+
+.tara-primary-btn:active {
+  transform: translateY(1px) scale(0.985);
+}
+
+.tara-primary-btn:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 1px var(--tara-focus-ring-strong),
+    0 0 0 4px var(--tara-focus-ring-soft),
+    0 10px 24px color-mix(in srgb, var(--tara-violet) 18%, transparent);
 }
 
 .tara-secondary-btn {
-  background: transparent;
+  background: color-mix(in srgb, var(--tara-surface-soft) 78%, transparent);
   border: 1px solid var(--tara-card-border);
   color: var(--tara-text-primary);
   border-radius: 999px;
   min-height: 68px;
   font-size: 1rem;
+  box-shadow: 0 8px 18px color-mix(in srgb, black 8%, transparent);
+  transition:
+    transform var(--tara-motion-interaction-fast) var(--tara-ease-press),
+    box-shadow var(--tara-motion-interaction-medium) var(--tara-ease-standard),
+    border-color var(--tara-motion-interaction-medium) var(--tara-ease-soft),
+    background var(--tara-motion-interaction-slow) var(--tara-ease-soft);
+}
+
+.tara-secondary-btn:active {
+  transform: translateY(1px) scale(0.985);
+}
+
+.tara-secondary-btn:focus-visible,
+.tara-back-btn:focus-visible {
+  outline: none;
+  border-color: var(--tara-focus-ring);
+  box-shadow:
+    0 0 0 1px var(--tara-focus-ring-strong),
+    0 0 0 4px var(--tara-focus-ring-soft);
 }
 
 .tara-back-btn {
@@ -319,6 +1513,15 @@ main {
   align-items: center;
   justify-content: center;
   font-size: 1.6rem;
+  transition:
+    transform var(--tara-motion-interaction-fast) var(--tara-ease-press),
+    box-shadow var(--tara-motion-interaction-medium) var(--tara-ease-standard),
+    border-color var(--tara-motion-interaction-medium) var(--tara-ease-soft),
+    background var(--tara-motion-interaction-slow) var(--tara-ease-soft);
+}
+
+.tara-back-btn:active {
+  transform: translateY(1px) scale(0.985);
 }
 
 .tara-progress-track {
@@ -332,13 +1535,106 @@ main {
   height: 100%;
   border-radius: 999px;
   background: linear-gradient(90deg, color-mix(in srgb, var(--tara-violet) 85%, white 8%), color-mix(in srgb, var(--tara-gold) 92%, white 2%));
+  transition: width var(--tara-motion-ui-medium) var(--tara-ease-standard);
+}
+
+.tara-motion-pressable {
+  transition:
+    transform var(--tara-motion-interaction-fast) var(--tara-ease-press),
+    box-shadow var(--tara-motion-interaction-medium) var(--tara-ease-standard),
+    border-color var(--tara-motion-interaction-medium) var(--tara-ease-soft),
+    background var(--tara-motion-interaction-slow) var(--tara-ease-soft),
+    color var(--tara-motion-interaction-medium) var(--tara-ease-soft),
+    opacity var(--tara-motion-interaction-medium) var(--tara-ease-soft);
+}
+
+.tara-motion-pressable:active {
+  transform: translateY(1px) scale(0.985);
+}
+
+.tara-motion-toggle {
+  transition:
+    background-color var(--tara-motion-interaction-medium) var(--tara-ease-soft),
+    border-color var(--tara-motion-interaction-medium) var(--tara-ease-soft),
+    box-shadow var(--tara-motion-interaction-medium) var(--tara-ease-standard);
+}
+
+.tara-motion-toggle-thumb {
+  transition: transform var(--tara-motion-interaction-medium) var(--tara-ease-standard);
+}
+
+.tara-motion-card-enter {
+  animation: taraCardFadeIn var(--tara-motion-ui-medium) var(--tara-ease-standard) both;
+}
+
+.tara-motion-modal-enter {
+  animation: taraModalSlideUp var(--tara-motion-ui-slow) var(--tara-ease-standard) both;
+}
+
+.tara-motion-tab-enter {
+  animation: taraTabShiftIn var(--tara-motion-ui-fast) var(--tara-ease-tab) both;
+}
+
+.tara-motion-nav-active {
+  animation: taraNavGlow calc(var(--tara-motion-ui-slow) + 60ms) var(--tara-ease-standard) both;
+}
+
+.tara-motion-expand {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    grid-template-rows var(--tara-motion-ui-medium) var(--tara-ease-standard),
+    opacity var(--tara-motion-interaction-medium) var(--tara-ease-soft);
+}
+
+.tara-motion-expand[data-state="open"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.tara-motion-expand > * {
+  min-height: 0;
+}
+
+.tara-nav-tab {
+  transition:
+    transform var(--tara-motion-interaction-fast) var(--tara-ease-press),
+    opacity var(--tara-motion-interaction-medium) var(--tara-ease-soft);
+}
+
+.tara-nav-tab:active {
+  transform: translateY(1px) scale(0.985);
+}
+
+.tara-nav-orb {
+  transition:
+    transform var(--tara-motion-ui-medium) var(--tara-ease-standard),
+    box-shadow var(--tara-motion-ui-medium) var(--tara-ease-standard),
+    background var(--tara-motion-ui-medium) var(--tara-ease-soft);
+}
+
+.tara-nav-orb-active {
+  animation: taraNavGlow calc(var(--tara-motion-ui-slow) + 60ms) var(--tara-ease-standard) both;
+}
+
+.tara-nav-copy {
+  transition:
+    color var(--tara-motion-interaction-medium) var(--tara-ease-soft),
+    opacity var(--tara-motion-interaction-medium) var(--tara-ease-soft),
+    transform var(--tara-motion-interaction-medium) var(--tara-ease-standard);
+}
+
+.tara-nav-copy-active {
+  transform: translateY(-1px);
 }
 
 .onboarding-step-enter {
-  animation: stepIn 220ms ease-out;
+  animation: taraStepIn var(--tara-motion-ui-fast) var(--tara-ease-soft);
 }
 
-@keyframes stepIn {
+@keyframes taraStepIn {
   from {
     opacity: 0;
     transform: translateY(8px);
@@ -350,10 +1646,10 @@ main {
 }
 
 .vibe-card {
-  animation: vibeIn 420ms ease both;
+  animation: taraVibeIn var(--tara-motion-ui-slow) var(--tara-ease-standard) both;
 }
 
-@keyframes vibeIn {
+@keyframes taraVibeIn {
   from {
     opacity: 0;
     transform: translateY(6px) scale(0.99);
@@ -364,7 +1660,7 @@ main {
   }
 }
 
-@keyframes fadeInQuick {
+@keyframes taraFadeInQuick {
   from {
     opacity: 0;
   }
@@ -374,10 +1670,10 @@ main {
 }
 
 .animate-fade-in {
-  animation: fadeInQuick 280ms ease both;
+  animation: taraFadeInQuick var(--tara-motion-ui-medium) var(--tara-ease-soft) both;
 }
 
-@keyframes fadeUp {
+@keyframes taraFadeUp {
   from {
     opacity: 0;
     transform: translateY(12px);
@@ -388,6 +1684,284 @@ main {
   }
 }
 
+@keyframes taraSkeletonSweep {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
 .animate-fade-up {
-  animation: fadeUp 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: taraFadeUp var(--tara-motion-ui-slow) var(--tara-ease-standard) both;
+}
+
+@keyframes taraStarsTwinkle {
+  0% {
+    opacity: calc(var(--tara-star-opacity) * 0.76);
+  }
+  50% {
+    opacity: calc(var(--tara-star-opacity) * 1.06);
+  }
+  100% {
+    opacity: calc(var(--tara-star-opacity) * 0.84);
+  }
+}
+
+@keyframes taraSkySparkle {
+  0% {
+    opacity: calc(var(--tara-star-opacity) * 0.68);
+  }
+  50% {
+    opacity: calc(var(--tara-star-opacity) * 0.96);
+  }
+  100% {
+    opacity: calc(var(--tara-star-opacity) * 0.74);
+  }
+}
+
+@keyframes taraWorldDrift {
+  0% {
+    background-position: 0 0, 0 0, 0 0, 0 0;
+  }
+  50% {
+    background-position: 8px -3px, -14px 2px, 0 4px, 0 0;
+  }
+  100% {
+    background-position: -6px 2px, 10px -1px, 0 -3px, 0 0;
+  }
+}
+
+@keyframes taraMoonGlowPulse {
+  0% {
+    opacity: calc(var(--tara-world-decoration-opacity) * 0.84);
+  }
+  50% {
+    opacity: calc(var(--tara-world-decoration-opacity) * 0.98);
+  }
+  100% {
+    opacity: calc(var(--tara-world-decoration-opacity) * 0.88);
+  }
+}
+
+@keyframes taraSunlightShimmer {
+  0% {
+    opacity: calc(var(--tara-world-decoration-opacity) * 0.8);
+  }
+  50% {
+    opacity: calc(var(--tara-world-decoration-opacity) * 1.02);
+  }
+  100% {
+    opacity: calc(var(--tara-world-decoration-opacity) * 0.88);
+  }
+}
+
+@keyframes taraCardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.992);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes taraModalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes taraTabShiftIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes taraNavGlow {
+  0% {
+    transform: scale(0.96);
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  }
+  60% {
+    transform: scale(1.03);
+    box-shadow: 0 0 26px color-mix(in srgb, var(--tara-violet) 22%, transparent);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 18px color-mix(in srgb, var(--tara-violet) 14%, transparent);
+  }
+}
+
+:root[data-theme-changing="true"] body,
+:root[data-theme-changing="true"] .bg-app,
+:root[data-theme-changing="true"] .bg-cosmic,
+:root[data-theme-changing="true"] .glass,
+:root[data-theme-changing="true"] .glass-strong,
+:root[data-theme-changing="true"] .tara-card,
+:root[data-theme-changing="true"] .tara-card-strong,
+:root[data-theme-changing="true"] .tara-scene-header::before,
+:root[data-theme-changing="true"] .tara-scene-motif::after,
+:root[data-theme-changing="true"] .bg-app::before,
+:root[data-theme-changing="true"] .bg-app::after,
+:root[data-theme-changing="true"] .bg-cosmic::before,
+:root[data-theme-changing="true"] .bg-cosmic::after {
+  transition-duration: calc(var(--tara-motion-ui-slow) + 60ms);
+  transition-timing-function: var(--tara-ease-standard);
+}
+
+@media (max-width: 640px) {
+  :root,
+  :root[data-theme="light"] {
+    --tara-world-safe-inline: 18px;
+    --tara-world-safe-top: 64px;
+    --tara-world-safe-bottom: 118px;
+  }
+
+  .bg-app::before,
+  .bg-cosmic::before {
+    opacity: calc(var(--tara-star-opacity) * 0.88);
+  }
+
+  .bg-app::after,
+  .bg-cosmic::after {
+    opacity: calc(var(--tara-world-decoration-opacity) * 0.94);
+  }
+
+  .tara-scene-hero {
+    min-height: min(36vh, 260px);
+    border-radius: 1.6rem;
+    padding-top: 1.4rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .tara-scene-safe-center {
+    width: min(100%, 26rem);
+  }
+
+  .tara-scene-shell::before {
+    opacity: calc(var(--tara-star-opacity) * 0.82);
+  }
+
+  .tara-scene-shell::after {
+    opacity: calc(var(--tara-world-decoration-opacity) * 0.68);
+  }
+
+  .tara-chip,
+  .tara-icon-button,
+  .tara-support-surface {
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-data: reduce) {
+  :root,
+  :root[data-theme="light"] {
+    --tara-star-opacity: 0.1;
+    --tara-world-decoration-opacity: 0.54;
+    --tara-world-hero-opacity: 0.52;
+    --tara-world-motif-opacity: 0.08;
+  }
+
+  .bg-app::before,
+  .bg-app::after,
+  .bg-cosmic::before,
+  .bg-cosmic::after,
+  .star-field,
+  .tara-scene-shell::before,
+  .tara-scene-shell::after,
+  .tara-scene-hero::before,
+  .tara-scene-hero::after {
+    animation: none !important;
+  }
+
+  .tara-chip,
+  .tara-icon-button,
+  .tara-support-surface,
+  .glass,
+  .glass-strong,
+  .tara-modal-surface,
+  .tara-overlay-surface,
+  .tara-empty-state {
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --tara-motion-atmosphere-twinkle: 0s;
+    --tara-motion-atmosphere-drift: 0s;
+    --tara-motion-atmosphere-pulse: 0s;
+    --tara-motion-atmosphere-shimmer: 0s;
+    --tara-motion-ui-fast: 1ms;
+    --tara-motion-ui-medium: 1ms;
+    --tara-motion-ui-slow: 1ms;
+    --tara-motion-interaction-fast: 1ms;
+    --tara-motion-interaction-medium: 1ms;
+    --tara-motion-interaction-slow: 1ms;
+  }
+
+  .bg-app::before,
+  .bg-app::after,
+  .bg-cosmic::before,
+  .bg-cosmic::after,
+  .tara-scene-shell::before,
+  .tara-scene-shell::after,
+  .tara-scene-hero::before,
+  .tara-scene-hero::after,
+  .animate-fade-in,
+  .animate-fade-up,
+  .onboarding-step-enter,
+  .vibe-card,
+  .tara-motion-card-enter,
+  .tara-motion-modal-enter,
+  .tara-motion-tab-enter,
+  .tara-motion-nav-active {
+    animation: none !important;
+  }
+
+  .tara-motion-pressable,
+  .tara-motion-toggle,
+  .tara-motion-toggle-thumb,
+  .tara-inline-link,
+  .tara-inline-field,
+  .tara-underline-input,
+  .tara-textarea,
+  .tara-option-card,
+  .tara-primary-btn,
+  .tara-secondary-btn,
+  .tara-back-btn,
+  .tara-chip,
+  .tara-icon-button,
+  .tara-list-row,
+  .tara-nav-tab,
+  .tara-nav-orb,
+  .tara-nav-copy,
+  .glass,
+  .glass-strong,
+  .tara-card,
+  .tara-card-strong,
+  .tara-progress-fill,
+  .tara-motion-expand {
+    transition-duration: 1ms !important;
+  }
+
+  .tara-motion-pressable:active,
+  .tara-nav-tab:active {
+    transform: none;
+  }
 }

@@ -83,32 +83,32 @@ function SwipeCard({ profile, onSwiped, disabled = false }, ref) {
         {profile?.user?.photo ? (
           <img alt={profile.user.name} className="h-full w-full object-cover" src={profile.user.photo} />
         ) : (
-          <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,#f97316_0%,#fb7185_35%,#4c1d95_100%)]" />
+          <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,color-mix(in_srgb,var(--tara-color-warning)_80%,transparent)_0%,color-mix(in_srgb,var(--tara-color-destructive)_72%,transparent)_35%,color-mix(in_srgb,var(--tara-violet)_76%,transparent)_100%)]" />
         )}
       </div>
 
-      <div className="absolute inset-0 bg-gradient-to-t from-[#070926] via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[color:var(--tara-bg-surface)] via-transparent to-transparent" />
 
-      <motion.div className="absolute left-4 top-4 flex items-center rounded-full border border-indigo-200/25 bg-[#0a0e3ddd] px-3 py-2">
+      <motion.div className="absolute left-4 top-4 flex items-center rounded-full border border-[color:var(--tara-card-border)] bg-[color:color-mix(in_srgb,var(--tara-card-bg-strong)_90%,transparent)] px-3 py-2 backdrop-blur-md">
         <span className="mr-2 inline-flex h-8 w-8 rounded-full bg-[conic-gradient(from_210deg,#9a86ff_0deg_250deg,#e5bf72_250deg_360deg)] p-[3px]">
-          <span className="h-full w-full rounded-full bg-[#11133f]" />
+          <span className="h-full w-full rounded-full bg-[color:var(--tara-bg-surface)]" />
         </span>
-        <span className="text-left text-[10px] uppercase tracking-[0.16em] text-slate-300">
+        <span className="text-left text-[10px] uppercase tracking-[0.16em] text-[color:var(--tara-text-secondary)]">
           Match
-          <span className="block text-[11px] normal-case tracking-normal text-amber-200">{profile?.compatibility_score ?? 0}%</span>
+          <span className="block text-[11px] normal-case tracking-normal text-[color:var(--tara-gold)]">{profile?.compatibility_score ?? 0}%</span>
         </span>
       </motion.div>
-      <motion.span className="absolute right-4 top-4 rounded-full border border-indigo-200/35 bg-[#0b123fcc] px-4 py-2 text-[13px] font-medium text-indigo-100">
+      <motion.span className="absolute right-4 top-4 rounded-full border border-[color:var(--tara-card-border)] bg-[color:color-mix(in_srgb,var(--tara-card-bg-strong)_88%,transparent)] px-4 py-2 text-[13px] font-medium text-[color:var(--tara-text-primary)] backdrop-blur-md">
         ✧ {zodiac}
       </motion.span>
 
       <div className="absolute inset-x-0 bottom-0 p-6 pb-7">
         <h2 className="tara-heading text-[2.5rem] font-semibold tracking-tight text-white">
           {profile?.user?.name ?? "Unknown"}
-          <span className="ml-2 text-[2.1rem] font-medium text-slate-200">{profile?.age ?? "--"}</span>
+          <span className="ml-2 text-[2.1rem] font-medium text-white/80">{profile?.age ?? "--"}</span>
         </h2>
-        <div className="mt-4 rounded-[1.75rem] border border-white/12 bg-[#070d34cf] px-5 py-4">
-          <p className="tara-heading text-[13px] italic font-normal leading-relaxed text-slate-100">✧ "{insight}"</p>
+        <div className="mt-4 rounded-[1.75rem] border border-white/12 bg-[color:color-mix(in_srgb,var(--tara-card-bg-strong)_76%,transparent)] px-5 py-4 backdrop-blur-md">
+          <p className="tara-heading text-[13px] italic font-normal leading-relaxed text-white/90">✧ "{insight}"</p>
         </div>
       </div>
     </motion.article>

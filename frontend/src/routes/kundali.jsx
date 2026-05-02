@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import Kundali from "../pages/Kundali";
+import { lazyRouteComponent } from "./_lazyRoute";
 import { RequireAuth } from "./_guards";
+
+const Kundali = lazyRouteComponent(() => import("../pages/Kundali"), "kundali");
 
 function KundaliRoute() {
   return (
@@ -14,4 +16,3 @@ function KundaliRoute() {
 export const Route = createFileRoute("/kundali")({
   component: KundaliRoute,
 });
-

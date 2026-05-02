@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 
+import EmptyState from "./EmptyState";
 import { useAuth } from "../hooks/useAuth";
 import { fetchNotifications, markNotificationsRead } from "../services/notificationService";
 
@@ -139,54 +141,74 @@ export default function NotificationBell() {
       <button
         aria-expanded={open}
         aria-label="Open notifications"
-        className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-slate-900/80 text-slate-100 backdrop-blur transition hover:border-rose-200/60"
+        className="tara-icon-button relative inline-flex h-10 w-10 items-center justify-center hover:border-[color:var(--tara-card-hover-border)]"
         onClick={onOpenToggle}
         type="button"
       >
         <BellIcon />
         {unreadCount > 0 ? (
-          <span className="absolute -right-1 -top-1 inline-flex min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-semibold text-white">
+          <span className="absolute -right-1 -top-1 inline-flex min-w-[18px] items-center justify-center rounded-full bg-[color:var(--tara-color-destructive)] px-1.5 text-[10px] font-semibold text-white">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         ) : null}
       </button>
 
       {open ? (
-        <section className="fixed inset-x-3 top-16 max-h-[70vh] overflow-hidden rounded-2xl border border-white/20 bg-slate-950/95 shadow-2xl shadow-black/50 backdrop-blur sm:absolute sm:inset-x-auto sm:right-0 sm:top-12 sm:w-96">
-          <header className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-            <p className="text-sm font-semibold text-white">Notifications</p>
-            <button
-              className="rounded-full border border-white/20 px-3 py-1 text-[11px] font-medium text-slate-200 disabled:opacity-60"
-              disabled={markingRead || unreadCount === 0}
-              onClick={onMarkAllRead}
-              type="button"
-            >
-              {markingRead ? "Marking..." : "Mark all read"}
-            </button>
+        <section className="tara-modal-surface fixed inset-x-3 top-16 max-h-[70vh] overflow-hidden rounded-2xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-12 sm:w-96">
+          <header className="flex items-center justify-between border-b border-[color:var(--tara-card-border)] px-4 py-3">
+            <p className="text-sm font-semibold text-[color:var(--tara-text-primary)]">Notifications</p>
+            {notifications.length > 0 ? (
+              <button
+                className="tara-chip tara-motion-pressable px-3 py-1 text-[11px] disabled:opacity-60"
+                disabled={markingRead || unreadCount === 0}
+                onClick={onMarkAllRead}
+                type="button"
+              >
+                {markingRead ? "Marking..." : "Mark all read"}
+              </button>
+            ) : null}
           </header>
 
           <div className="max-h-[calc(70vh-56px)] overflow-y-auto">
             {loading ? (
-              <p className="px-4 py-5 text-sm text-slate-300">Loading notifications...</p>
+              <p className="px-4 py-5 text-sm text-[color:var(--tara-text-secondary)]">Loading notifications...</p>
             ) : null}
 
             {!loading && error ? (
-              <p className="px-4 py-5 text-sm text-rose-200">{error}</p>
+              <p className="px-4 py-5 text-sm text-[color:var(--tara-color-destructive)]">{error}</p>
             ) : null}
 
             {!loading && !error && notifications.length === 0 ? (
-              <p className="px-4 py-5 text-sm text-slate-300">No notifications yet.</p>
+              <div className="px-4 py-5">
+                <EmptyState
+                  compact
+                  kind="notifications"
+                  eyebrow="All clear"
+                  icon="🔔"
+                  title="Nothing new yet"
+                  subtitle="New matches, likes, and messages will land here as they happen."
+                  action={(
+                    <Link
+                      className="tara-primary-btn tara-motion-pressable inline-flex w-full items-center justify-center px-4 py-3 text-sm font-semibold"
+                      onClick={() => setOpen(false)}
+                      to="/discover"
+                    >
+                      Explore people
+                    </Link>
+                  )}
+                />
+              </div>
             ) : null}
 
             {!loading && !error && notifications.length > 0 ? (
-              <ul className="divide-y divide-white/10">
+              <ul className="divide-y divide-[color:var(--tara-card-border)]">
                 {notifications.map((item, index) => (
                   <li
-                    className={`px-4 py-3 ${item.is_read ? "bg-transparent" : "bg-rose-500/10"}`}
+                    className={`px-4 py-3 ${item.is_read ? "bg-transparent" : "bg-[color:var(--tara-color-destructive-soft)]"}`}
                     key={item.id || `${item.timestamp || "n"}-${index}`}
                   >
-                    <p className={`text-sm ${item.is_read ? "text-slate-200" : "font-semibold text-white"}`}>{item.text}</p>
-                    <div className="mt-1 flex items-center justify-between text-[11px] text-slate-400">
+                    <p className={`text-sm ${item.is_read ? "text-[color:var(--tara-text-secondary)]" : "font-semibold text-[color:var(--tara-text-primary)]"}`}>{item.text}</p>
+                    <div className="mt-1 flex items-center justify-between text-[11px] text-[color:var(--tara-text-faint)]">
                       <span className="capitalize">{item.type}</span>
                       <span>{formatNotificationTime(item.timestamp)}</span>
                     </div>

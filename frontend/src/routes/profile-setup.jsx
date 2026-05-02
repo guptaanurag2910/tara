@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import ProfileSetup from "../pages/ProfileSetup";
+import { lazyRouteComponent } from "./_lazyRoute";
 import { RequireAuth } from "./_guards";
+
+const ProfileSetup = lazyRouteComponent(() => import("../pages/ProfileSetup"), "onboarding");
 
 function ProfileSetupRoute() {
   return (
@@ -14,4 +16,3 @@ function ProfileSetupRoute() {
 export const Route = createFileRoute("/profile-setup")({
   component: ProfileSetupRoute,
 });
-

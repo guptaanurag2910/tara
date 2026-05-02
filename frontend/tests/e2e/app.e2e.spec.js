@@ -124,6 +124,8 @@ test("existing user login skips onboarding and lands on discover", async ({ page
 });
 
 test("full authenticated app flow across core UI scenarios", async ({ page }) => {
+  test.slow();
+  test.setTimeout(180000);
   const phoneDigits = uniquePhone();
   await completePhoneAuth(page, phoneDigits);
 

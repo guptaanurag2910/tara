@@ -7,7 +7,7 @@ export default function Button({
   ...props
 }) {
   const baseClass =
-    "inline-flex items-center justify-center px-4 py-3 text-sm font-semibold transition active:scale-[0.98] disabled:opacity-50";
+    "tara-motion-pressable inline-flex items-center justify-center px-4 py-3 text-sm font-semibold transition disabled:opacity-50";
 
   const variantClass =
     variant === "ghost"

@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import Discover from "../pages/Discover";
+import { lazyRouteComponent } from "./_lazyRoute";
 import { RequireAuth } from "./_guards";
+
+const Discover = lazyRouteComponent(() => import("../pages/Discover"), "discover");
 
 function DiscoverRoute() {
   return (
@@ -14,4 +16,3 @@ function DiscoverRoute() {
 export const Route = createFileRoute("/discover")({
   component: DiscoverRoute,
 });
-

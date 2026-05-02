@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import WelcomeTransition from "../pages/WelcomeTransition";
+import { lazyRouteComponent } from "./_lazyRoute";
 import { RequireAuth } from "./_guards";
+
+const WelcomeTransition = lazyRouteComponent(() => import("../pages/WelcomeTransition"), "welcome");
 
 function WelcomeRoute() {
   return (
@@ -14,4 +16,3 @@ function WelcomeRoute() {
 export const Route = createFileRoute("/welcome")({
   component: WelcomeRoute,
 });
-

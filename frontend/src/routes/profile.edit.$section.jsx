@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import EditProfileSection from "../pages/EditProfileSection";
+import { lazyRouteComponent } from "./_lazyRoute";
 import { RequireAuth } from "./_guards";
+
+const EditProfileSection = lazyRouteComponent(() => import("../pages/EditProfileSection"), "profile-edit");
 
 function EditProfileSectionRoute() {
   return (
@@ -14,4 +16,3 @@ function EditProfileSectionRoute() {
 export const Route = createFileRoute("/profile/edit/$section")({
   component: EditProfileSectionRoute,
 });
-

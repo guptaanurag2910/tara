@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import MatchDetail from "../pages/MatchDetail";
+import { lazyRouteComponent } from "./_lazyRoute";
 import { RequireAuth } from "./_guards";
+
+const MatchDetail = lazyRouteComponent(() => import("../pages/MatchDetail"), "match-detail");
 
 function MatchDetailRoute() {
   return (
@@ -14,4 +16,3 @@ function MatchDetailRoute() {
 export const Route = createFileRoute("/matches/$matchId")({
   component: MatchDetailRoute,
 });
-

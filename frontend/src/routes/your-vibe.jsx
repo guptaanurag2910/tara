@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import YourVibe from "../pages/YourVibe";
+import { lazyRouteComponent } from "./_lazyRoute";
 import { RequireAuth } from "./_guards";
+
+const YourVibe = lazyRouteComponent(() => import("../pages/YourVibe"), "your-vibe");
 
 function YourVibeRoute() {
   return (
@@ -14,4 +16,3 @@ function YourVibeRoute() {
 export const Route = createFileRoute("/your-vibe")({
   component: YourVibeRoute,
 });
-

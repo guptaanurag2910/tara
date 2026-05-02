@@ -1,8 +1,10 @@
+import { Suspense, lazy } from "react";
 import { Link, Outlet, createRootRoute, useRouterState } from "@tanstack/react-router";
 
-import NotificationBell from "../components/NotificationBell";
 import BottomNav from "../components/tara/BottomNav";
 import { useAuth } from "../hooks/useAuth";
+
+const NotificationBell = lazy(() => import("../components/NotificationBell"));
 
 function NotFoundComponent() {
   return (
@@ -49,11 +51,15 @@ function RootComponent() {
   const showNotifications = Boolean(token) && !hiddenRoutes.includes(pathname);
 
   return (
-    <div className="relative h-[100dvh] overflow-hidden bg-app text-[color:var(--tara-text-primary)]">
-      <div className="h-full overflow-x-hidden overflow-y-auto overscroll-contain pb-[calc(7rem+env(safe-area-inset-bottom))]">
+    <div className="tara-app-shell bg-app">
+      <div className="tara-app-scroll">
         <Outlet />
       </div>
-      {showNotifications ? <NotificationBell /> : null}
+      {showNotifications ? (
+        <Suspense fallback={null}>
+          <NotificationBell />
+        </Suspense>
+      ) : null}
       <BottomNav />
     </div>
   );

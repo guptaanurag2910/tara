@@ -10,11 +10,12 @@ import {
   Sparkles,
 } from "lucide-react";
 
+import { KundaliSkeleton } from "./AppSkeletons";
 import { fetchDailyHoroscope, fetchKundali } from "../services/astrologyService";
 import Button from "./Button";
+import EmptyState from "./EmptyState";
 import KundaliChart from "./KundaliChart";
 import LifeDashboard from "./LifeDashboard";
-import Loader from "./Loader";
 
 const DETAIL_META = {
   today: {
@@ -486,26 +487,13 @@ function renderDetailContent({ activeSection, kundali, horoscope, houses, planet
   }
 }
 
-function DashboardSkeleton() {
-  return (
-    <div className="space-y-4">
-      <div className="h-40 animate-pulse rounded-3xl border border-white/10 bg-white/5" />
-      <div className="grid grid-cols-2 gap-3">
-        {Array.from({ length: 6 }).map((_, index) => (
-          <div key={index} className="h-32 animate-pulse rounded-3xl border border-white/10 bg-white/5" />
-        ))}
-      </div>
-      <div className="h-80 animate-pulse rounded-3xl border border-white/10 bg-white/5" />
-    </div>
-  );
-}
-
-export default function KundaliDashboard({ reloadSignal = 0 }) {
+export default function KundaliDashboard({ reloadSignal = 0, onOpenBirthEditor = null }) {
   const [kundali, setKundali] = useState(null);
   const [horoscope, setHoroscope] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
+  const [errorStatus, setErrorStatus] = useState(0);
   const [activeSection, setActiveSection] = useState("today");
 
   const loadDashboard = async ({ silent = false } = {}) => {
@@ -515,6 +503,7 @@ export default function KundaliDashboard({ reloadSignal = 0 }) {
       setLoading(true);
     }
     setError("");
+    setErrorStatus(0);
 
     try {
       const kundaliPayload = await fetchKundali();
@@ -535,6 +524,7 @@ export default function KundaliDashboard({ reloadSignal = 0 }) {
     } catch (apiError) {
       setKundali(null);
       setHoroscope(null);
+      setErrorStatus(Number(apiError?.status || 0));
       if (apiError?.status === 404) {
         setError("Kundali is not generated yet. Add your birth details to create the chart first.");
       } else {
@@ -604,6 +594,7 @@ export default function KundaliDashboard({ reloadSignal = 0 }) {
   );
 
   const activeMeta = sections.find((item) => item.key === activeSection) || sections[0];
+  const showMissingBirthDetails = !loading && errorStatus === 404;
 
   return (
     <section className="space-y-4">
@@ -614,24 +605,50 @@ export default function KundaliDashboard({ reloadSignal = 0 }) {
             A simpler view of your chart. Tap a card to open the detail that matters.
           </p>
         </div>
-        <Button type="button" fullWidth={false} loading={refreshing} onClick={() => loadDashboard({ silent: true })} variant="ghost">
-          <span className="inline-flex items-center gap-1.5">
-            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
-            Refresh
-          </span>
-        </Button>
+        {!showMissingBirthDetails ? (
+          <Button type="button" fullWidth={false} loading={refreshing} onClick={() => loadDashboard({ silent: true })} variant="ghost">
+            <span className="inline-flex items-center gap-1.5">
+              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+              Refresh
+            </span>
+          </Button>
+        ) : null}
       </header>
 
-      {loading ? <Loader text="Reading your chart..." /> : null}
-      {loading ? <DashboardSkeleton /> : null}
+      {loading ? <KundaliSkeleton /> : null}
 
-      {!loading && error ? (
+      {!loading && showMissingBirthDetails ? (
+        <div className="pt-2">
+          <EmptyState
+            kind="kundali"
+            eyebrow="Chart pending"
+            icon="☾"
+            title="Your kundali is waiting on birth details"
+            subtitle="Add your date, time, and place of birth once, and we'll open the full reading here."
+            action={(
+              <Button
+                type="button"
+                fullWidth={false}
+                onClick={() => {
+                  if (typeof onOpenBirthEditor === "function") {
+                    onOpenBirthEditor();
+                  }
+                }}
+              >
+                Open birth details
+              </Button>
+            )}
+          />
+        </div>
+      ) : null}
+
+      {!loading && error && !showMissingBirthDetails ? (
         <div className="rounded-2xl border border-rose-300/20 bg-rose-500/10 p-4">
           <p className="text-sm text-rose-100">{error}</p>
         </div>
       ) : null}
 
-      {!loading && !error ? (
+      {!loading && !error && !showMissingBirthDetails ? (
         <>
           <motion.section
             initial={{ opacity: 0, y: 8 }}

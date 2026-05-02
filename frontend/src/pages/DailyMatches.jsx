@@ -35,12 +35,12 @@ function initials(name) {
 function scoreColor(score) {
   const value = Number(score || 0);
   if (value >= 80) {
-    return "text-emerald-100 bg-emerald-500/20 border-emerald-300/40";
+    return "tara-chip-gold";
   }
   if (value >= 65) {
-    return "text-amber-100 bg-amber-500/20 border-amber-300/40";
+    return "";
   }
-  return "text-slate-100 bg-slate-500/20 border-slate-300/30";
+  return "";
 }
 
 function insightText(match) {
@@ -58,43 +58,43 @@ function MatchSpotlight({ match, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-slate-950/70 backdrop-blur-sm">
-      <div className="w-full rounded-t-[1.8rem] border-t border-white/20 bg-slate-950/95 p-5">
-        <div className="mx-auto mb-3 h-1.5 w-14 rounded-full bg-white/20" />
+    <div className="tara-overlay-surface fixed inset-0 z-50 flex items-end">
+      <div className="tara-modal-surface tara-motion-modal-enter w-full rounded-t-[1.8rem] p-5">
+        <div className="mx-auto mb-3 h-1.5 w-14 rounded-full bg-[color:var(--tara-card-border)]" />
         <div className="flex items-center gap-3">
           {match.photo ? (
             <img
               alt={match.name || "Daily match"}
-              className="h-14 w-14 rounded-full border border-white/25 object-cover"
+              className="h-14 w-14 rounded-full border border-[color:var(--tara-card-border)] object-cover"
               src={match.photo}
             />
           ) : (
-            <div className="flex h-14 w-14 items-center justify-center rounded-full border border-white/25 bg-gradient-to-br from-cyan-400/45 to-amber-300/40 text-lg font-semibold text-white">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full border border-[color:var(--tara-card-border)] bg-[radial-gradient(circle_at_25%_20%,color-mix(in_srgb,var(--tara-color-info)_36%,transparent)_0%,color-mix(in_srgb,var(--tara-gold)_28%,transparent)_52%,transparent_100%)] text-lg font-semibold text-[color:var(--tara-text-primary)]">
               {initials(match.name)}
             </div>
           )}
           <div>
-            <p className="text-lg font-semibold text-white">{match.name}</p>
-            <p className="text-xs text-cyan-100/80">{match.age} years · Curated for today</p>
+            <p className="text-lg font-semibold text-[color:var(--tara-text-primary)]">{match.name}</p>
+            <p className="text-xs text-[color:var(--tara-text-secondary)]">{match.age} years · Curated for today</p>
           </div>
         </div>
 
         <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-          <div className="rounded-xl border border-white/10 bg-white/5 px-2 py-3">
-            <p className="text-[10px] uppercase tracking-wide text-slate-400">Compatibility</p>
-            <p className="mt-1 text-base font-semibold text-white">{match.compatibility_score ?? 0}%</p>
+          <div className="tara-card rounded-xl px-2 py-3">
+            <p className="text-[10px] uppercase tracking-wide text-[color:var(--tara-text-faint)]">Compatibility</p>
+            <p className="mt-1 text-base font-semibold text-[color:var(--tara-text-primary)]">{match.compatibility_score ?? 0}%</p>
           </div>
-          <div className="rounded-xl border border-white/10 bg-white/5 px-2 py-3">
-            <p className="text-[10px] uppercase tracking-wide text-slate-400">Kundali</p>
-            <p className="mt-1 text-base font-semibold text-white">{match.kundali_score ?? 0}/36</p>
+          <div className="tara-card rounded-xl px-2 py-3">
+            <p className="text-[10px] uppercase tracking-wide text-[color:var(--tara-text-faint)]">Kundali</p>
+            <p className="mt-1 text-base font-semibold text-[color:var(--tara-text-primary)]">{match.kundali_score ?? 0}/36</p>
           </div>
-          <div className="rounded-xl border border-white/10 bg-white/5 px-2 py-3">
-            <p className="text-[10px] uppercase tracking-wide text-slate-400">Personality</p>
-            <p className="mt-1 text-base font-semibold text-white">{match.personality_score ?? 0}%</p>
+          <div className="tara-card rounded-xl px-2 py-3">
+            <p className="text-[10px] uppercase tracking-wide text-[color:var(--tara-text-faint)]">Personality</p>
+            <p className="mt-1 text-base font-semibold text-[color:var(--tara-text-primary)]">{match.personality_score ?? 0}%</p>
           </div>
         </div>
 
-        <p className="mt-4 rounded-xl border border-cyan-300/20 bg-cyan-400/10 px-3 py-3 text-sm text-cyan-50">
+        <p className="tara-support-surface mt-4 rounded-xl px-3 py-3 text-sm text-[color:var(--tara-text-primary)]">
           {insightText(match)}
         </p>
 
@@ -137,20 +137,22 @@ export default function DailyMatches() {
   const headingCount = useMemo(() => Math.min(matches.length, 5), [matches.length]);
 
   return (
-    <main className="relative mx-auto min-h-[calc(100dvh-88px)] w-full max-w-md overflow-hidden px-4 py-5">
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_10%,rgba(14,165,233,0.35),transparent_45%),radial-gradient(circle_at_85%_20%,rgba(251,191,36,0.28),transparent_42%),linear-gradient(180deg,#0f172a_0%,#111827_65%,#0a1122_100%)]" />
-
-      <header className="mb-5 rounded-3xl border border-cyan-200/20 bg-white/[0.04] p-4 shadow-xl shadow-black/30 backdrop-blur-sm">
-        <p className="text-[11px] uppercase tracking-[0.18em] text-cyan-100/75">Daily Curations</p>
-        <h1 className="mt-1 text-2xl font-semibold text-white">✨ Your Top Matches Today</h1>
-        <p className="mt-1 text-sm text-slate-300">
+    <main className="tara-page-shell tara-scene-shell px-5 pb-28 pt-8">
+      <header className="tara-screen-intro tara-scene-motif px-5 py-5" data-scene="day">
+        <p className="tara-kicker">Daily curations</p>
+        <h1 className="tara-type-page mt-2 leading-none">Your Top Matches Today</h1>
+        <p className="tara-copy mt-2 max-w-sm">
           {headingCount > 0
             ? `${headingCount} handpicked vibes tuned to your energy today.`
             : "Fresh stars are aligning. Come back in a bit."}
         </p>
       </header>
 
-      {loading ? <Loader text="Reading today's stars..." /> : null}
+      {loading ? (
+        <div className="tara-screen-panel p-5">
+          <Loader text="Reading today's stars..." />
+        </div>
+      ) : null}
       {!loading && error ? (
         <EmptyState
           title="We couldn't load today's matches"
@@ -180,7 +182,7 @@ export default function DailyMatches() {
           {matches.slice(0, 5).map((match, index) => (
             <motion.article
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-2xl border border-cyan-200/20 bg-gradient-to-br from-cyan-300/10 via-slate-900/85 to-amber-300/10 p-4 shadow-lg shadow-cyan-500/10"
+              className="tara-screen-panel p-4"
               initial={{ opacity: 0, y: 10 }}
               key={`${match.user_id}-${index}`}
               transition={{ duration: 0.25, delay: index * 0.04 }}
@@ -189,38 +191,38 @@ export default function DailyMatches() {
                 {match.photo ? (
                   <img
                     alt={match.name || "Daily match"}
-                    className="h-14 w-14 shrink-0 rounded-full border border-white/30 object-cover"
+                    className="h-14 w-14 shrink-0 rounded-full border border-[color:var(--tara-card-border)] object-cover"
                     src={match.photo}
                   />
                 ) : (
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-white/30 bg-gradient-to-br from-cyan-400/40 to-amber-300/40 text-base font-semibold text-white">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-[color:var(--tara-card-border)] bg-[radial-gradient(circle_at_25%_20%,color-mix(in_srgb,var(--tara-color-info)_36%,transparent)_0%,color-mix(in_srgb,var(--tara-gold)_28%,transparent)_52%,transparent_100%)] text-base font-semibold text-[color:var(--tara-text-primary)]">
                     {initials(match.name)}
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="truncate text-base font-semibold text-white">
+                    <p className="truncate text-base font-semibold text-[color:var(--tara-text-primary)]">
                       {match.name}
-                      <span className="ml-1 text-sm font-normal text-slate-300">{match.age ? `· ${match.age}` : ""}</span>
+                      <span className="ml-1 text-sm font-normal text-[color:var(--tara-text-secondary)]">{match.age ? `· ${match.age}` : ""}</span>
                     </p>
-                    <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${scoreColor(match.compatibility_score)}`}>
+                    <span className={`tara-chip px-2.5 py-1 text-xs font-semibold ${scoreColor(match.compatibility_score)}`}>
                       {match.compatibility_score ?? 0}%
                     </span>
                   </div>
-                  <p className="mt-1 line-clamp-2 text-sm text-slate-200">{insightText(match)}</p>
+                  <p className="mt-1 line-clamp-2 text-sm text-[color:var(--tara-text-secondary)]">{insightText(match)}</p>
                 </div>
               </div>
 
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <button
-                  className="rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-sm font-medium text-white transition hover:bg-white/10"
+                  className="tara-secondary-btn tara-motion-pressable inline-flex items-center justify-center px-3 py-2 text-sm font-medium"
                   onClick={() => setSpotlightMatch(match)}
                   type="button"
                 >
                   View Details
                 </button>
                 <button
-                  className="rounded-xl bg-gradient-to-r from-cyan-500 via-sky-500 to-amber-400 px-3 py-2 text-sm font-semibold text-white shadow-md shadow-sky-900/40"
+                  className="tara-primary-btn tara-motion-pressable inline-flex items-center justify-center px-3 py-2 text-sm font-semibold"
                   onClick={() => navigate("/discover")}
                   type="button"
                 >

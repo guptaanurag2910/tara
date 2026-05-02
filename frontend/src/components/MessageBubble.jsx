@@ -71,8 +71,8 @@ export default function MessageBubble({
           />
 
           {Array.isArray(gameAnswers) && gameAnswers.length > 0 ? (
-            <div className="mt-2 rounded-xl border border-white/15 bg-slate-900/55 px-3 py-2">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-300">
+            <div className="tara-screen-panel mt-2 px-3 py-2">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-[color:var(--tara-text-faint)]">
                 Answers
               </p>
               <div className="mt-1 space-y-1">
@@ -81,7 +81,7 @@ export default function MessageBubble({
                   return (
                     <p
                       key={`${answer?.sender_id}-${answer?.content}`}
-                      className={`text-xs ${isOwnAnswer ? "text-rose-200" : "text-cyan-200"}`}
+                      className={`text-xs ${isOwnAnswer ? "text-[color:var(--tara-gold)]" : "text-[color:var(--tara-color-info)]"}`}
                     >
                       <span className="font-semibold">{isOwnAnswer ? "You" : "Them"}:</span>{" "}
                       {answer?.content}
@@ -110,10 +110,10 @@ export default function MessageBubble({
   }
 
   const bubbleClass = isGameEvent
-    ? "rounded-2xl border border-amber-300/30 bg-amber-500/15 text-amber-50"
+    ? "rounded-2xl border border-[color:var(--tara-color-warning)]/30 bg-[color:var(--tara-color-warning-soft)] text-[color:var(--tara-text-primary)]"
     : isOwn
-      ? "rounded-2xl rounded-br-sm bg-gradient-to-r from-rose-500 to-pink-500 text-white"
-      : "rounded-2xl rounded-bl-sm bg-white/16 text-slate-100";
+      ? "rounded-2xl rounded-br-sm bg-[linear-gradient(135deg,color-mix(in_srgb,var(--tara-violet)_88%,white_10%),color-mix(in_srgb,var(--tara-gold)_45%,var(--tara-violet)_55%))] text-white"
+      : "rounded-2xl rounded-bl-sm border border-[color:var(--tara-card-border)] bg-[color:var(--tara-card-bg)] text-[color:var(--tara-text-primary)]";
 
   return (
     <div className={`flex ${alignmentClass}`}>
@@ -127,10 +127,10 @@ export default function MessageBubble({
         <div
           className={`mt-1 flex items-center gap-1 text-[10px] ${
             isGameEvent
-              ? "text-amber-100/80"
+              ? "text-[color:var(--tara-text-secondary)]"
               : isOwn
-                ? "text-rose-100/90"
-                : "text-slate-300"
+                ? "text-white/80"
+                : "text-[color:var(--tara-text-faint)]"
           }`}
         >
           <span>{formatTime(message.timestamp)}</span>

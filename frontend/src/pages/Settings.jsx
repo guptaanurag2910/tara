@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 
 import Button from "../components/Button";
 import { useAuth } from "../hooks/useAuth";
-import { applyAppearanceMode, getUserSettings, patchUserSettings } from "../services/settingsService";
+import { useTheme } from "../hooks/useTheme";
+import { getUserSettings, patchUserSettings } from "../services/settingsService";
 
 function SectionCard({ title, children }) {
   return (
-    <section className="rounded-2xl border border-white/15 bg-slate-900/65 p-4 shadow-xl shadow-black/20">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">{title}</h2>
+    <section className="tara-screen-panel p-4">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-[color:var(--tara-text-secondary)]">{title}</h2>
       <div className="mt-3 space-y-3">{children}</div>
     </section>
   );
@@ -19,14 +20,16 @@ function Toggle({ checked, onChange, ariaLabel }) {
     <button
       aria-label={ariaLabel}
       aria-pressed={checked}
-      className={`relative h-7 w-12 rounded-full transition ${
-        checked ? "bg-emerald-500/80" : "bg-white/20"
+      className={`relative h-7 w-12 rounded-full border transition ${
+        checked
+          ? "border-[color:var(--tara-color-success)]/35 bg-[color:var(--tara-color-success-soft)]"
+          : "border-[color:var(--tara-card-border)] bg-[color:var(--tara-input-bg)]"
       }`}
       onClick={onChange}
       type="button"
     >
       <span
-        className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${
+        className={`absolute top-1 h-5 w-5 rounded-full bg-[color:var(--tara-card-bg-strong)] shadow-sm transition ${
           checked ? "left-6" : "left-1"
         }`}
       />
@@ -36,10 +39,10 @@ function Toggle({ checked, onChange, ariaLabel }) {
 
 function Row({ label, hint, right }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5">
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-[color:var(--tara-card-border)] bg-[color:var(--tara-surface-soft)] px-3 py-2.5">
       <div>
-        <p className="text-sm text-white">{label}</p>
-        {hint ? <p className="text-xs text-slate-300">{hint}</p> : null}
+        <p className="text-sm text-[color:var(--tara-text-primary)]">{label}</p>
+        {hint ? <p className="text-xs text-[color:var(--tara-text-secondary)]">{hint}</p> : null}
       </div>
       {right}
     </div>
@@ -49,11 +52,19 @@ function Row({ label, hint, right }) {
 export default function Settings() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { appearanceMode, resolvedTheme, setAppearanceMode } = useTheme();
   const [settings, setSettings] = useState(() => getUserSettings(user?.id));
 
   useEffect(() => {
     setSettings(getUserSettings(user?.id));
   }, [user?.id]);
+
+  useEffect(() => {
+    setSettings((current) => ({
+      ...current,
+      appearance: appearanceMode,
+    }));
+  }, [appearanceMode]);
 
   const updateSettings = (patch) => {
     const next = patchUserSettings(user?.id, patch);
@@ -72,11 +83,12 @@ export default function Settings() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 py-5">
-      <header className="mb-4 flex items-center justify-between">
+    <main className="tara-page-shell-compact px-4 py-5">
+      <header className="tara-screen-panel mb-4 flex items-center justify-between px-4 py-4">
         <div>
-          <h1 className="text-xl font-semibold text-white">Settings</h1>
-          <p className="text-xs text-slate-300">Manage preferences, privacy and account</p>
+          <p className="tara-kicker">Least decorative, most useful</p>
+          <h1 className="tara-type-section mt-2 text-[2rem] leading-none">Settings</h1>
+          <p className="text-xs text-[color:var(--tara-text-secondary)]">Manage preferences, privacy and account</p>
         </div>
         <Button fullWidth={false} onClick={() => navigate("/profile")} variant="ghost">
           Back
@@ -91,7 +103,7 @@ export default function Settings() {
             right={
               <input
                 aria-label="Minimum age"
-                className="w-16 rounded-lg border border-white/20 bg-white/10 px-2 py-1 text-right text-sm text-white"
+                className="w-16 rounded-lg border border-[color:var(--tara-card-border)] bg-[color:color-mix(in_srgb,var(--tara-card-bg)_82%,transparent)] px-2 py-1 text-right text-sm text-[color:var(--tara-text-primary)]"
                 min={18}
                 onChange={(event) =>
                   updateSettings({
@@ -112,7 +124,7 @@ export default function Settings() {
             right={
               <input
                 aria-label="Maximum age"
-                className="w-16 rounded-lg border border-white/20 bg-white/10 px-2 py-1 text-right text-sm text-white"
+                className="w-16 rounded-lg border border-[color:var(--tara-card-border)] bg-[color:color-mix(in_srgb,var(--tara-card-bg)_82%,transparent)] px-2 py-1 text-right text-sm text-[color:var(--tara-text-primary)]"
                 min={settings.discovery.minAge}
                 onChange={(event) =>
                   updateSettings({
@@ -130,7 +142,7 @@ export default function Settings() {
           <Row
             hint="How far you want matches from"
             label="Distance"
-            right={<span className="text-sm text-slate-100">{settings.discovery.distanceKm} km</span>}
+            right={<span className="text-sm text-[color:var(--tara-text-primary)]">{settings.discovery.distanceKm} km</span>}
           />
           <input
             aria-label="Discovery distance"
@@ -150,10 +162,10 @@ export default function Settings() {
           />
 
           <label className="block text-sm">
-            <span className="mb-1.5 block font-medium text-slate-200">Gender Preference</span>
+            <span className="mb-1.5 block font-medium text-[color:var(--tara-text-primary)]">Gender Preference</span>
             <select
               aria-label="Gender preference"
-              className="w-full rounded-xl border border-white/20 bg-white/10 px-3 py-3 text-sm text-white"
+              className="w-full rounded-xl border border-[color:var(--tara-card-border)] bg-[color:color-mix(in_srgb,var(--tara-card-bg)_82%,transparent)] px-3 py-3 text-sm text-[color:var(--tara-text-primary)]"
               onChange={(event) =>
                 updateSettings({
                   discovery: {
@@ -235,22 +247,26 @@ export default function Settings() {
         </SectionCard>
 
         <SectionCard title="Appearance">
+          <p className="text-xs text-[color:var(--tara-text-secondary)]">
+            Follow your device or keep Tara in a saved day or night mood. Right now you&apos;re seeing{" "}
+            <span className="font-medium text-[color:var(--tara-text-primary)]">{resolvedTheme === "dark" ? "Night" : "Day"}</span>.
+          </p>
           <div className="grid grid-cols-3 gap-2">
             {[
-              { value: "light", label: "Light" },
-              { value: "dark", label: "Dark" },
+              { value: "light", label: "Day" },
+              { value: "dark", label: "Night" },
               { value: "system", label: "System" },
             ].map((item) => (
               <button
-                className={`rounded-xl border px-3 py-2 text-sm font-medium transition ${
-                  settings.appearance === item.value
-                    ? "border-cyan-300/60 bg-cyan-400/20 text-white"
-                    : "border-white/20 bg-white/5 text-slate-100"
+                className={`tara-motion-pressable rounded-xl border px-3 py-2 text-sm font-medium transition ${
+                  appearanceMode === item.value
+                    ? "border-[color:var(--tara-card-active-border)] bg-[color:color-mix(in_srgb,var(--tara-violet)_18%,transparent)] text-[color:var(--tara-text-primary)] shadow-[0_0_20px_rgba(111,99,247,0.1)]"
+                    : "border-[color:var(--tara-card-border)] bg-[color:var(--tara-surface-soft)] text-[color:var(--tara-text-primary)]"
                 }`}
                 key={item.value}
                 onClick={() => {
-                  updateSettings({ appearance: item.value });
-                  applyAppearanceMode(item.value);
+                  setSettings((current) => ({ ...current, appearance: item.value }));
+                  setAppearanceMode(item.value);
                 }}
                 type="button"
               >
@@ -283,7 +299,7 @@ export default function Settings() {
 
         <SectionCard title="Account">
           <button
-            className="w-full rounded-xl border border-rose-300/30 bg-rose-500/10 px-3 py-3 text-left text-sm font-medium text-rose-100"
+            className="w-full rounded-xl border border-[color:var(--tara-color-destructive)]/35 bg-[color:var(--tara-color-destructive-soft)] px-3 py-3 text-left text-sm font-medium text-[color:var(--tara-text-primary)]"
             onClick={onDeleteAccount}
             type="button"
           >

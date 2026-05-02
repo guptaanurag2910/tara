@@ -5,7 +5,7 @@ import { cva } from "class-variance-authority";
 import { cn } from "../../lib/utils";
 
 const toggleVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[color:var(--tara-violet)] disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-white/10 data-[state=on]:text-[color:var(--tara-text-primary)] [&_svg]:pointer-events-none [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0",
+  "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--tara-focus-ring)] disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-white/10 data-[state=on]:text-[color:var(--tara-text-primary)] [&_svg]:pointer-events-none [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -36,4 +36,3 @@ const Toggle = React.forwardRef(({ className, variant, size, ...props }, ref) =>
 Toggle.displayName = TogglePrimitive.Root.displayName;
 
 export { Toggle, toggleVariants };
-

@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import DailyMatches from "../pages/DailyMatches";
+import { lazyRouteComponent } from "./_lazyRoute";
 import { RequireAuth } from "./_guards";
+
+const DailyMatches = lazyRouteComponent(() => import("../pages/DailyMatches"), "stars");
 
 function StarsTodayRoute() {
   return (
@@ -14,4 +16,3 @@ function StarsTodayRoute() {
 export const Route = createFileRoute("/stars-today")({
   component: StarsTodayRoute,
 });
-

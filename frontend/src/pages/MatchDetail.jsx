@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Heart, MessageCircle, Moon, Sparkles, Sun } from "lucide-react";
+import { ArrowLeft, MessageCircle, Moon, Sparkles, Sun } from "lucide-react";
 
+import Button from "../components/Button";
+import EmptyState from "../components/EmptyState";
 import Loader from "../components/Loader";
 import { fetchMatchDetail } from "../services/matchingService";
 
@@ -43,7 +45,7 @@ function traitsFromInsight(insight) {
 
 function Stat({ icon, label: statLabel, value, note }) {
   return (
-    <div className="rounded-2xl glass p-4">
+    <div className="tara-screen-panel rounded-2xl p-4">
       <div className="flex items-center gap-1.5 text-[color:var(--tara-gold)]">
         {icon}
         <span className="text-[10px] uppercase tracking-[0.16em] text-[color:var(--tara-text-faint)]">{statLabel}</span>
@@ -56,9 +58,9 @@ function Stat({ icon, label: statLabel, value, note }) {
 
 function Attribute({ label: attributeLabel, value, icon }) {
   return (
-    <div className="flex items-center justify-between rounded-2xl glass px-4 py-3">
+    <div className="tara-list-row flex items-center justify-between px-4 py-3">
       <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[color:var(--tara-violet)]/20">{icon}</div>
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[color:color-mix(in_srgb,var(--tara-violet)_16%,transparent)]">{icon}</div>
         <span className="text-sm text-[color:var(--tara-text-secondary)]">{attributeLabel}</span>
       </div>
       <span className="font-[var(--font-serif)] text-xl text-[color:var(--tara-text-primary)]">{value}</span>
@@ -116,107 +118,131 @@ export default function MatchDetail() {
   const hasKundaliAttributes = Boolean(sunSign || moonSign || nakshatra);
 
   return (
-    <main className="tara-container pb-28">
-      <div className="relative h-80 w-full overflow-hidden">
-        {detail?.user?.photo ? (
-          <img src={detail.user.photo} alt={name} className="h-full w-full object-cover" />
-        ) : (
-          <div className="h-full w-full bg-[radial-gradient(circle_at_30%_20%,#9f9fff_0%,#4f46e5_45%,#090338_100%)]" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-[#090338]" />
+    <main className="tara-page-shell px-5 pb-28 pt-6">
+      <header className="mb-4 flex items-center gap-3">
         <button
-          onClick={() => navigate("/matches")}
-          className="absolute left-5 top-5 flex h-10 w-10 items-center justify-center rounded-full glass-strong"
-          type="button"
           aria-label="Back"
+          className="tara-back-btn"
+          onClick={() => navigate("/matches")}
+          type="button"
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <div className="absolute bottom-0 left-0 right-0 p-5">
-          <h1 className="tara-heading text-5xl text-[color:var(--tara-text-primary)]">
-            {hasDetail ? name : "Match unavailable"}
-            {hasDetail ? <span className="text-[color:var(--tara-text-secondary)]">{age}</span> : null}
-          </h1>
-          {hasDetail && (sunSign || moonSign) ? (
-            <div className="mt-2 flex items-center gap-2">
+        <div>
+          <p className="tara-kicker">Match details</p>
+          <h1 className="tara-type-section mt-1 text-[2.2rem]">Cosmic compatibility</h1>
+        </div>
+      </header>
+
+      {loading ? (
+        <div className="tara-screen-panel p-5">
+          <Loader text="Loading compatibility..." />
+        </div>
+      ) : null}
+
+      {!loading && error ? (
+        <EmptyState
+          action={(
+            <Button onClick={() => navigate("/matches")} type="button" variant="ghost">
+              Back to matches
+            </Button>
+          )}
+          subtitle={error}
+          title="Match unavailable"
+        />
+      ) : null}
+
+      {!loading && !error && hasDetail ? (
+        <div className="space-y-4">
+          <section className="tara-screen-intro tara-scene-motif p-5" data-scene="night">
+            <div className="flex items-start gap-4">
+              {detail?.user?.photo ? (
+                <img
+                  alt={name}
+                  className="h-28 w-24 rounded-[1.4rem] border border-[color:var(--tara-card-border)] object-cover shadow-[0_12px_28px_rgba(0,0,0,0.18)]"
+                  src={detail.user.photo}
+                />
+              ) : (
+                <div className="flex h-28 w-24 shrink-0 items-center justify-center rounded-[1.4rem] border border-[color:var(--tara-card-border)] bg-[radial-gradient(circle_at_30%_20%,color-mix(in_srgb,var(--tara-color-soft-blue)_38%,transparent)_0%,color-mix(in_srgb,var(--tara-violet)_34%,transparent)_45%,transparent_100%)] text-3xl font-semibold text-[color:var(--tara-text-primary)]">
+                  {name.slice(0, 1)}
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="tara-kicker">Mutual alignment</p>
+                <h2 className="tara-type-page mt-2 text-[2.8rem] leading-[0.96]">
+                  {name}
+                  <span className="ml-2 text-[1.1rem] font-normal text-[color:var(--tara-text-secondary)]">{age}</span>
+                </h2>
+                <p className="tara-copy mt-3 max-w-[15rem] text-sm">{insightPreview(insight)}</p>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {sunSign ? <span className="tara-chip px-3 py-1 text-xs">{sunSign} sun</span> : null}
+                  {moonSign ? <span className="tara-chip px-3 py-1 text-xs">{moonSign} moon</span> : null}
+                  {nakshatra ? <span className="tara-chip tara-chip-gold px-3 py-1 text-xs">{nakshatra}</span> : null}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="tara-screen-panel rounded-[1.75rem] p-5">
+            <p className="tara-kicker">Compatibility score</p>
+            <div className="mt-2 flex items-end gap-2">
+              <span className="font-[var(--font-serif)] text-7xl text-aurora">{compatibility}</span>
+              <span className="pb-2 font-[var(--font-serif)] text-3xl text-[color:var(--tara-text-secondary)]">%</span>
+            </div>
+            <p className="tara-support-surface mt-4 rounded-2xl px-4 py-4 text-sm italic text-[color:var(--tara-text-primary)]">
+              &quot;{insight}&quot;
+            </p>
+          </section>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Stat icon={<Moon className="h-4 w-4" />} label="Kundali" value={`${kundaliScore}/36`} note="Strong guna match" />
+            <Stat icon={<Sparkles className="h-4 w-4" />} label="Personality" value={`${personalityScore}%`} note="Compatible vibes" />
+          </div>
+
+          {hasKundaliAttributes ? (
+            <section className="space-y-2">
+              <h2 className="text-xs uppercase tracking-widest text-[color:var(--tara-text-faint)]">Kundali attributes</h2>
               {sunSign ? (
-                <span className="rounded-full glass-strong px-3 py-1 text-xs font-medium">{sunSign} sun</span>
+                <Attribute label="Sun sign" value={sunSign} icon={<Sun className="h-4 w-4 text-[color:var(--tara-gold)]" />} />
               ) : null}
               {moonSign ? (
-                <span className="rounded-full glass-strong px-3 py-1 text-xs font-medium">{moonSign} moon</span>
+                <Attribute label="Moon sign" value={moonSign} icon={<Moon className="h-4 w-4 text-[color:var(--tara-gold)]" />} />
               ) : null}
-            </div>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="px-5 pt-6">
-        {loading ? <Loader text="Loading compatibility..." /> : null}
-        {!loading && error ? (
-          <p className="rounded-xl border border-rose-300/20 bg-rose-500/10 px-3 py-3 text-sm text-rose-100">{error}</p>
-        ) : null}
-
-        {!loading && !error && hasDetail ? (
-          <>
-            <div className="rounded-3xl bg-card-gradient p-6 shadow-card-mystic">
-              <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--tara-gold)]">Cosmic compatibility</p>
-              <div className="mt-2 flex items-end gap-2">
-                <span className="font-[var(--font-serif)] text-7xl text-aurora">{compatibility}</span>
-                <span className="pb-2 font-[var(--font-serif)] text-3xl text-[color:var(--tara-text-secondary)]">%</span>
-              </div>
-              <p className="mt-3 font-[var(--font-serif)] text-lg italic leading-snug text-[color:var(--tara-text-primary)]">
-                &quot;{insightPreview(insight)}&quot;
-              </p>
-            </div>
-
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <Stat icon={<Moon className="h-4 w-4" />} label="Kundali" value={`${kundaliScore}/36`} note="Strong guna match" />
-              <Stat icon={<Sparkles className="h-4 w-4" />} label="Personality" value={`${personalityScore}%`} note="Compatible vibes" />
-            </div>
-
-            {hasKundaliAttributes ? (
-              <section className="mt-6">
-                <h2 className="mb-3 text-xs uppercase tracking-widest text-[color:var(--tara-text-faint)]">Kundali attributes</h2>
-                <div className="space-y-2">
-                  {sunSign ? (
-                    <Attribute label="Sun sign" value={sunSign} icon={<Sun className="h-4 w-4 text-[color:var(--tara-gold)]" />} />
-                  ) : null}
-                  {moonSign ? (
-                    <Attribute label="Moon sign" value={moonSign} icon={<Moon className="h-4 w-4 text-[color:var(--tara-gold)]" />} />
-                  ) : null}
-                  {nakshatra ? (
-                    <Attribute label="Nakshatra" value={nakshatra} icon={<Sparkles className="h-4 w-4 text-[color:var(--tara-gold)]" />} />
-                  ) : null}
-                </div>
-              </section>
-            ) : null}
-
-            <section className="mt-6">
-              <h2 className="mb-3 text-xs uppercase tracking-widest text-[color:var(--tara-text-faint)]">Their vibe</h2>
-              <div className="flex flex-wrap gap-2">
-                {traits.map((trait) => (
-                  <span key={trait} className="rounded-full glass px-4 py-2 text-xs font-medium text-[color:var(--tara-text-primary)]">
-                    {trait}
-                  </span>
-                ))}
-              </div>
+              {nakshatra ? (
+                <Attribute label="Nakshatra" value={nakshatra} icon={<Sparkles className="h-4 w-4 text-[color:var(--tara-gold)]" />} />
+              ) : null}
             </section>
+          ) : null}
 
-            <div className="mt-8 flex gap-3">
-              <button className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full glass-strong" type="button">
-                <Heart className="h-5 w-5 text-[color:var(--tara-gold)]" fill="currentColor" />
-              </button>
-              <Link
-                to={`/chat/${matchId}`}
-                className="flex h-14 flex-1 items-center justify-center gap-2 rounded-full bg-aurora text-base font-semibold text-white shadow-glow"
-              >
-                <MessageCircle className="h-4 w-4" />
-                Start chatting
-              </Link>
+          <section className="space-y-3">
+            <h2 className="text-xs uppercase tracking-widest text-[color:var(--tara-text-faint)]">Their vibe</h2>
+            <div className="flex flex-wrap gap-2">
+              {traits.map((trait) => (
+                <span key={trait} className="tara-chip px-4 py-2 text-xs font-medium">
+                  {trait}
+                </span>
+              ))}
             </div>
-          </>
-        ) : null}
-      </div>
+          </section>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Link
+              className="tara-secondary-btn tara-motion-pressable flex items-center justify-center px-4 py-3 text-sm font-medium"
+              to="/matches"
+            >
+              Back to matches
+            </Link>
+            <Link
+              className="tara-primary-btn tara-motion-pressable flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold"
+              to={`/chat/${matchId}`}
+            >
+              <MessageCircle className="h-4 w-4" />
+              Start chatting
+            </Link>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

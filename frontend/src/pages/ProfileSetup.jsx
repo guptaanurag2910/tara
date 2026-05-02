@@ -701,8 +701,8 @@ export default function ProfileSetup() {
   const personalityLabel = `${questionIndex + 1} of ${Math.max(questions.length, PERSONALITY_QUESTION_LIMIT)}`;
 
   return (
-    <main className="tara-container flex min-h-[100dvh] flex-col px-6 pb-8 pt-10">
-      <header className="mb-10 flex items-center gap-4">
+    <main className="tara-page-shell-compact tara-scene-shell flex min-h-[100dvh] flex-col px-6 pb-8 pt-10">
+      <header className="tara-screen-panel mb-8 flex items-center gap-4 px-4 py-3">
         <button aria-label="Back" className="tara-back-btn" onClick={onBack} type="button">
           ←
         </button>
@@ -712,6 +712,7 @@ export default function ProfileSetup() {
       </header>
 
       <section className="onboarding-step-enter flex flex-1 flex-col">
+        <div className="tara-screen-panel flex flex-1 flex-col px-5 py-6">
         {step === STEP_NAME ? (
           <>
             <span className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--tara-card-border)] bg-[color:var(--tara-input-bg)] text-[color:var(--tara-gold)]">
@@ -721,7 +722,7 @@ export default function ProfileSetup() {
             <p className="tara-copy mt-2 text-[15px]">Your first name is how others will know you.</p>
             <div className="mt-8">
               <input
-                className="w-full border-0 border-b border-[color:var(--tara-card-border)] bg-transparent pb-3 text-[2.5rem] text-[color:var(--tara-text-primary)] placeholder:text-[color:var(--tara-text-faint)] focus:border-b-[color:var(--tara-violet)] focus:outline-none"
+                className="tara-underline-input text-[2.5rem]"
                 onChange={(event) =>
                   setProfile((prev) => ({ ...prev, name: event.target.value, basicSaved: false }))
                 }
@@ -901,7 +902,8 @@ export default function ProfileSetup() {
                 <div key={photo.id} className="relative overflow-hidden rounded-2xl border border-[color:var(--tara-card-border)]">
                   <img alt="Profile upload" className="h-28 w-full object-cover" src={photo.src} />
                   <button
-                    className="absolute right-1 top-1 rounded-full bg-black/55 px-2 py-1 text-xs text-white"
+                    aria-label="Remove photo"
+                    className="absolute right-2 top-2 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/55 text-sm text-white backdrop-blur focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
                     onClick={() => onRemovePhoto(photo.id)}
                     type="button"
                   >
@@ -966,18 +968,19 @@ export default function ProfileSetup() {
         ) : null}
 
         {error ? (
-          <p className="mt-4 rounded-2xl border border-rose-300/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+          <p className="tara-alert tara-alert-error mt-4">
             {error}
           </p>
         ) : null}
 
         {!error && clientValidationMessage ? (
-          <p className="mt-4 rounded-2xl border border-amber-300/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
+          <p className="tara-alert tara-alert-warning mt-4">
             {clientValidationMessage}
           </p>
         ) : null}
+        </div>
 
-        <div className="mt-auto pt-10">
+        <div className="mt-6">
           <button className="tara-primary-btn w-full" disabled={!canProceed || loading} onClick={onNext} type="button">
             {loading ? "Saving..." : step === STEP_VIBE ? "Find my matches →" : "Continue →"}
           </button>

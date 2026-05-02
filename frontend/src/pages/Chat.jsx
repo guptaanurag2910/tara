@@ -238,7 +238,7 @@ function initials(name) {
 
 function Avatar({ name, photo }) {
   return (
-    <div className="relative h-[58px] w-[58px] shrink-0 overflow-hidden rounded-full border border-amber-200/40 bg-[#14144e]">
+    <div className="relative h-[58px] w-[58px] shrink-0 overflow-hidden rounded-full border border-[color:var(--tara-card-border)] bg-[color:var(--tara-card-bg-strong)]">
       {photo ? (
         <img alt={name || "Match"} className="h-full w-full object-cover" src={photo} />
       ) : (
@@ -252,16 +252,17 @@ function Avatar({ name, photo }) {
 
 function ConversationsList({ loading, error, conversations, query, setQuery }) {
   return (
-    <main className="tara-container px-5 pb-28 pt-8">
-      <header>
-        <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--tara-gold)]">Whispers</p>
-        <h1 className="tara-heading mt-2 text-6xl leading-none">Conversations</h1>
+    <main className="tara-page-shell tara-scene-shell px-5 pb-28 pt-8">
+      <header className="tara-screen-intro px-5 py-5">
+        <p className="tara-kicker">Whispers</p>
+        <h1 className="tara-type-page mt-2 leading-none">Conversations</h1>
+        <p className="tara-copy mt-2 max-w-xs">Minimal, intimate, and easy to scan when you come back to it.</p>
       </header>
 
-      <div className="relative mt-4">
-        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg text-[color:var(--tara-text-faint)]">⌕</span>
+      <div className="tara-screen-panel relative mt-4 px-4 py-3">
+        <span className="pointer-events-none absolute left-8 top-1/2 -translate-y-1/2 text-lg text-[color:var(--tara-text-faint)]">⌕</span>
         <input
-          className="h-12 w-full rounded-full border border-[color:var(--tara-card-border)] bg-[color:var(--tara-input-bg)] pl-12 pr-4 text-[15px] text-[color:var(--tara-text-primary)] placeholder:text-[color:var(--tara-text-faint)] focus:border-indigo-300/35 focus:outline-none"
+          className="tara-input h-12 min-h-[48px] pl-12 pr-4 text-[15px]"
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search messages"
           value={query}
@@ -269,16 +270,22 @@ function ConversationsList({ loading, error, conversations, query, setQuery }) {
       </div>
 
       {loading ? <ConversationListSkeleton /> : null}
-      {error ? <p className="mt-4 rounded-xl bg-rose-500/20 px-3 py-2 text-sm text-rose-100">{error}</p> : null}
+      {error ? <p className="tara-alert tara-alert-error mt-4">{error}</p> : null}
 
       {!loading && !error && conversations.length === 0 ? (
         <div className="mt-8">
           <EmptyState
+            kind="chat"
+            eyebrow="Quiet room"
+            icon="✉"
             title="No conversations yet"
-            subtitle="Your matches will show up here once you start talking. When you're ready, head to matches and break the ice."
+            subtitle="Your matches will appear here once someone says hello. Start with a match and the thread will open here."
             action={(
-              <Link to="/matches">
-                <Button type="button">View matches</Button>
+              <Link
+                className="tara-primary-btn tara-motion-pressable inline-flex w-full items-center justify-center px-4 py-3 text-sm font-semibold"
+                to="/matches"
+              >
+                View matches
               </Link>
             )}
           />
@@ -289,7 +296,7 @@ function ConversationsList({ loading, error, conversations, query, setQuery }) {
         <section className="mt-5 space-y-2">
           {conversations.map((item, index) => (
             <Link
-              className="flex items-center gap-3 rounded-2xl px-1 py-2 transition hover:bg-white/5"
+              className="tara-list-row flex items-center gap-3 px-3 py-3"
               key={item.match_id}
               to={`/chat/${item.match_id}`}
             >
@@ -299,7 +306,7 @@ function ConversationsList({ loading, error, conversations, query, setQuery }) {
               </div>
 
               <div className="min-w-0 flex-1">
-                <p className="tara-heading truncate text-[2rem] leading-none">{item.user?.name || "Match"}</p>
+                <p className="tara-type-section truncate text-[1.85rem] leading-none">{item.user?.name || "Match"}</p>
                 <p className="mt-1 truncate text-[15px] text-[color:var(--tara-text-secondary)]">{item.preview}</p>
               </div>
 
@@ -684,17 +691,23 @@ export default function ChatScreen() {
   }
 
   return (
-    <main className="tara-container flex h-[calc(100dvh-112px)] flex-col sm:h-[calc(100dvh-96px)]">
-      <header className="border-b border-[color:var(--tara-card-border)] bg-[color:var(--tara-card-bg)] px-4 py-3 backdrop-blur-xl">
-        <p className="tara-heading text-[1.35rem] leading-none">{matchInfo?.user?.name || "Chat"}</p>
-        <p className="tara-copy mt-1 text-sm italic">✧ {insightText}</p>
+    <main className="tara-page-shell tara-scene-shell flex h-[calc(100dvh-112px)] flex-col sm:h-[calc(100dvh-96px)]">
+      <header className="tara-screen-panel mx-3 mt-3 flex items-center gap-3 px-4 py-3 backdrop-blur-xl">
+        <Avatar name={matchInfo?.user?.name} photo={matchInfo?.user?.photo} />
+        <div className="min-w-0 flex-1">
+          <p className="tara-type-section truncate text-[1.7rem] leading-none">{matchInfo?.user?.name || "Chat"}</p>
+          <p className="tara-copy mt-1 truncate text-sm italic">✧ {insightText}</p>
+        </div>
+        <span className="tara-chip tara-chip-gold whitespace-nowrap text-[0.7rem]">
+          {matchInfo?.compatibility_score ?? 0}% aligned
+        </span>
       </header>
 
       <section className="flex-1 overflow-y-auto px-4 py-4">
         {loading ? <ChatThreadSkeleton /> : null}
-        {error ? <p className="mb-3 rounded-lg bg-rose-500/20 px-3 py-2 text-xs text-rose-100">{error}</p> : null}
+        {error ? <p className="tara-alert tara-alert-error mb-3">{error}</p> : null}
         {!error && socket.lastError ? (
-          <p className="mb-3 rounded-lg bg-amber-500/20 px-3 py-2 text-xs text-amber-100">{socket.lastError}</p>
+          <p className="tara-alert tara-alert-warning mb-3">{socket.lastError}</p>
         ) : null}
 
         {!loading && messages.length === 0 ? (
@@ -702,29 +715,21 @@ export default function ChatScreen() {
             <div className="w-full max-w-xs">
               <EmptyState
                 compact
+                kind="chat"
+                eyebrow="First message"
+                icon="☾"
                 title="This chat is waiting for the first message"
-                subtitle="Keep it simple. Say hello, mention something from their profile, or start a quick game together."
+                subtitle="Keep it simple. Say hello or mention something from their profile to start the thread gently."
                 action={(
-                  <div className="grid gap-2">
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        setDraft(`Hey ${matchInfo?.user?.name?.split?.(" ")?.[0] || ""}, I finally made the first move ✨`.trim());
-                        draftInputRef.current?.focus();
-                      }}
-                    >
-                      Send a hello
-                    </Button>
-                    <Button
-                      fullWidth
-                      type="button"
-                      variant="ghost"
-                      disabled={!socket.isConnected || Boolean(startingGame)}
-                      onClick={() => onStartGame(selectedGame)}
-                    >
-                      Start a game
-                    </Button>
-                  </div>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      setDraft(`Hey ${matchInfo?.user?.name?.split?.(" ")?.[0] || ""}, I finally made the first move ✨`.trim());
+                      draftInputRef.current?.focus();
+                    }}
+                  >
+                    Send a hello
+                  </Button>
                 )}
               />
             </div>
@@ -777,7 +782,7 @@ export default function ChatScreen() {
         sessionId={activeGame?.session_id}
       />
 
-      <form className="border-t border-[color:var(--tara-card-border)] bg-[color:var(--tara-card-bg)] px-3 py-3 backdrop-blur-xl" onSubmit={onSend}>
+      <form className="tara-screen-panel mx-3 mb-3 mt-2 px-3 py-3 backdrop-blur-xl" onSubmit={onSend}>
         {shouldShowIcebreakers ? (
           <Icebreaker
             loading={icebreakersLoading}
@@ -795,10 +800,10 @@ export default function ChatScreen() {
             const isPending = startingGame === game.id;
             return (
               <button
-                className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm transition-all ${
+                className={`tara-chip tara-motion-pressable inline-flex items-center gap-1 px-3 py-1.5 text-sm ${
                   isActive
-                    ? "border-[color:var(--tara-gold)] bg-[color:var(--tara-card-bg)] text-[color:var(--tara-text-primary)]"
-                    : "border-[color:var(--tara-card-border)] bg-[color:var(--tara-input-bg)] text-[color:var(--tara-text-secondary)]"
+                    ? "tara-chip-gold text-[color:var(--tara-text-primary)]"
+                    : "text-[color:var(--tara-text-secondary)]"
                 } ${!socket.isConnected ? "opacity-60" : ""}`}
                 disabled={Boolean(startingGame) || !socket.isConnected}
                 key={game.id}
@@ -814,7 +819,7 @@ export default function ChatScreen() {
 
         <div className="flex items-center gap-2">
           <input
-            className="h-11 flex-1 rounded-full border border-[color:var(--tara-card-border)] bg-[color:var(--tara-input-bg)] px-4 text-sm text-[color:var(--tara-text-primary)] placeholder:text-[color:var(--tara-text-faint)] focus:border-indigo-200/45 focus:outline-none"
+            className="tara-input h-11 min-h-0 flex-1 px-4 py-0 text-sm"
             onChange={(event) => setDraft(event.target.value)}
             placeholder="Type a message..."
             ref={draftInputRef}

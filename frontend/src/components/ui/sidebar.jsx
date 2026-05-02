@@ -265,7 +265,7 @@ const SidebarInput = React.forwardRef(({ className, ...props }, ref) => {
       ref={ref}
       data-sidebar="input"
       className={cn(
-        "h-8 w-full bg-transparent shadow-none focus-visible:ring-2 focus-visible:ring-[color:var(--tara-violet)]",
+        "h-8 w-full bg-transparent shadow-none focus-visible:ring-2 focus-visible:ring-[color:var(--tara-focus-ring)]",
         className,
       )}
       {...props}
@@ -551,4 +551,3 @@ export {
   SidebarTrigger,
   useSidebar,
 };
-
