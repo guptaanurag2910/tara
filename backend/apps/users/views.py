@@ -35,7 +35,7 @@ from .serializers import (
 from .services.kundali_service import calculate_kundali
 from .services.horoscope_service import get_horoscope_for_sign
 from .services.matching_service import calculate_user_guna_match
-from .services.personality_service import calculate_traits
+from .services.personality_service import calculate_traits, sync_starter_personality_questions
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -191,6 +191,7 @@ class PersonalityQuestionListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
+        sync_starter_personality_questions()
         questions = PersonalityQuestion.objects.filter(is_active=True).prefetch_related("options").order_by("id")
         serializer = PersonalityQuestionSerializer(questions, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

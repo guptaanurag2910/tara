@@ -24,6 +24,7 @@ from apps.users.models import (
     UserProfileImage,
 )
 from apps.users.services import calculate_traits
+from apps.users.services.personality_service import STARTER_PERSONALITY_QUESTION_BANK
 from apps.users.services.kundali_service import NAKSHATRAS, calculate_kundali
 
 User = get_user_model()
@@ -200,93 +201,30 @@ class Command(BaseCommand):
                     )
 
     def _create_personality_questions(self):
-        payload = [
-            (
-                "[Demo] How do you handle emotional conflict?",
-                "emotions",
-                [
-                    ("I overthink every detail", {"overthinking": 3, "emotional_depth": 2, "stability": 1}),
-                    ("I talk it out early", {"communication": 3, "stability": 2, "overthinking": 1}),
-                    ("I need space first", {"stability": 2, "communication": 1, "chaos": 1}),
-                    ("I go with the flow", {"chaos": 2, "overthinking": 1, "communication": 1}),
-                ],
-            ),
-            (
-                "[Demo] Your ideal first date vibe?",
-                "relationships",
-                [
-                    ("Deep conversation", {"emotional_depth": 3, "communication": 2}),
-                    ("Playful and spontaneous", {"chaos": 3, "communication": 1}),
-                    ("Quiet and cozy", {"stability": 3, "emotional_depth": 1}),
-                    ("Adventure outdoors", {"chaos": 2, "stability": 1, "communication": 1}),
-                ],
-            ),
-            (
-                "[Demo] What scares you most in dating?",
-                "personality",
-                [
-                    ("Mixed signals", {"overthinking": 3, "communication": 1}),
-                    ("Losing independence", {"stability": 2, "chaos": 1}),
-                    ("Emotional unavailability", {"emotional_depth": 3, "communication": 1}),
-                    ("Boring routine", {"chaos": 3, "stability": 1}),
-                ],
-            ),
-            (
-                "[Demo] How often do you text your partner?",
-                "relationships",
-                [
-                    ("A lot throughout the day", {"communication": 3, "overthinking": 1}),
-                    ("A few meaningful check-ins", {"stability": 3, "communication": 2}),
-                    ("Mostly at night", {"emotional_depth": 2, "communication": 1}),
-                    ("Only when needed", {"stability": 1, "communication": 1, "chaos": 1}),
-                ],
-            ),
-            (
-                "[Demo] When plans change suddenly, you...",
-                "personality",
-                [
-                    ("Get anxious quickly", {"overthinking": 3, "chaos": 1}),
-                    ("Adapt smoothly", {"stability": 3, "communication": 1}),
-                    ("Need reassurance", {"emotional_depth": 2, "overthinking": 2}),
-                    ("Love the unpredictability", {"chaos": 3, "stability": 1}),
-                ],
-            ),
-            (
-                "[Demo] In relationships, you value...",
-                "relationships",
-                [
-                    ("Emotional safety", {"stability": 3, "emotional_depth": 2}),
-                    ("Intense chemistry", {"emotional_depth": 3, "chaos": 2}),
-                    ("Clear communication", {"communication": 3, "stability": 2}),
-                    ("Freedom and spontaneity", {"chaos": 3, "overthinking": 1}),
-                ],
-            ),
-            (
-                "[Demo] Your friends describe you as...",
-                "personality",
-                [
-                    ("Thoughtful but intense", {"overthinking": 2, "emotional_depth": 2}),
-                    ("Calm and balanced", {"stability": 3, "communication": 1}),
-                    ("Warm and expressive", {"communication": 2, "emotional_depth": 2}),
-                    ("Fun and chaotic", {"chaos": 3, "communication": 1}),
-                ],
-            ),
-        ]
+        demo_questions = PersonalityQuestion.objects.filter(question_text__startswith="[Demo]")
+        PersonalityResponse.objects.filter(question__in=demo_questions).delete()
+
+        next_question_texts = [item["question_text"] for item in STARTER_PERSONALITY_QUESTION_BANK]
+        stale_demo_questions = demo_questions.exclude(
+            question_text__in=next_question_texts
+        )
+        PersonalityOption.objects.filter(question__in=stale_demo_questions).delete()
+        stale_demo_questions.delete()
 
         questions = []
-        for question_text, category, options in payload:
+        for question_payload in STARTER_PERSONALITY_QUESTION_BANK:
             question, _ = PersonalityQuestion.objects.update_or_create(
-                question_text=question_text,
-                defaults={"category": category, "is_active": True},
+                question_text=question_payload["question_text"],
+                defaults={"category": question_payload["category"], "is_active": True},
             )
             PersonalityOption.objects.filter(question=question).delete()
             option_objs = []
-            for option_text, trait_mapping in options:
+            for option_payload in question_payload["options"]:
                 option_objs.append(
                     PersonalityOption.objects.create(
                         question=question,
-                        option_text=option_text,
-                        trait_mapping=trait_mapping,
+                        option_text=option_payload["option_text"],
+                        trait_mapping=option_payload["trait_mapping"],
                     )
                 )
             questions.append((question, option_objs))

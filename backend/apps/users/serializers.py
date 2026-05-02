@@ -353,8 +353,19 @@ class PersonalityOptionSerializer(serializers.ModelSerializer):
         fields = ["id", "option_text", "trait_mapping"]
 
 
+def _display_personality_question_text(text):
+    normalized = str(text or "")
+    if normalized.startswith("[Demo] "):
+        return normalized[len("[Demo] ") :]
+    return normalized
+
+
 class PersonalityQuestionSerializer(serializers.ModelSerializer):
+    question_text = serializers.SerializerMethodField()
     options = PersonalityOptionSerializer(many=True, read_only=True)
+
+    def get_question_text(self, obj):
+        return _display_personality_question_text(obj.question_text)
 
     class Meta:
         model = PersonalityQuestion
@@ -386,9 +397,12 @@ class PersonalityResponseInputSerializer(serializers.Serializer):
 
 class PersonalityResponseSerializer(serializers.ModelSerializer):
     question_id = serializers.IntegerField(source="question.id", read_only=True)
-    question_text = serializers.CharField(source="question.question_text", read_only=True)
+    question_text = serializers.SerializerMethodField()
     category = serializers.CharField(source="question.category", read_only=True)
     selected_option = PersonalityOptionSerializer(read_only=True)
+
+    def get_question_text(self, obj):
+        return _display_personality_question_text(obj.question.question_text)
 
     class Meta:
         model = PersonalityResponse

@@ -18,7 +18,7 @@ INITIAL_CANDIDATE_LIMIT = 300
 TOP_MATCHES_LIMIT = 20
 KUNDALI_MAX_SCORE = 36.0
 KUNDALI_WEIGHT = 80.0
-PERSONALITY_WEIGHT = 0.2
+PERSONALITY_WEIGHT = 20.0
 
 
 def _canonical_pair_ids(left_user_id: int, right_user_id: int) -> Tuple[int, int]:
@@ -102,7 +102,11 @@ def _lightweight_kundali_score(user_kundali, candidate_kundali) -> float:
 
 
 def _final_score(kundali_score: float, personality_score: float) -> float:
-    return round(((kundali_score / KUNDALI_MAX_SCORE) * KUNDALI_WEIGHT) + (personality_score * PERSONALITY_WEIGHT), 2)
+    return round(
+        ((kundali_score / KUNDALI_MAX_SCORE) * KUNDALI_WEIGHT)
+        + ((personality_score / 100.0) * PERSONALITY_WEIGHT),
+        2,
+    )
 
 
 @transaction.atomic
@@ -184,4 +188,3 @@ def generate_initial_matches(user):
         output_field=IntegerField(),
     )
     return Match.objects.filter(id__in=ordered_ids).select_related("user_a", "user_b").order_by(preserve_order)
-

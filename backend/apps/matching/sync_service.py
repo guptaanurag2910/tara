@@ -15,7 +15,7 @@ User = get_user_model()
 
 KUNDALI_MAX_SCORE = 36.0
 KUNDALI_WEIGHT = 80.0
-PERSONALITY_WEIGHT = 0.2
+PERSONALITY_WEIGHT = 20.0
 
 
 def _canonical_pair_ids(left_user_id: int, right_user_id: int) -> Tuple[int, int]:
@@ -52,7 +52,11 @@ def _valid_candidates_queryset(user):
 
 
 def _final_score(kundali_score: float, personality_score: float) -> float:
-    return round((kundali_score / KUNDALI_MAX_SCORE * KUNDALI_WEIGHT) + (personality_score * PERSONALITY_WEIGHT), 2)
+    return round(
+        ((kundali_score / KUNDALI_MAX_SCORE) * KUNDALI_WEIGHT)
+        + ((personality_score / 100.0) * PERSONALITY_WEIGHT),
+        2,
+    )
 
 
 def _existing_pair_keys_for_batch(user_id: int, candidate_ids: Iterable[int]) -> Set[Tuple[int, int]]:

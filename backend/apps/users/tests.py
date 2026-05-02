@@ -365,28 +365,28 @@ class PersonalityResponseFlowTests(TestCase):
         self.client.force_authenticate(user=self.user)
 
         self.question_one = PersonalityQuestion.objects.create(
-            question_text="A perfect Sunday looks like...",
+            question_text="Big decisions come from...",
             category=PersonalityQuestion.Category.PERSONALITY,
             is_active=True,
         )
         self.question_two = PersonalityQuestion.objects.create(
-            question_text="In conflict, you usually...",
-            category=PersonalityQuestion.Category.RELATIONSHIPS,
+            question_text="When life feels heavy, you...",
+            category=PersonalityQuestion.Category.EMOTIONS,
             is_active=True,
         )
         self.option_one_a = PersonalityOption.objects.create(
             question=self.question_one,
-            option_text="Books and tea",
-            trait_mapping={"emotional_depth": 2, "stability": 1},
+            option_text="Logic",
+            trait_mapping={"stability": 2, "overthinking": 1},
         )
         self.option_one_b = PersonalityOption.objects.create(
             question=self.question_one,
-            option_text="Road trip",
-            trait_mapping={"openness": 2, "stability": -1},
+            option_text="Instinct",
+            trait_mapping={"openness": 2, "emotional_depth": 1},
         )
         self.option_two = PersonalityOption.objects.create(
             question=self.question_two,
-            option_text="Talk it through",
+            option_text="Talk it out",
             trait_mapping={"communication": 3, "emotional_depth": 1},
         )
 

@@ -3,32 +3,52 @@ import api from "./api";
 const FALLBACK_QUESTIONS = [
   {
     id: "fallback-1",
-    question_text: "A perfect Sunday looks like...",
+    question_text: "When life feels heavy, you...",
     options: [
-      { id: "f1-o1", option_text: "Books, tea, and quiet", trait_mapping: { emotional_depth: 2, overthinking: 1 } },
-      { id: "f1-o2", option_text: "Brunch and long walks", trait_mapping: { communication: 2, openness: 1 } },
-      { id: "f1-o3", option_text: "Spontaneous road trip", trait_mapping: { openness: 2, overthinking: -1 } },
-      { id: "f1-o4", option_text: "Cooking with someone I love", trait_mapping: { emotional_depth: 2, communication: 1 } },
+      { id: "f1-o1", option_text: "Talk it out", trait_mapping: { communication: 3, openness: 1 } },
+      { id: "f1-o2", option_text: "Take space", trait_mapping: { stability: 2, emotional_depth: 1 } },
+      { id: "f1-o3", option_text: "Stay busy", trait_mapping: { overthinking: 2, chaos: 1 } },
+      { id: "f1-o4", option_text: "Sit with it", trait_mapping: { emotional_depth: 2, stability: 2 } },
     ],
   },
   {
     id: "fallback-2",
-    question_text: "In love, I lead with...",
+    question_text: "Big decisions come from...",
     options: [
-      { id: "f2-o1", option_text: "My heart", trait_mapping: { emotional_depth: 2, communication: 1 } },
-      { id: "f2-o2", option_text: "My head", trait_mapping: { overthinking: 2, stability: 1 } },
-      { id: "f2-o3", option_text: "My instincts", trait_mapping: { openness: 2 } },
-      { id: "f2-o4", option_text: "A bit of all three", trait_mapping: { communication: 1, stability: 1, emotional_depth: 1 } },
+      { id: "f2-o1", option_text: "Logic", trait_mapping: { stability: 2, overthinking: 1 } },
+      { id: "f2-o2", option_text: "Instinct", trait_mapping: { openness: 2, emotional_depth: 1 } },
+      { id: "f2-o3", option_text: "Advice", trait_mapping: { communication: 2, stability: 1 } },
+      { id: "f2-o4", option_text: "A mix", trait_mapping: { communication: 1, openness: 1, stability: 1 } },
     ],
   },
   {
     id: "fallback-3",
-    question_text: "When stressed, I become...",
+    question_text: "In any connection, you value...",
     options: [
-      { id: "f3-o1", option_text: "Quiet and inward", trait_mapping: { emotional_depth: 2, stability: 1 } },
-      { id: "f3-o2", option_text: "Restless and busy", trait_mapping: { overthinking: 2, communication: -1 } },
-      { id: "f3-o3", option_text: "Honest and talkative", trait_mapping: { communication: 2, openness: 1 } },
-      { id: "f3-o4", option_text: "Reflective and slow", trait_mapping: { stability: 2, emotional_depth: 1 } },
+      { id: "f3-o1", option_text: "Depth", trait_mapping: { emotional_depth: 3 } },
+      { id: "f3-o2", option_text: "Peace", trait_mapping: { stability: 3 } },
+      { id: "f3-o3", option_text: "Honesty", trait_mapping: { communication: 3 } },
+      { id: "f3-o4", option_text: "Freedom", trait_mapping: { openness: 2, chaos: 1 } },
+    ],
+  },
+  {
+    id: "fallback-4",
+    question_text: "Your best space feels...",
+    options: [
+      { id: "f4-o1", option_text: "Quiet", trait_mapping: { stability: 2, emotional_depth: 1 } },
+      { id: "f4-o2", option_text: "Warm", trait_mapping: { communication: 2, openness: 1 } },
+      { id: "f4-o3", option_text: "Clear", trait_mapping: { stability: 2, overthinking: 1 } },
+      { id: "f4-o4", option_text: "Open", trait_mapping: { openness: 2, chaos: 1 } },
+    ],
+  },
+  {
+    id: "fallback-5",
+    question_text: "Your natural rhythm is...",
+    options: [
+      { id: "f5-o1", option_text: "Steady", trait_mapping: { stability: 3 } },
+      { id: "f5-o2", option_text: "Balanced", trait_mapping: { stability: 1, openness: 1, communication: 1 } },
+      { id: "f5-o3", option_text: "Active", trait_mapping: { chaos: 2, openness: 1 } },
+      { id: "f5-o4", option_text: "Flowing", trait_mapping: { chaos: 3, openness: 1 } },
     ],
   },
 ];
@@ -95,7 +115,7 @@ export async function fetchQuestions() {
     const response = await api.get("personality/questions/");
     const data = response.data;
     if (Array.isArray(data) && data.length > 0) {
-      return data.slice(0, 3);
+      return data;
     }
   } catch {
     // Fall back to local onboarding questions if backend questions are unavailable.

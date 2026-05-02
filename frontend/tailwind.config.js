@@ -3,6 +3,10 @@ export default {
   content: ["./index.html", "./src/**/*.{js,jsx}"],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["Inter", "Avenir Next", "Segoe UI", "sans-serif"],
+        serif: ["var(--font-serif)"]
+      },
       colors: {
         brand: {
           50: "#eff6ff",

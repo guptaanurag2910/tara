@@ -14,14 +14,14 @@ class ApiEndToEndSmokeTests(TestCase):
         self.password = "StrongPass@123"
 
         self.personality_question = PersonalityQuestion.objects.create(
-            question_text="A perfect Sunday looks like...",
-            category="personality",
+            question_text="In any connection, you value...",
+            category="relationships",
             is_active=True,
         )
         self.personality_option = PersonalityOption.objects.create(
             question=self.personality_question,
-            option_text="Books, tea, and quiet",
-            trait_mapping={"emotional_depth": 2},
+            option_text="Honesty",
+            trait_mapping={"communication": 3},
         )
 
         self.game_category = GameCategory.objects.create(
