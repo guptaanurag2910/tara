@@ -10,6 +10,7 @@ from .models import BirthDetails, Kundali
 from .serializers import BirthDetailsSerializer, KundaliSerializer
 from .services.ephemeris_service import get_coordinates
 from .services.horoscope_engine import get_cached_daily_horoscope
+from .services.ephemeris_service import get_timezone_name
 from .services.interpretation_service import generate_insights, generate_scores
 from .services.location_service import reverse_geocode, search_places
 
@@ -56,7 +57,7 @@ class BirthDetailsView(APIView):
             except ValueError as exc:
                 return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
             except Exception:
-                logger.exception("Failed geocoding place='%s'", place)
+                logger.exception("Failed geocoding birth place for user_id=%s", request.user.id)
                 return Response(
                     {"detail": "Could not resolve place to coordinates."},
                     status=status.HTTP_502_BAD_GATEWAY,
@@ -82,7 +83,7 @@ class KundaliView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        kundali = Kundali.objects.filter(user=request.user).first()
+        kundali = Kundali.objects.select_related("birth_details").filter(user=request.user).first()
         if kundali is None:
             return Response({"detail": "Kundali not generated yet."}, status=status.HTTP_404_NOT_FOUND)
 
@@ -114,11 +115,20 @@ class DailyHoroscopeView(APIView):
         kundali = Kundali.objects.filter(user=request.user).first()
         lagna_sign = kundali.lagna if kundali else None
         moon_sign = kundali.moon_sign if kundali else None
+        birth_details = kundali.birth_details if kundali else None
+        timezone_name = "UTC"
+        if birth_details and birth_details.latitude is not None and birth_details.longitude is not None:
+            try:
+                timezone_name = get_timezone_name(float(birth_details.latitude), float(birth_details.longitude))
+            except (RuntimeError, ValueError):
+                # Missing timezone data should not block a general horoscope.
+                pass
 
         payload = get_cached_daily_horoscope(
             user_id=request.user.id,
             lagna_sign=lagna_sign,
             moon_sign=moon_sign,
+            timezone_name=timezone_name,
         )
         return Response(payload, status=status.HTTP_200_OK)
 
@@ -134,7 +144,7 @@ class LocationSearchView(APIView):
             payload = search_places(query, limit=6)
             return Response(payload, status=status.HTTP_200_OK)
         except Exception:
-            logger.exception("Failed location search for query='%s'", query)
+            logger.exception("Failed location search for user_id=%s", request.user.id)
             return Response(
                 {"detail": "Could not fetch location suggestions right now."},
                 status=status.HTTP_502_BAD_GATEWAY,
@@ -166,7 +176,7 @@ class LocationReverseView(APIView):
             payload = reverse_geocode(latitude, longitude)
             return Response(payload, status=status.HTTP_200_OK)
         except Exception:
-            logger.exception("Failed reverse geocode for lat=%s lon=%s", latitude, longitude)
+            logger.exception("Failed reverse geocode for user_id=%s", request.user.id)
             return Response(
                 {"detail": "Could not resolve the provided coordinates."},
                 status=status.HTTP_502_BAD_GATEWAY,

@@ -12,7 +12,7 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "unsafe-dev-key")
 DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() == "true"
 ALLOWED_HOSTS = [host.strip() for host in os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",") if host.strip()]
 if DEBUG:
-    for host in ("localhost", "127.0.0.1", "testserver"):
+    for host in ("localhost", "127.0.0.1", "10.0.2.2", "testserver"):
         if host not in ALLOWED_HOSTS:
             ALLOWED_HOSTS.append(host)
 
@@ -60,6 +60,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "config.context_processors.admin_dashboard",
             ],
         },
     },
@@ -135,6 +136,21 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
     ),
+    "DEFAULT_THROTTLE_CLASSES": (
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+        "rest_framework.throttling.ScopedRateThrottle",
+    ),
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "60/hour",
+        "user": "1000/day",
+        "signup": "5/hour",
+        "login": "10/minute",
+        "phone_status": "30/hour",
+        "report": "10/hour",
+        "block": "20/hour",
+        "chat_message": "30/minute",
+    },
 }
 
 SIMPLE_JWT = {
@@ -154,6 +170,27 @@ ASTRO_NOMINATIM_USER_AGENT = os.getenv(
     "TaraAstrology/1.0 (support@tara.local)",
 )
 ASTRO_NOMINATIM_TIMEOUT_SECONDS = float(os.getenv("ASTRO_NOMINATIM_TIMEOUT_SECONDS", "8"))
+
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
+TWILIO_FROM_NUMBER = os.getenv("TWILIO_FROM_NUMBER", "")
+
+if os.getenv("REDIS_URL"):
+    TARA_OTP_CACHE_SHARED = True
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": os.getenv("REDIS_URL"),
+        }
+    }
+else:
+    TARA_OTP_CACHE_SHARED = False
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "tara-local-cache",
+        }
+    }
 
 USE_REDIS_CHANNEL_LAYER = os.getenv(
     "USE_REDIS_CHANNEL_LAYER",

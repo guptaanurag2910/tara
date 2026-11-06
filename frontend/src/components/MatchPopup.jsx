@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom";
+import { Link } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { MessageCircle, Sparkles, X } from "lucide-react";
 
@@ -19,111 +20,97 @@ function ProfileOrb({ photo, name, delay = 0 }) {
       initial={{ opacity: 0, scale: 0.85 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay, duration: 0.25 }}
-      className="relative"
+      className="match-popup-avatar"
     >
-      <div className="absolute inset-0 rounded-full bg-[color:var(--tara-violet)] opacity-50 blur-xl" />
-      <div className="relative h-28 w-28 overflow-hidden rounded-full ring-2 ring-[color:var(--tara-gold)]/70 ring-offset-4 ring-offset-black/20">
-        {photo ? (
-          <img src={photo} alt={name || "match"} className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-indigo-400/75 to-amber-400/70 text-2xl font-semibold text-white">
-            {initials(name)}
-          </div>
-        )}
-      </div>
+      {photo ? <img src={photo} alt={name || "Match"} /> : <span>{initials(name)}</span>}
     </motion.div>
   );
 }
 
-function ScoreCard({ label, value, accent = "gold" }) {
+function ScoreCard({ label, value }) {
   return (
-    <div className="glass-strong rounded-2xl px-4 py-4 text-left">
-      <p className="text-[10px] uppercase tracking-[0.18em] text-[color:var(--tara-text-faint)]">{label}</p>
-      <p className={`mt-1 font-[var(--font-serif)] text-3xl ${accent === "gold" ? "text-gold-gradient" : "text-aurora"}`}>
-        {value}
-      </p>
+    <div className="match-popup-stat">
+      <span>{label}</span>
+      <strong>{value}</strong>
     </div>
   );
 }
 
 export default function MatchPopup({ open, selfUser, matchedUser, breakdown, onClose }) {
-  const compatibility = Number(breakdown?.compatibility ?? 0);
-  const kundali = Number(breakdown?.kundali ?? 0);
-  const personality = Number(breakdown?.personality ?? 0);
-  const insight = breakdown?.insight || "Your moons align — emotional rhythms in deep harmony.";
+  const compatibility = breakdown?.compatibility;
+  const kundali = breakdown?.kundali;
+  const personality = breakdown?.personality;
+  const insight = String(breakdown?.insight || "").trim();
   const matchId = breakdown?.matchId;
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") onClose?.();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open, onClose]);
 
   return (
     <AnimatePresence>
       {open ? (
         <motion.div
-          className="fixed inset-0 z-[80] flex items-center justify-center overflow-y-auto bg-black/70 px-6 backdrop-blur-xl"
+          className="match-popup-overlay"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          onClick={onClose}
         >
-          <div className="pointer-events-none absolute inset-0 bg-cosmic opacity-95" />
-          <div className="star-field pointer-events-none absolute inset-0 opacity-60" />
-          <div className="pointer-events-none absolute left-1/2 top-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-glow blur-3xl" />
-
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-full glass"
-            type="button"
-          >
-            <X className="h-4 w-4" />
-          </button>
-
           <motion.div
-            className="relative w-full max-w-sm text-center"
-            initial={{ opacity: 0, scale: 0.9, y: 16 }}
+            aria-labelledby="match-popup-title"
+            aria-modal="true"
+            className="match-popup-panel"
+            initial={{ opacity: 0, scale: 0.95, y: 14 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 16 }}
+            exit={{ opacity: 0, scale: 0.95, y: 14 }}
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
           >
-            <p className="text-xs uppercase tracking-[0.4em] text-[color:var(--tara-gold)]">A cosmic match</p>
-            <h1 className="mt-3 font-[var(--font-serif)] text-6xl leading-none">
-              <span className="text-aurora italic">It&apos;s written</span>
-            </h1>
+            <button aria-label="Close match popup" className="match-popup-close" onClick={onClose} type="button"><X size={19} /></button>
+            <p className="match-popup-eyebrow">A NEW CONNECTION</p>
+            <h2 id="match-popup-title">It&apos;s a match!</h2>
+            <p className="match-popup-subtitle">You both liked each other.</p>
 
-            <div className="mt-10 flex items-center justify-center">
+            <div className="match-popup-avatars">
               <ProfileOrb photo={selfUser?.photo} name={selfUser?.name} />
-              <div className="-mx-3 z-10 flex h-14 w-14 items-center justify-center rounded-full bg-aurora shadow-glow">
-                <Sparkles className="h-6 w-6 text-white" />
+              <div className="match-popup-connection">
+                <Sparkles size={21} />
               </div>
               <ProfileOrb photo={matchedUser?.photo} name={matchedUser?.name} delay={0.08} />
             </div>
 
-            <p className="mt-8 font-[var(--font-serif)] text-4xl text-[color:var(--tara-text-primary)]">
-              You & <span className="text-gold-gradient">{matchedUser?.name || "your match"}</span>
-            </p>
+            <p className="match-popup-name">You and {matchedUser?.name || "your match"}</p>
+            {compatibility !== null && compatibility !== undefined ? <p className="match-popup-compatibility">{compatibility}% compatible</p> : null}
 
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              <ScoreCard label="Kundali" value={`${kundali}/36`} accent="gold" />
-              <ScoreCard label="Personality" value={`${personality}%`} accent="purple" />
-            </div>
+            {kundali !== null && kundali !== undefined || personality !== null && personality !== undefined ? <div className="match-popup-stats">
+              {kundali !== null && kundali !== undefined ? <ScoreCard label="Kundali" value={`${kundali}/36`} /> : null}
+              {personality !== null && personality !== undefined ? <ScoreCard label="Personality" value={`${personality}%`} /> : null}
+            </div> : null}
 
-            <p className="mt-6 font-[var(--font-serif)] text-lg italic leading-snug text-[color:var(--tara-text-primary)]">
-              &quot;{insight}&quot;
-            </p>
+            {insight ? <p className="match-popup-insight">{insight}</p> : null}
 
-            <div className="mt-8 space-y-3">
+            <div className="match-popup-actions">
               <Link
                 to={matchId ? `/chat/${matchId}` : "/chat"}
                 onClick={onClose}
-                className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-aurora text-base font-semibold text-white shadow-glow"
+                className="match-popup-chat"
               >
-                <MessageCircle className="h-4 w-4" />
+                <MessageCircle size={18} />
                 Start the conversation
               </Link>
               <button
                 onClick={onClose}
-                className="flex h-12 w-full items-center justify-center rounded-full text-sm font-medium text-[color:var(--tara-text-secondary)]"
+                className="match-popup-dismiss"
                 type="button"
               >
                 Keep swiping
               </button>
-              <p className="text-xs text-[color:var(--tara-gold)]">Compatibility {compatibility}%</p>
             </div>
           </motion.div>
         </motion.div>

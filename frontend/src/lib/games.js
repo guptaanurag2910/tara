@@ -42,7 +42,7 @@ export function buildVerdict(score, total, gameId) {
     if (pct >= 0.33) return "Different limits — worth a real talk.";
     return "Opposite deal breakers. Could be friction, could be growth.";
   }
-  if (pct === 1) return "Cosmic sync. Three for three.";
+  if (pct === 1) return "Cosmic sync. Perfect score.";
   if (pct >= 0.66) return "Mostly aligned — a soft kind of match.";
   if (pct >= 0.33) return "Half and half. Interesting tension.";
   return "Total opposites. The chart loves contrast.";

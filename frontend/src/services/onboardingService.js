@@ -124,6 +124,11 @@ export async function fetchQuestions() {
   return FALLBACK_QUESTIONS;
 }
 
+export async function fetchActivePersonalityQuestions() {
+  const response = await api.get("personality/questions/");
+  return Array.isArray(response.data) ? response.data : [];
+}
+
 export async function submitResponse(data) {
   const response = await api.post("personality/response/", data);
   return response.data;

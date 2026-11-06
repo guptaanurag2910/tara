@@ -1,6 +1,5 @@
-import { Link, useNavigate } from "react-router-dom";
-
-import Button from "../components/Button";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 
 const EDIT_ITEMS = [
   { key: "name", label: "Name", hint: "How your name appears on profile" },
@@ -14,39 +13,39 @@ const EDIT_ITEMS = [
 ];
 
 export default function EditProfile() {
+  const location = useLocation();
   const navigate = useNavigate();
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 py-5">
-      <header className="mb-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-white">Edit Profile</h1>
-          <p className="text-xs text-slate-300">Update one section at a time</p>
-        </div>
-        <Button fullWidth={false} onClick={() => navigate("/profile")} variant="ghost">
-          Done
-        </Button>
+    <main className="tara-edit-menu tara-container">
+      <header className="edit-menu-header">
+        <div className="edit-menu-brand">tara<span>.</span></div>
+        <button aria-label="Back to profile" className="edit-menu-back" onClick={() => navigate("/profile")} type="button"><ArrowLeft size={19} /></button>
+        <p className="edit-menu-eyebrow">MAKE IT YOURS</p>
+        <h1>Edit Profile</h1>
+        <p>Update one section at a time.</p>
+        {location.state?.saved ? <p aria-live="polite" className="mt-3 rounded-xl border border-emerald-300/20 bg-emerald-500/15 px-3 py-2 text-sm text-emerald-100" role="status">Saved</p> : null}
       </header>
 
-      <section className="space-y-2 rounded-2xl border border-white/15 bg-slate-900/65 p-3 shadow-xl shadow-black/20">
+      <section aria-label="Profile sections" className="edit-menu-list">
         {EDIT_ITEMS.map((item) => (
           <Link
-            className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-3 transition hover:border-white/25"
+            className="edit-menu-row"
             key={item.key}
             to={`/profile/edit/${item.key}`}
           >
             <div>
-              <p className="text-sm font-medium text-white">{item.label}</p>
-              <p className="text-xs text-slate-300">{item.hint}</p>
+              <strong>{item.label}</strong>
+              <p>{item.hint}</p>
             </div>
-            <span className="text-sm text-slate-300">›</span>
+            <ChevronRight aria-hidden="true" size={18} />
           </Link>
         ))}
       </section>
 
-      <div className="mt-4">
+      <div className="edit-menu-footer">
         <Link
-          className="block rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-center text-sm font-medium text-slate-100"
+          className="edit-menu-preview"
           to="/profile"
         >
           Preview Profile

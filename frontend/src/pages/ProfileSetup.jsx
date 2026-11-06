@@ -2,16 +2,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useAuth } from "../hooks/useAuth";
+import { prepareRecommendations } from "../services/matchingService";
 import LocationInput from "../components/LocationInput";
-import BirthTimeClock from "../components/BirthTimeClock";
 import {
-  fetchQuestions,
   fetchProfilePhotos,
-  fetchProfileSummary,
   saveBasicProfile,
   saveBirthDetails,
   deleteProfilePhoto,
-  submitResponse,
   uploadProfilePhoto,
 } from "../services/onboardingService";
 import {
@@ -28,12 +25,13 @@ const STEP_PREFERENCE = 3;
 const STEP_PLACE = 4;
 const STEP_TIME = 5;
 const STEP_PHOTOS = 6;
-const STEP_PERSONALITY = 7;
-const STEP_VIBE = 8;
-
-const PERSONALITY_QUESTION_LIMIT = 5;
-const TOTAL_PROGRESS_UNITS = STEP_PHOTOS + 1 + PERSONALITY_QUESTION_LIMIT;
+const TOTAL_PROGRESS_UNITS = STEP_PHOTOS + 1;
 const MAX_PROFILE_PHOTOS = 5;
+
+function getCurrentTime() {
+  const now = new Date();
+  return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+}
 
 function isPastDate(dobText) {
   if (!dobText) {
@@ -78,20 +76,6 @@ function getDobValidationMessage(dobText) {
   return "";
 }
 
-function toPositiveInteger(value) {
-  const numeric = Number(value);
-  if (Number.isInteger(numeric) && numeric > 0) {
-    return numeric;
-  }
-  return null;
-}
-
-function sentenceCase(value) {
-  return String(value || "")
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
 function normalizePhotoItems(items) {
   if (!Array.isArray(items)) {
     return [];
@@ -120,25 +104,11 @@ function normalizePhotoItems(items) {
     .filter(Boolean);
 }
 
-function normalizeResponsesMap(value) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return {};
-  }
-
-  return Object.entries(value).reduce((acc, [questionId, optionId]) => {
-    const normalizedQuestionId = toPositiveInteger(questionId);
-    const normalizedOptionId = toPositiveInteger(optionId);
-    if (normalizedQuestionId && normalizedOptionId) {
-      acc[String(normalizedQuestionId)] = normalizedOptionId;
-    }
-    return acc;
-  }, {});
-}
-
 function normalizeStoredStep(value) {
   const numeric = Number(value);
-  if (Number.isInteger(numeric) && numeric >= STEP_NAME && numeric <= STEP_VIBE) {
-    return numeric;
+  if (Number.isInteger(numeric) && numeric >= STEP_NAME) {
+    // Resume older drafts that had advanced into the removed personality screens at Photos.
+    return Math.min(numeric, STEP_PHOTOS);
   }
   return null;
 }
@@ -146,6 +116,12 @@ function normalizeStoredStep(value) {
 function deriveInitialStep(storedProfile) {
   const storedStep = normalizeStoredStep(storedProfile?.currentStep);
   if (storedStep !== null) {
+    if (
+      storedStep >= STEP_PLACE &&
+      (!storedProfile?.birth_place || !storedProfile?.latitude || !storedProfile?.longitude || storedProfile?.is_default_location)
+    ) {
+      return STEP_PLACE;
+    }
     return storedStep;
   }
 
@@ -174,74 +150,14 @@ function deriveInitialStep(storedProfile) {
     return STEP_TIME;
   }
 
-  if (!Array.isArray(storedProfile?.photos) || storedProfile.photos.length === 0) {
-    return STEP_PHOTOS;
-  }
-
-  return STEP_PERSONALITY;
-}
-
-function normalizeTraitCards(traits, name) {
-  const fallback = [
-    {
-      key: "intuitive",
-      title: "Intuitive",
-      note: "You feel before you think.",
-    },
-    {
-      key: "romantic",
-      title: "Romantic",
-      note: "You believe in slow, deep love.",
-    },
-    {
-      key: "curious",
-      title: "Curious",
-      note: "You ask the questions others avoid.",
-    },
-    {
-      key: "grounded",
-      title: "Grounded",
-      note: "Steady when the world isn\'t.",
-    },
-  ];
-
-  if (!traits || typeof traits !== "object" || !Object.keys(traits).length) {
-    return {
-      greetingName: name || "there",
-      cards: fallback,
-    };
-  }
-
-  const notes = {
-    overthinking: "Your mind catches details others miss.",
-    emotional_depth: "You connect through emotional honesty.",
-    communication: "You value clarity over confusion.",
-    stability: "People feel calm around you.",
-    openness: "You give new people a fair chance.",
-    empathy: "You naturally tune into emotions.",
-  };
-
-  const sorted = Object.entries(traits)
-    .map(([key, value]) => ({ key, value: Number(value) || 0 }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 4)
-    .map((entry) => ({
-      key: entry.key,
-      title: sentenceCase(entry.key),
-      note: notes[entry.key] || "A core part of your emotional vibe.",
-    }));
-
-  return {
-    greetingName: name || "there",
-    cards: sorted.length ? sorted : fallback,
-  };
+  return STEP_PHOTOS;
 }
 
 function OptionRow({ selected, label, onClick }) {
   return (
     <button className={`tara-option-card ${selected ? "active" : ""}`} onClick={onClick} type="button">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-[18px] font-medium leading-tight">{label}</span>
+        <span className="onboarding-option-label text-[18px] font-medium leading-tight">{label}</span>
         <span className="tara-option-dot">{selected ? "✓" : ""}</span>
       </div>
     </button>
@@ -257,6 +173,13 @@ export default function ProfileSetup() {
   const stored = getOnboardingProfile(user?.id);
   const initialName =
     stored.name || (isGeneratedPhoneName(user) ? "" : user?.name || "");
+  const hasSelectedBirthplace = Boolean(
+    stored.birth_place &&
+    stored.latitude &&
+    stored.longitude &&
+    !stored.is_default_location &&
+    (stored.birthPlaceConfirmed || normalizeStoredStep(stored.currentStep) > STEP_PLACE)
+  );
   const [step, setStep] = useState(() => deriveInitialStep(stored));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -265,29 +188,16 @@ export default function ProfileSetup() {
     date_of_birth: stored.date_of_birth || user?.date_of_birth || "",
     gender: stored.gender || user?.gender || "",
     preference: stored.preference || user?.preference || "",
-    birth_place: stored.birth_place || user?.birth_place || "",
-    birth_time: stored.birth_time || user?.birth_time || "",
-    latitude: stored.latitude || (user?.latitude ? String(user.latitude) : ""),
-    longitude: stored.longitude || (user?.longitude ? String(user.longitude) : ""),
-    is_default_location: Boolean(
-      stored.is_default_location !== undefined
-        ? stored.is_default_location
-        : user?.is_default_location
-    ),
+    birth_place: hasSelectedBirthplace ? stored.birth_place : "",
+    birthPlaceConfirmed: hasSelectedBirthplace,
+    birth_time: stored.birth_time || user?.birth_time || getCurrentTime(),
+    latitude: hasSelectedBirthplace ? stored.latitude : "",
+    longitude: hasSelectedBirthplace ? stored.longitude : "",
+    is_default_location: false,
     photos: normalizePhotoItems(stored.photos),
     basicSaved: Boolean(stored.basicSaved),
     birthSaved: Boolean(stored.birthSaved),
   });
-
-  const [questions, setQuestions] = useState([]);
-  const [questionIndex, setQuestionIndex] = useState(() => {
-    const numeric = Number(stored.currentQuestionIndex);
-    return Number.isInteger(numeric) && numeric >= 0 ? numeric : 0;
-  });
-  const [responsesByQuestion, setResponsesByQuestion] = useState(() =>
-    normalizeResponsesMap(stored.responsesByQuestion),
-  );
-  const [vibeSummary, setVibeSummary] = useState(() => normalizeTraitCards({}, stored.name || user?.name));
 
   useEffect(() => {
     const persisted = getOnboardingProfile(user?.id);
@@ -296,14 +206,18 @@ export default function ProfileSetup() {
     }
 
     saveOnboardingProfile({
+      ...getOnboardingProfile(user?.id),
       ...profile,
       currentStep: step,
-      currentQuestionIndex: step === STEP_PERSONALITY ? questionIndex : 0,
-      responsesByQuestion,
+      currentQuestionIndex: 0,
       completed: false,
       completedAt: null,
     }, user?.id);
-  }, [profile, questionIndex, responsesByQuestion, step, user?.id]);
+  }, [profile, step, user?.id]);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [step]);
 
   useEffect(() => {
     let active = true;
@@ -335,25 +249,7 @@ export default function ProfileSetup() {
     };
   }, []);
 
-  const currentQuestion = questions[questionIndex] || null;
-  const selectedOptionId = currentQuestion ? responsesByQuestion[String(currentQuestion.id)] : null;
-
-  useEffect(() => {
-    if (!questions.length) {
-      return;
-    }
-    setQuestionIndex((prev) => Math.min(Math.max(prev, 0), questions.length - 1));
-  }, [questions]);
-
-  const progressUnit = useMemo(() => {
-    if (step <= STEP_PHOTOS) {
-      return step + 1;
-    }
-    if (step === STEP_PERSONALITY) {
-      return 7 + questionIndex + 1;
-    }
-    return TOTAL_PROGRESS_UNITS;
-  }, [questionIndex, step]);
+  const progressUnit = step + 1;
 
   const progressPercent = useMemo(
     () => Math.min(100, Math.max(0, (progressUnit / TOTAL_PROGRESS_UNITS) * 100)),
@@ -396,11 +292,8 @@ export default function ProfileSetup() {
     if (step === STEP_PHOTOS) {
       return Array.isArray(profile.photos) && profile.photos.length > 0;
     }
-    if (step === STEP_PERSONALITY) {
-      return Boolean(selectedOptionId);
-    }
     return true;
-  }, [profile, selectedOptionId, step]);
+  }, [profile, step]);
 
   const saveBasicIfNeeded = async () => {
     if (profile.basicSaved) {
@@ -452,70 +345,6 @@ export default function ProfileSetup() {
           : prev.is_default_location,
     }));
   };
-
-  const loadQuestionsIfNeeded = async () => {
-    if (questions.length > 0) {
-      return;
-    }
-    const loaded = await fetchQuestions();
-    const sliced = Array.isArray(loaded) ? loaded.slice(0, PERSONALITY_QUESTION_LIMIT) : [];
-    if (!sliced.length) {
-      throw new Error("Could not load personality questions.");
-    }
-    setQuestions(sliced);
-  };
-
-  useEffect(() => {
-    if (step < STEP_PERSONALITY) {
-      return;
-    }
-
-    let active = true;
-    (async () => {
-      try {
-        await loadQuestionsIfNeeded();
-      } catch {
-        return;
-      }
-
-      try {
-        const summary = await fetchProfileSummary();
-        if (!active) {
-          return;
-        }
-
-        const responseMap = Array.isArray(summary?.personality_responses)
-          ? summary.personality_responses.reduce((acc, item) => {
-              const questionId = toPositiveInteger(item?.question_id);
-              const optionId = toPositiveInteger(item?.selected_option?.id);
-              if (questionId && optionId) {
-                acc[String(questionId)] = optionId;
-              }
-              return acc;
-            }, {})
-          : {};
-
-        if (Object.keys(responseMap).length > 0) {
-          setResponsesByQuestion((prev) => ({
-            ...responseMap,
-            ...prev,
-          }));
-        }
-
-        if (summary?.traits && typeof summary.traits === "object") {
-          setVibeSummary(normalizeTraitCards(summary.traits || {}, profile.name));
-        }
-      } catch {
-        if (active && step === STEP_VIBE) {
-          setVibeSummary(normalizeTraitCards({}, profile.name));
-        }
-      }
-    })();
-
-    return () => {
-      active = false;
-    };
-  }, [profile.name, step]); // intentionally rehydrate when resuming personality/vibe
 
   const onPhotoSelect = async (event) => {
     const files = Array.from(event.target.files || []);
@@ -576,11 +405,15 @@ export default function ProfileSetup() {
   };
 
   const onBirthLocationChange = (locationPayload) => {
+    const place = String(locationPayload?.place_of_birth || "");
+    const latitude = String(locationPayload?.latitude || "");
+    const longitude = String(locationPayload?.longitude || "");
     setProfile((prev) => ({
       ...prev,
-      birth_place: String(locationPayload?.place_of_birth || ""),
-      latitude: String(locationPayload?.latitude || ""),
-      longitude: String(locationPayload?.longitude || ""),
+      birth_place: place,
+      birthPlaceConfirmed: Boolean(place && latitude && longitude && !locationPayload?.is_default_location),
+      latitude,
+      longitude,
       is_default_location: Boolean(locationPayload?.is_default_location),
       birthSaved: false,
     }));
@@ -588,17 +421,6 @@ export default function ProfileSetup() {
 
   const onBack = () => {
     setError("");
-
-    if (step === STEP_PERSONALITY && questionIndex > 0) {
-      setQuestionIndex((prev) => prev - 1);
-      return;
-    }
-
-    if (step === STEP_VIBE) {
-      setStep(STEP_PERSONALITY);
-      setQuestionIndex(Math.max(questions.length - 1, 0));
-      return;
-    }
 
     if (step > STEP_NAME) {
       setStep((prev) => prev - 1);
@@ -610,13 +432,19 @@ export default function ProfileSetup() {
 
   const completeOnboarding = async () => {
     markOnboardingComplete({
+      ...getOnboardingProfile(user?.id),
       ...profile,
-      currentStep: STEP_VIBE,
-      currentQuestionIndex: Math.max(questionIndex, 0),
+      currentStep: STEP_PHOTOS,
+      currentQuestionIndex: 0,
       completed: true,
       completedAt: Date.now(),
     }, user?.id);
     await fetchCurrentUser();
+    try {
+      await prepareRecommendations();
+    } catch {
+      // Discover retries job creation when it loads if this request fails.
+    }
     navigate("/discover", { replace: true });
   };
 
@@ -648,43 +476,6 @@ export default function ProfileSetup() {
       }
 
       if (step === STEP_PHOTOS) {
-        await loadQuestionsIfNeeded();
-        setStep(STEP_PERSONALITY);
-        setLoading(false);
-        return;
-      }
-
-      if (step === STEP_PERSONALITY) {
-        const questionId = toPositiveInteger(currentQuestion?.id);
-        const optionId = toPositiveInteger(selectedOptionId);
-
-        if (questionId && optionId) {
-          await submitResponse({
-            question_id: questionId,
-            option_id: optionId,
-          });
-        }
-
-        const isLastQuestion = questionIndex >= questions.length - 1;
-        if (!isLastQuestion) {
-          setQuestionIndex((prev) => prev + 1);
-          setLoading(false);
-          return;
-        }
-
-        try {
-          const summary = await fetchProfileSummary();
-          setVibeSummary(normalizeTraitCards(summary?.traits || {}, profile.name));
-        } catch {
-          setVibeSummary(normalizeTraitCards({}, profile.name));
-        }
-
-        setStep(STEP_VIBE);
-        setLoading(false);
-        return;
-      }
-
-      if (step === STEP_VIBE) {
         await completeOnboarding();
         setLoading(false);
         return;
@@ -698,30 +489,35 @@ export default function ProfileSetup() {
     }
   };
 
-  const personalityLabel = `${questionIndex + 1} of ${Math.max(questions.length, PERSONALITY_QUESTION_LIMIT)}`;
-
   return (
-    <main className="tara-container flex min-h-[100dvh] flex-col px-6 pb-8 pt-10">
-      <header className="mb-10 flex items-center gap-4">
-        <button aria-label="Back" className="tara-back-btn" onClick={onBack} type="button">
-          ←
-        </button>
-        <div className="tara-progress-track flex-1">
+    <main className="tara-container tara-onboarding onboarding-profile">
+      <header className="onboarding-header">
+        <div className="onboarding-header-row">
+          <button aria-label="Back" className="tara-back-btn" onClick={onBack} type="button">
+            ←
+          </button>
+          <div className="onboarding-header-meta">
+            <span className="onboarding-brand">tara<span className="onboarding-brand-dot">.</span></span>
+            <span className="onboarding-step-count">{progressUnit} of {TOTAL_PROGRESS_UNITS}</span>
+          </div>
+        </div>
+        <div aria-label="Onboarding progress" className="tara-progress-track" role="progressbar" aria-valuenow={progressUnit} aria-valuemin={0} aria-valuemax={TOTAL_PROGRESS_UNITS}>
           <div className="tara-progress-fill h-full transition-all duration-300" style={{ width: `${progressPercent}%` }} />
         </div>
       </header>
 
-      <section className="onboarding-step-enter flex flex-1 flex-col">
+      <section className="onboarding-step-enter onboarding-content" key={step}>
         {step === STEP_NAME ? (
           <>
-            <span className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--tara-card-border)] bg-[color:var(--tara-input-bg)] text-[color:var(--tara-gold)]">
+            <span className="onboarding-step-icon">
               ◉
             </span>
             <h1 className="tara-heading text-[3.2rem] leading-[1.05]">What should we call you?</h1>
             <p className="tara-copy mt-2 text-[15px]">Your first name is how others will know you.</p>
             <div className="mt-8">
               <input
-                className="w-full border-0 border-b border-[color:var(--tara-card-border)] bg-transparent pb-3 text-[2.5rem] text-[color:var(--tara-text-primary)] placeholder:text-[color:var(--tara-text-faint)] focus:border-b-[color:var(--tara-violet)] focus:outline-none"
+                aria-label="Your first name"
+                className="onboarding-name-input"
                 onChange={(event) =>
                   setProfile((prev) => ({ ...prev, name: event.target.value, basicSaved: false }))
                 }
@@ -735,7 +531,7 @@ export default function ProfileSetup() {
 
         {step === STEP_DOB ? (
           <>
-            <span className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--tara-card-border)] bg-[color:var(--tara-input-bg)] text-[color:var(--tara-gold)]">
+            <span className="onboarding-step-icon">
               ☷
             </span>
             <h1 className="tara-heading text-[3.2rem] leading-[1.05]">When were you born?</h1>
@@ -766,7 +562,7 @@ export default function ProfileSetup() {
               {[
                 { value: "female", label: "Woman" },
                 { value: "male", label: "Man" },
-                { value: "other", label: "Non-binary" },
+                { value: "non_binary", label: "Non-binary" },
                 { value: "prefer_not_to_say", label: "Prefer not to say" },
               ].map((item) => (
                 <OptionRow
@@ -804,14 +600,15 @@ export default function ProfileSetup() {
 
         {step === STEP_PLACE ? (
           <>
-            <span className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--tara-card-border)] bg-[color:var(--tara-input-bg)] text-[color:var(--tara-gold)]">
+            <span className="onboarding-step-icon">
               ⌖
             </span>
             <h1 className="tara-heading text-[3.2rem] leading-[1.05]">Where were you born?</h1>
-            <p className="tara-copy mt-2 text-[15px]">Use current location or search and select a birthplace.</p>
+            <p className="tara-copy mt-2 text-[15px]">Search for your birthplace and select it from the list.</p>
 
             <div className="mt-7 space-y-3">
               <LocationInput
+                autoDetect={false}
                 value={{
                   place_of_birth: profile.birth_place,
                   latitude: profile.latitude,
@@ -819,7 +616,8 @@ export default function ProfileSetup() {
                   is_default_location: profile.is_default_location,
                 }}
                 onChange={onBirthLocationChange}
-                placeholder="Search city or place"
+                placeholder="Search your place of birth"
+                simple
               />
             </div>
           </>
@@ -827,34 +625,36 @@ export default function ProfileSetup() {
 
         {step === STEP_TIME ? (
           <>
-            <span className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--tara-card-border)] bg-[color:var(--tara-input-bg)] text-[color:var(--tara-gold)]">
+            <span className="onboarding-step-icon">
               ◷
             </span>
             <h1 className="tara-heading text-[3.2rem] leading-[1.05]">Time of birth</h1>
-            <p className="tara-copy mt-2 text-[15px]">Optional - but it sharpens your chart.</p>
+            <p className="tara-copy mt-2 text-[15px]">We’ve filled in the current time. Change it to your birth time if you know it.</p>
             <div className="mt-8">
-              <BirthTimeClock
-                label="Set birth time"
-                manualInputId="profile-setup-birth-time"
-                onChange={(nextTime) =>
-                  setProfile((prev) => ({
-                    ...prev,
-                    birth_time: nextTime,
-                    birthSaved: false,
-                  }))
-                }
-                value={profile.birth_time}
-              />
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium tara-copy">Time</span>
+                <input
+                  className="tara-input w-full"
+                  id="profile-setup-birth-time"
+                  name="birth_time"
+                  onChange={(event) =>
+                    setProfile((prev) => ({
+                      ...prev,
+                      birth_time: event.target.value,
+                      birthSaved: false,
+                    }))
+                  }
+                  type="time"
+                  value={profile.birth_time}
+                />
+              </label>
             </div>
-            <p className="tara-faint mt-3 text-sm">
-              If skipped, we use your profile creation time and current location.
-            </p>
           </>
         ) : null}
 
         {step === STEP_PHOTOS ? (
           <>
-            <span className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--tara-card-border)] bg-[color:var(--tara-input-bg)] text-[color:var(--tara-gold)]">
+            <span className="onboarding-step-icon">
               ⊙
             </span>
             <h1 className="tara-heading text-[3.2rem] leading-[1.05]">Add your photos</h1>
@@ -915,71 +715,21 @@ export default function ProfileSetup() {
           </>
         ) : null}
 
-        {step === STEP_PERSONALITY ? (
-          <>
-            <p className="tara-kicker">Personality · {personalityLabel}</p>
-            <h1 className="tara-heading mt-2 text-[3.2rem] leading-[1.06]">
-              {currentQuestion?.question_text || "Loading your question..."}
-            </h1>
-
-            <div className="mt-8 space-y-3">
-              {(currentQuestion?.options || []).map((option) => (
-                <OptionRow
-                  key={option.id}
-                  label={option.option_text}
-                  onClick={() => {
-                    setResponsesByQuestion((prev) => ({
-                      ...prev,
-                      [String(currentQuestion.id)]: option.id,
-                    }));
-                  }}
-                  selected={selectedOptionId === option.id}
-                />
-              ))}
-            </div>
-          </>
-        ) : null}
-
-        {step === STEP_VIBE ? (
-          <>
-            <p className="tara-kicker">Your vibe</p>
-            <h1 className="tara-heading mt-2 text-[3.3rem] leading-[1.04]">
-              Welcome,{" "}
-              <span className="bg-gradient-to-r from-[#6f63f7] via-[#5f6df6] to-[#d5bb76] bg-clip-text italic text-transparent">
-                {vibeSummary.greetingName}
-              </span>
-            </h1>
-            <p className="tara-copy mt-2 text-[15px]">We&apos;ve read your chart. Here&apos;s the energy you bring.</p>
-
-            <div className="mt-7 space-y-3">
-              {vibeSummary.cards.map((item) => (
-                <article className="tara-card-strong vibe-card rounded-[30px] px-5 py-4" key={item.key}>
-                  <p className="tara-heading text-[24px] leading-none">
-                    <span className="mr-2 text-[color:var(--tara-gold)]">✧</span>
-                    {item.title}
-                  </p>
-                  <p className="tara-copy mt-1 text-[15px]">{item.note}</p>
-                </article>
-              ))}
-            </div>
-          </>
-        ) : null}
-
         {error ? (
-          <p className="mt-4 rounded-2xl border border-rose-300/20 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+          <p className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
             {error}
           </p>
         ) : null}
 
         {!error && clientValidationMessage ? (
-          <p className="mt-4 rounded-2xl border border-amber-300/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
+          <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
             {clientValidationMessage}
           </p>
         ) : null}
 
-        <div className="mt-auto pt-10">
+        <div className="onboarding-actions">
           <button className="tara-primary-btn w-full" disabled={!canProceed || loading} onClick={onNext} type="button">
-            {loading ? "Saving..." : step === STEP_VIBE ? "Find my matches →" : "Continue →"}
+            {loading ? "Saving..." : step === STEP_PHOTOS ? "Finish setup" : "Continue"}
           </button>
         </div>
       </section>

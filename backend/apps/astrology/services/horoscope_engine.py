@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime, time, timedelta
 from typing import Dict, List, Mapping, Optional
+from zoneinfo import ZoneInfo
 
 from django.core.cache import cache
 from django.utils import timezone
@@ -68,10 +69,11 @@ def _daily_horoscope_cache_key(
     target_day: date,
     lagna_sign: Optional[str],
     moon_sign: Optional[str],
+    timezone_name: str,
 ) -> str:
     return (
         "astrology:daily-horoscope:"
-        f"{user_id}:{target_day.isoformat()}:{_cache_token(lagna_sign)}:{_cache_token(moon_sign)}"
+        f"{user_id}:{target_day.isoformat()}:{_cache_token(lagna_sign)}:{_cache_token(moon_sign)}:{_cache_token(timezone_name)}"
     )
 
 
@@ -198,11 +200,11 @@ def _build_key_transits(mapped_transits: Mapping[str, Mapping[str, object]]) -> 
     return points
 
 
-def generate_daily_horoscope(*, lagna_sign: Optional[str] = None, moon_sign: Optional[str] = None, day: Optional[date] = None) -> Dict[str, object]:
-    target_day = day or timezone.localdate()
+def generate_daily_horoscope(*, lagna_sign: Optional[str] = None, moon_sign: Optional[str] = None, day: Optional[date] = None, timezone_name: str = "UTC") -> Dict[str, object]:
+    target_day = day or timezone.now().astimezone(ZoneInfo(timezone_name)).date()
 
     if lagna_sign:
-        transits = get_daily_transits(target_day)
+        transits = get_daily_transits(target_day, timezone_name)
         mapped = map_transits_to_houses(lagna_sign, transits)
         career = _transit_message_for_domain("career", mapped)
         love = _transit_message_for_domain("love", mapped)
@@ -217,6 +219,8 @@ def generate_daily_horoscope(*, lagna_sign: Optional[str] = None, moon_sign: Opt
         key_transits = _build_key_transits(mapped)
         return {
             "date": target_day.isoformat(),
+            "timezone": timezone_name,
+            "transit_snapshot": "12:00 local time",
             "source": "transit",
             "career": career,
             "love": love,
@@ -263,22 +267,24 @@ def generate_daily_horoscope(*, lagna_sign: Optional[str] = None, moon_sign: Opt
     }
 
 
-def get_cached_daily_horoscope(*, user_id: int, lagna_sign: Optional[str], moon_sign: Optional[str], day: Optional[date] = None) -> Dict[str, object]:
-    target_day = day or timezone.localdate()
+def get_cached_daily_horoscope(*, user_id: int, lagna_sign: Optional[str], moon_sign: Optional[str], day: Optional[date] = None, timezone_name: str = "UTC") -> Dict[str, object]:
+    zone = ZoneInfo(timezone_name)
+    target_day = day or timezone.now().astimezone(zone).date()
     cache_key = _daily_horoscope_cache_key(
         user_id=user_id,
         target_day=target_day,
         lagna_sign=lagna_sign,
         moon_sign=moon_sign,
+        timezone_name=timezone_name,
     )
     cached = cache.get(cache_key)
     if cached is not None:
         return cached
 
-    payload = generate_daily_horoscope(lagna_sign=lagna_sign, moon_sign=moon_sign, day=target_day)
+    payload = generate_daily_horoscope(lagna_sign=lagna_sign, moon_sign=moon_sign, day=target_day, timezone_name=timezone_name)
 
     now = timezone.now()
-    end_of_day = now.replace(hour=23, minute=59, second=59, microsecond=0)
-    timeout = max(60, int((end_of_day - now).total_seconds()))
+    next_midnight = datetime.combine(target_day + timedelta(days=1), time.min, tzinfo=zone)
+    timeout = max(60, int((next_midnight - now.astimezone(zone)).total_seconds()))
     cache.set(cache_key, payload, timeout=timeout)
     return payload

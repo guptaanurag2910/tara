@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, time
+from zoneinfo import ZoneInfo
 from typing import Dict
 
 from django.utils import timezone
@@ -8,10 +9,11 @@ from django.utils import timezone
 from .ephemeris_service import ZODIAC_SIGNS, degree_to_sign, get_julian_day, get_planet_positions
 
 
-def get_daily_transits(day: date | None = None) -> Dict[str, Dict[str, object]]:
-    target_day = day or timezone.now().date()
-    # Fixed noon UTC for stable daily transits.
-    jd_ut = get_julian_day(target_day, time(hour=12, minute=0), "UTC")
+def get_daily_transits(day: date | None = None, timezone_name: str = "UTC") -> Dict[str, Dict[str, object]]:
+    target_day = day or timezone.now().astimezone(ZoneInfo(timezone_name)).date()
+    # A consistent local-noon snapshot keeps the selected calendar day aligned
+    # with the user's birth location while avoiding DST transition hours.
+    jd_ut = get_julian_day(target_day, time(hour=12, minute=0), timezone_name)
     transit_positions = get_planet_positions(jd_ut)
 
     transits: Dict[str, Dict[str, object]] = {}

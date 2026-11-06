@@ -18,6 +18,7 @@ class User(AbstractUser):
         FEMALE = "female", "Female"
         NON_BINARY = "non_binary", "Non Binary"
         OTHER = "other", "Other"
+        PREFER_NOT_TO_SAY = "prefer_not_to_say", "Prefer not to say"
 
     class Preference(models.TextChoices):
         MALE = "male", "Male"
@@ -39,6 +40,16 @@ class User(AbstractUser):
     is_birth_time_default = models.BooleanField(default=False)
     bio = models.TextField(blank=True, default="")
     interests = models.JSONField(default=list, blank=True)
+    notification_preferences = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Per-user in-app notification preferences.",
+    )
+    privacy_settings = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="User-controlled profile visibility settings.",
+    )
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["name"]

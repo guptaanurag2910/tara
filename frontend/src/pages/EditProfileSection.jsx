@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
 import Button from "../components/Button";
 import BirthDetailsForm from "../components/BirthDetailsForm";
@@ -234,7 +235,7 @@ export default function EditProfileSection() {
       }
 
       setSuccess("Saved");
-      navigate("/profile/edit");
+      navigate("/profile/edit", { state: { saved: true } });
     } catch (apiError) {
       setError(apiError?.message || "Could not save changes.");
     } finally {
@@ -327,19 +328,17 @@ export default function EditProfileSection() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 py-5">
-      <header className="mb-4 flex items-center justify-between">
-        <Button fullWidth={false} onClick={() => navigate("/profile/edit")} variant="ghost">
-          Back
-        </Button>
-        <p className="text-xs text-slate-300">Step {stepLabel}</p>
+    <main className="tara-edit-section tara-container">
+      <header className="edit-section-header">
+        <div className="edit-section-brand">tara<span>.</span></div>
+        <button aria-label="Back to Edit Profile" className="edit-section-back" onClick={() => navigate("/profile/edit")} type="button"><ArrowLeft size={19} /></button>
+        <p className="edit-section-eyebrow">PROFILE DETAILS · {stepLabel}</p>
+        <h1>{sectionMeta.title}</h1>
+        <p className="edit-section-subtitle">{sectionMeta.subtitle}</p>
       </header>
 
-      <section className="rounded-2xl border border-white/15 bg-slate-900/65 p-4 shadow-xl shadow-black/20">
-        <h1 className="text-xl font-semibold text-white">{sectionMeta.title}</h1>
-        <p className="mt-1 text-xs text-slate-300">{sectionMeta.subtitle}</p>
-
-        <div className="mt-4 space-y-4">
+      <section className="edit-section-card">
+        <div className="edit-section-fields">
           {section === "name" ? (
             <Input
               id="edit-name"

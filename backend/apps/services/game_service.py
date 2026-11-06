@@ -1,21 +1,26 @@
 import random
-from typing import Any
+from typing import Any, Optional
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import F
 
-from apps.games.models import GameCategory, GameQuestion, GameResponse
+from apps.games.models import GameCategory, GameQuestion, GameResponse, QuestionExposure
 
 User = get_user_model()
 
 
-def get_random_questions(user: User, category, limit: int = 3) -> list[dict[str, Any]]:
+def get_random_questions(
+    user: User,
+    category,
+    limit: int = 5,
+    exclude_user_ids: Optional[list[int]] = None,
+) -> list[dict[str, Any]]:
     """
     Return random questions for a category while prioritizing unseen questions.
 
-    Seen questions are determined from GameResponse for the given user.
-    If unseen questions are fewer than `limit`, falls back to the full pool.
+    Prefer questions neither participant has answered before. Repeats are only
+    used when the unseen pool is smaller than the requested session.
     """
     user_id = getattr(user, "id", None)
     if not user_id:
@@ -24,7 +29,7 @@ def get_random_questions(user: User, category, limit: int = 3) -> list[dict[str,
     try:
         requested_limit = int(limit)
     except (TypeError, ValueError):
-        requested_limit = 3
+        requested_limit = 5
     if requested_limit <= 0:
         return []
 
@@ -43,13 +48,21 @@ def get_random_questions(user: User, category, limit: int = 3) -> list[dict[str,
 
     effective_limit = min(requested_limit, len(all_ids))
 
+    participant_ids = {user_id}
+    participant_ids.update(int(value) for value in (exclude_user_ids or []) if value)
     seen_ids = set(
         GameResponse.objects.filter(
-            user_id=user_id,
+            user_id__in=participant_ids,
             question_id__in=all_ids,
         )
         .values_list("question_id", flat=True)
         .distinct()
+    )
+    seen_ids.update(
+        QuestionExposure.objects.filter(
+            user_id__in=participant_ids,
+            question_id__in=all_ids,
+        ).values_list("question_id", flat=True)
     )
 
     unseen_ids = [qid for qid in all_ids if qid not in seen_ids]
@@ -80,6 +93,52 @@ def get_random_questions(user: User, category, limit: int = 3) -> list[dict[str,
         GameQuestion.objects.filter(id__in=selected_ids).update(times_used=F("times_used") + 1)
 
     return ordered_result
+
+
+def get_random_adventure_questions(
+    user: User,
+    *,
+    exclude_user_ids: Optional[list[int]] = None,
+) -> list[dict[str, Any]]:
+    """Select one complete, unseen five-stage adventure for a new session."""
+    if not getattr(user, "id", None):
+        return []
+    category = _resolve_category("choose_your_adventure")
+    if category is None:
+        return []
+    rows = list(
+        GameQuestion.objects.filter(
+            category_id=category.id, is_active=True, game__is_active=True,
+        ).order_by("order", "id").values("id", "question_text", "options", "game_type", "tags", "order")
+    )
+    adventures: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        tags = row.get("tags") or []
+        if tags:
+            adventures.setdefault(str(tags[0]), []).append(row)
+    complete = [group for group in adventures.values() if len(group) == 5]
+    if not complete:
+        return []
+
+    participant_ids = {int(user.id)}
+    participant_ids.update(int(value) for value in (exclude_user_ids or []) if value)
+    question_ids = [row["id"] for group in complete for row in group]
+    seen_ids = set(GameResponse.objects.filter(
+        user_id__in=participant_ids, question_id__in=question_ids,
+    ).values_list("question_id", flat=True).distinct())
+    seen_ids.update(QuestionExposure.objects.filter(
+        user_id__in=participant_ids, question_id__in=question_ids,
+    ).values_list("question_id", flat=True))
+    unseen = [group for group in complete if not any(row["id"] in seen_ids for row in group)]
+    selected = random.choice(unseen or complete)
+    selected_ids = [row["id"] for row in selected]
+    GameQuestion.objects.filter(id__in=selected_ids).update(times_used=F("times_used") + 1)
+    return [{
+        "id": row["id"],
+        "question_text": row["question_text"],
+        "options": row["options"] or [],
+        "game_type": row["game_type"],
+    } for row in selected]
 
 
 def _resolve_category(category) -> GameCategory | None:

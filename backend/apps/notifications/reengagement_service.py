@@ -13,8 +13,8 @@ from .services import create_notification_for_user
 
 User = get_user_model()
 
-INACTIVE_NOTIFICATION_TEXT = "You have been away for a while. Your matches are waiting ✨"
-UNREAD_MESSAGE_NOTIFICATION_TEXT = "Someone messaged you 👀"
+INACTIVE_NOTIFICATION_TEXT = "New people to explore are ready whenever you are ✨"
+UNREAD_MESSAGE_NOTIFICATION_TEXT = "A conversation has a new message"
 
 
 def _has_recent_notification(
@@ -61,6 +61,7 @@ def trigger_inactive_user_notifications(
             user_id=user_id,
             notification_type=Notification.Type.RECOMMENDATION,
             text=INACTIVE_NOTIFICATION_TEXT,
+            action_url="/discover",
         )
         created_count += 1
 
@@ -93,7 +94,7 @@ def trigger_high_compatibility_match_notifications(
             (match.user_b_id, match.user_a.name or "your match"),
         )
         for user_id, partner_name in payload:
-            text = f"New high compatibility match found ✨ {partner_name} ({match.final_score}%)"
+            text = f"A new person you may connect with: {partner_name} ✨"
             if _has_recent_notification(
                 user_id=user_id,
                 notification_type=Notification.Type.MATCH,
@@ -105,6 +106,8 @@ def trigger_high_compatibility_match_notifications(
                 user_id=user_id,
                 notification_type=Notification.Type.MATCH,
                 text=text,
+                action_url=f"/chat/{match.id}",
+                actor_name=partner_name,
             )
             created_count += 1
 
@@ -144,6 +147,7 @@ def trigger_unread_message_notifications(
             user_id=user_id,
             notification_type=Notification.Type.MESSAGE,
             text=UNREAD_MESSAGE_NOTIFICATION_TEXT,
+            action_url="/chat",
         )
         created_count += 1
 

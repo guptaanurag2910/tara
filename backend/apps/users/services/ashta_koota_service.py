@@ -1,6 +1,14 @@
 from __future__ import annotations
 
-from typing import Dict, Mapping, Tuple
+from typing import Dict, Mapping
+
+from .nakshatra_data import (
+    NAKSHATRA_TO_GANA,
+    NAKSHATRA_TO_INDEX,
+    NAKSHATRA_TO_NADI,
+    NAKSHATRA_TO_YONI,
+    normalize_nakshatra,
+)
 
 MAX_KOOTA_SCORE = {
     "varna": 1,
@@ -108,9 +116,12 @@ GANA_MATRIX = {
     ("deva", "deva"): 6,
     ("manushya", "manushya"): 6,
     ("rakshasa", "rakshasa"): 6,
-    ("deva", "manushya"): 5,
-    ("manushya", "rakshasa"): 3,
-    ("deva", "rakshasa"): 1,
+    ("deva", "manushya"): 6,
+    ("manushya", "deva"): 5,
+    ("manushya", "rakshasa"): 0,
+    ("rakshasa", "manushya"): 0,
+    ("deva", "rakshasa"): 0,
+    ("rakshasa", "deva"): 1,
 }
 
 YONI_FRIENDLY_PAIRS = {
@@ -128,65 +139,13 @@ YONI_ENEMY_PAIRS = {
     frozenset({"deer", "dog"}),
 }
 
-NAKSHATRA_DATA = [
-    ("Ashwini", "Deva", "Horse", "Adi"),
-    ("Bharani", "Manushya", "Elephant", "Madhya"),
-    ("Krittika", "Rakshasa", "Sheep", "Antya"),
-    ("Rohini", "Manushya", "Serpent", "Adi"),
-    ("Mrigashirsha", "Deva", "Serpent", "Madhya"),
-    ("Ardra", "Manushya", "Dog", "Antya"),
-    ("Punarvasu", "Deva", "Cat", "Adi"),
-    ("Pushya", "Deva", "Sheep", "Madhya"),
-    ("Ashlesha", "Rakshasa", "Cat", "Antya"),
-    ("Magha", "Rakshasa", "Rat", "Adi"),
-    ("Purva Phalguni", "Manushya", "Rat", "Madhya"),
-    ("Uttara Phalguni", "Manushya", "Cow", "Antya"),
-    ("Hasta", "Deva", "Buffalo", "Adi"),
-    ("Chitra", "Rakshasa", "Tiger", "Madhya"),
-    ("Swati", "Deva", "Buffalo", "Antya"),
-    ("Vishakha", "Rakshasa", "Tiger", "Adi"),
-    ("Anuradha", "Deva", "Deer", "Madhya"),
-    ("Jyeshtha", "Rakshasa", "Deer", "Antya"),
-    ("Mula", "Rakshasa", "Dog", "Adi"),
-    ("Purva Ashadha", "Manushya", "Monkey", "Madhya"),
-    ("Uttara Ashadha", "Manushya", "Mongoose", "Antya"),
-    ("Shravana", "Deva", "Monkey", "Adi"),
-    ("Dhanishta", "Rakshasa", "Lion", "Madhya"),
-    ("Shatabhisha", "Rakshasa", "Horse", "Antya"),
-    ("Purva Bhadrapada", "Manushya", "Lion", "Adi"),
-    ("Uttara Bhadrapada", "Manushya", "Cow", "Madhya"),
-    ("Revati", "Deva", "Elephant", "Antya"),
-]
-
-
 def _norm(value) -> str:
     text = str(value or "").strip().lower()
     return "".join(ch for ch in text if ch.isalnum())
 
 
-NAKSHATRA_TO_INDEX: Dict[str, int] = {}
-NAKSHATRA_TO_GANA: Dict[str, str] = {}
-NAKSHATRA_TO_YONI: Dict[str, str] = {}
-NAKSHATRA_TO_NADI: Dict[str, str] = {}
-
-for idx, (name, gana, yoni, nadi) in enumerate(NAKSHATRA_DATA, start=1):
-    key = _norm(name)
-    NAKSHATRA_TO_INDEX[key] = idx
-    NAKSHATRA_TO_GANA[key] = gana.lower()
-    NAKSHATRA_TO_YONI[key] = yoni.lower()
-    NAKSHATRA_TO_NADI[key] = nadi.lower()
-
-NAKSHATRA_ALIASES = {
-    "mrigashira": "mrigashirsha",
-    "mrigasira": "mrigashirsha",
-    "uttaraphalguni": "uttaraphalguni",
-    "purvaphalguni": "purvaphalguni",
-}
-
-
 def _canonical_nakshatra_key(value: str) -> str:
-    key = _norm(value)
-    return NAKSHATRA_ALIASES.get(key, key)
+    return normalize_nakshatra(value)
 
 
 def _canonical_sign_key(value: str) -> str:
@@ -237,7 +196,7 @@ def _tara_is_good(distance: int) -> bool:
     return tara_number not in {3, 5, 7}
 
 
-def _score_tara(user1: Mapping[str, str], user2: Mapping[str, str]) -> int:
+def _score_tara(user1: Mapping[str, str], user2: Mapping[str, str]) -> float:
     idx_1 = _lookup_nakshatra_index(user1.get("nakshatra", ""))
     idx_2 = _lookup_nakshatra_index(user2.get("nakshatra", ""))
     if idx_1 == 0 or idx_2 == 0:
@@ -248,10 +207,10 @@ def _score_tara(user1: Mapping[str, str], user2: Mapping[str, str]) -> int:
 
     good_count = int(_tara_is_good(distance_1_to_2)) + int(_tara_is_good(distance_2_to_1))
     if good_count == 2:
-        return 3
+        return 3.0
     if good_count == 1:
-        return 2
-    return 0
+        return 1.5
+    return 0.0
 
 
 def _score_yoni(user1: Mapping[str, str], user2: Mapping[str, str]) -> int:
@@ -294,18 +253,21 @@ def _score_graha_maitri(user1: Mapping[str, str], user2: Mapping[str, str]) -> i
     return int(round(normalized * MAX_KOOTA_SCORE["graha_maitri"]))
 
 
-def _score_gana(user1: Mapping[str, str], user2: Mapping[str, str]) -> int:
+def _score_gana(user1: Mapping[str, str], user2: Mapping[str, str]) -> float:
     key_1 = _canonical_nakshatra_key(user1.get("nakshatra", ""))
     key_2 = _canonical_nakshatra_key(user2.get("nakshatra", ""))
     gana_1 = NAKSHATRA_TO_GANA.get(key_1, "")
     gana_2 = NAKSHATRA_TO_GANA.get(key_2, "")
     if not gana_1 or not gana_2:
         return 0
-    if (gana_1, gana_2) in GANA_MATRIX:
-        return GANA_MATRIX[(gana_1, gana_2)]
-    if (gana_2, gana_1) in GANA_MATRIX:
-        return GANA_MATRIX[(gana_2, gana_1)]
-    return 0
+    if gana_1 == gana_2:
+        return 6.0
+    # Gana tables are traditionally directional by groom/bride. This API
+    # accepts two equivalent profiles without gender roles, so average both
+    # directions instead of making the result depend on request ordering.
+    forward = GANA_MATRIX.get((gana_1, gana_2), 0)
+    reverse = GANA_MATRIX.get((gana_2, gana_1), 0)
+    return (float(forward) + float(reverse)) / 2.0
 
 
 def _score_bhakoot(user1: Mapping[str, str], user2: Mapping[str, str]) -> int:
@@ -317,7 +279,8 @@ def _score_bhakoot(user1: Mapping[str, str], user2: Mapping[str, str]) -> int:
         return 0
 
     diff = abs(idx_1 - idx_2)
-    if diff in {1, 5, 7, 11}:  # 2-12 and 6-8 relationships
+    circular_diff = min(diff, len(RASHI_ORDER) - diff)
+    if circular_diff in {1, 4, 5}:  # 2-12, 5-9, and 6-8 relationships
         return 0
     return MAX_KOOTA_SCORE["bhakoot"]
 
@@ -353,7 +316,7 @@ def calculate_ashta_koota_match(user1: Mapping[str, str], user2: Mapping[str, st
         "bhakoot": _score_bhakoot(user1, user2),
         "nadi": _score_nadi(user1, user2),
     }
-    total_score = int(sum(breakdown.values()))
+    total_score = round(sum(breakdown.values()), 2)
     return {
         "total_score": total_score,
         "compatibility": compatibility_label(total_score),

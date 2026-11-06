@@ -43,6 +43,14 @@ class Message(models.Model):
         db_index=True,
     )
     game_payload = models.JSONField(default=dict, blank=True)
+    reply_to = models.ForeignKey(
+        "self", on_delete=models.SET_NULL, null=True, blank=True, related_name="replies"
+    )
+    reactions = models.JSONField(default=dict, blank=True)
+    # A client supplied key makes chat retries safe when a response is lost.
+    # Keep it nullable so messages created by older clients remain valid.
+    client_message_id = models.CharField(max_length=64, null=True, blank=True)
+    event_dedupe_key = models.CharField(max_length=128, null=True, blank=True)
     status = models.CharField(
         max_length=16,
         choices=Status.choices,
@@ -57,6 +65,16 @@ class Message(models.Model):
         indexes = [
             models.Index(fields=["match"], name="chat_message_match_idx"),
             models.Index(fields=["match", "created_at"], name="chat_message_match_created_idx"),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["match", "sender", "client_message_id"],
+                name="chat_msg_client_id_unique",
+            ),
+            models.UniqueConstraint(
+                fields=["match", "event_dedupe_key"],
+                name="chat_event_dedupe_key_unique",
+            ),
         ]
 
     def __str__(self) -> str:

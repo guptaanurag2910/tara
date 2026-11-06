@@ -17,13 +17,13 @@ export default function GameQuestion({
 
   return (
     <section
-      className={`w-full rounded-2xl border border-white/20 bg-slate-900/75 p-4 shadow-xl shadow-black/25 transition-all duration-300 ${
+      className={`w-full rounded-2xl border border-[#e7e7e7] bg-white p-4 transition-all duration-300 ${
         isVisible ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
       }`}
     >
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-cyan-200">Game Question</p>
-      {stepLabel ? <p className="mt-1 text-xs text-slate-300">{stepLabel}</p> : null}
-      <h3 className="mt-2 text-base font-semibold leading-snug text-white">{question}</h3>
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#e1306c]">Game Question</p>
+      {stepLabel ? <p className="mt-1 text-xs text-[#737373]">{stepLabel}</p> : null}
+      <h3 className="mt-2 text-base font-semibold leading-snug text-[#262626]">{question}</h3>
 
       <div className="mt-4 space-y-2">
         {options.map((option, index) => {
@@ -45,8 +45,8 @@ export default function GameQuestion({
               onClick={() => onAnswer?.(option, index)}
               className={`w-full rounded-xl border px-4 py-3 text-left text-sm font-medium transition active:scale-[0.99] disabled:opacity-50 ${
                 isSelected
-                  ? "border-rose-300/70 bg-rose-500/20 text-white"
-                  : "border-white/15 bg-white/10 text-slate-100 hover:border-white/35 hover:bg-white/15"
+                  ? "border-[#e1306c] bg-[#fff0f5] text-[#262626]"
+                  : "border-[#dbdbdb] bg-[#fafafa] text-[#262626] hover:border-[#0095f6] hover:bg-white"
               }`}
             >
               {label}

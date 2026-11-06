@@ -36,14 +36,17 @@ async function apiSignup(request, { name, email }) {
   return response.json();
 }
 
-async function apiPhoneLogin(request, phoneNumber) {
-  const response = await request.post(`${API_BASE}/auth/login/`, {
+async function createPhoneAccount(request, name) {
+  const localNumber = `9${Date.now().toString().slice(-8)}${Math.floor(Math.random() * 10)}`;
+  const response = await request.post(`${API_BASE}/auth/signup/`, {
     data: {
-      phone_number: phoneNumber,
+      phone_number: `+91${localNumber}`,
+      otp: "123456",
       password: PHONE_AUTH_PASSWORD,
+      name,
     },
   });
-  expect(response.status()).toBe(200);
+  expect(response.status()).toBe(201);
   return response.json();
 }
 
@@ -104,27 +107,38 @@ test.describe.serial("Negative and edge-case validation", () => {
   };
 
   test.beforeAll(async ({ request }) => {
-    seed.matchedUser = await apiPhoneLogin(request, "+919000000005");
-    seed.otherUser = await apiPhoneLogin(request, "+919000000011");
+    seed.matchedUser = await createPhoneAccount(request, "Negative Edge Member");
+    seed.otherUser = await createPhoneAccount(request, "Unaffiliated Member");
+    const matchPartner = await createPhoneAccount(request, "Negative Edge Partner");
 
-    const matchesResponse = await apiGet(request, seed.matchedUser.access, "matches/");
-    expect(matchesResponse.status()).toBe(200);
-    const matchesPayload = await matchesResponse.json();
-    const matchList = Array.isArray(matchesPayload?.results) ? matchesPayload.results : matchesPayload;
-    seed.otherUsersMatchId = matchList?.[0]?.match_id;
+    const matchedHeaders = { Authorization: `Bearer ${seed.matchedUser.access}` };
+    const partnerHeaders = { Authorization: `Bearer ${matchPartner.access}` };
+    const firstLike = await request.post(`${API_BASE}/swipe/like/`, {
+      headers: matchedHeaders,
+      data: { target_user_id: matchPartner.user.id },
+    });
+    expect(firstLike.status()).toBe(200);
+    const mutualLike = await request.post(`${API_BASE}/swipe/like/`, {
+      headers: partnerHeaders,
+      data: { target_user_id: seed.matchedUser.user.id },
+    });
+    expect(mutualLike.status()).toBe(200);
+    const matchPayload = await mutualLike.json();
+    seed.otherUsersMatchId = matchPayload.match_id;
     expect(seed.otherUsersMatchId).toBeTruthy();
   });
 
   test("wrong-password login and existing-number signup stay clear", async ({ page }) => {
+    const phoneDigits = seed.matchedUser.user.phone_number.replace(/^\+91/, "");
     await page.goto("/auth?mode=login");
-    await page.locator('input[type="tel"]').fill("9000000005");
+    await page.locator('input[type="tel"]').fill(phoneDigits);
     await page.getByPlaceholder(/Enter your password/i).fill("DefinitelyWrong@123");
     await page.getByRole("button", { name: /^Login$/i }).click();
     await expect(page.getByText(/Incorrect password/i)).toBeVisible();
     await expect(page.getByRole("button", { name: /Reset password instead/i })).toBeVisible();
 
     await page.goto("/auth?mode=signup");
-    await page.locator('input[placeholder="98765 43210"]').fill("9000000005");
+    await page.locator('input[placeholder="98765 43210"]').fill(phoneDigits);
     await page.getByRole("button", { name: /Continue/i }).click();
     await expect(page).toHaveURL(/\/auth\?mode=login$/);
     await expect(page.getByText(/already has an account/i)).toBeVisible();
@@ -191,6 +205,62 @@ test.describe.serial("Negative and edge-case validation", () => {
     await page.goto(`/matches/${seed.otherUsersMatchId}`);
     await expect(page.getByRole("heading", { name: /Match unavailable/i })).toBeVisible();
     await expect(page.getByText(/This match isn't available anymore/i)).toBeVisible();
+    await page.getByRole("button", { name: "Back to matches" }).click();
+    await expect(page).toHaveURL(/\/matches$/);
+  });
+
+  test("matches list loading, empty, error, and retry states", async ({ page }) => {
+    await applySession(page, seed.otherUser);
+    let responseMode = "loading";
+    let notifyLoadingStarted;
+    let releaseLoading;
+    const loadingStarted = new Promise((resolve) => { notifyLoadingStarted = resolve; });
+    const loadingGate = new Promise((resolve) => { releaseLoading = resolve; });
+    await page.route("**/api/matches/", async (route) => {
+      if (responseMode === "loading") {
+        notifyLoadingStarted();
+        await loadingGate;
+        await route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
+      } else if (responseMode === "error") {
+        await route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ detail: "temporarily unavailable" }) });
+      } else {
+        await route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
+      }
+    });
+
+    const navigation = page.goto("/matches");
+    await loadingStarted;
+    await expect(page.getByText("Finding your connections...")).toBeVisible();
+    releaseLoading();
+    await navigation;
+    await expect(page.getByRole("heading", { name: "No matches yet" })).toBeVisible();
+
+    responseMode = "error";
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Couldn't load your matches" })).toBeVisible();
+    responseMode = "empty";
+    await page.getByRole("button", { name: "Try again" }).click();
+    await expect(page.getByRole("heading", { name: "No matches yet" })).toBeVisible();
+  });
+
+  test("match detail server error can be retried", async ({ page }) => {
+    await applySession(page, seed.matchedUser);
+    let shouldFail = true;
+    await page.route(`**/api/matches/${seed.otherUsersMatchId}/`, async (route) => {
+      if (shouldFail) {
+        await route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ detail: "temporarily unavailable" }) });
+      } else {
+        await route.continue();
+      }
+    });
+
+    await page.goto(`/matches/${seed.otherUsersMatchId}`);
+    await expect(page.getByText("Compatibility details are unavailable right now. Please try again shortly.")).toBeVisible();
+    const retry = page.waitForResponse((response) => response.url().includes(`/api/matches/${seed.otherUsersMatchId}/`) && response.status() === 200);
+    shouldFail = false;
+    await page.getByRole("button", { name: "Try again" }).click();
+    await retry;
+    await expect(page.getByRole("link", { name: /Start chatting/i })).toBeVisible();
   });
 
   test("kundali stays stable when astrology birth rows are missing", async ({ page, request }) => {

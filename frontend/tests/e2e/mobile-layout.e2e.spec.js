@@ -156,7 +156,14 @@ test.describe.serial("Mobile-first layout validation", () => {
       const nav = page.locator(".tara-fixed-nav");
       await expect(nav).toBeVisible();
       const before = await nav.boundingBox();
+      if (screen.path === "/discover") {
+        const actions = await page.locator(".discover-actions").boundingBox();
+        expect((actions?.y || 0) + (actions?.height || 0)).toBeLessThanOrEqual((before?.y || 0) - 4);
+      }
       const metricsBefore = await readScrollerMetrics(page);
+      if (screen.path === "/discover") {
+        expect(metricsBefore.scrollHeight).toBeLessThanOrEqual(metricsBefore.clientHeight + 1);
+      }
 
       if (metricsBefore.scrollHeight > metricsBefore.clientHeight + 20) {
         await page.locator("div.overflow-y-auto.overscroll-contain").first().evaluate((el) => {
@@ -174,6 +181,19 @@ test.describe.serial("Mobile-first layout validation", () => {
       const viewport = page.viewportSize();
       expect((before?.y || 0) + (before?.height || 0)).toBeLessThanOrEqual((viewport?.height || 0) + 1);
     }
+  });
+
+  test("Discover fits a compact phone without a vertical scroll", async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 568 });
+    await applySession(page, seed.appUser);
+    await page.goto("/discover");
+    await page.waitForLoadState("networkidle");
+
+    const metrics = await readScrollerMetrics(page);
+    const actions = await page.locator(".discover-actions").boundingBox();
+    const nav = await page.locator(".tara-fixed-nav").boundingBox();
+    expect(metrics.scrollHeight).toBeLessThanOrEqual(metrics.clientHeight + 1);
+    expect((actions?.y || 0) + (actions?.height || 0)).toBeLessThanOrEqual((nav?.y || 0) - 4);
   });
 
   test("chat composer stays usable and game modal fits the viewport", async ({ page }) => {
@@ -197,6 +217,11 @@ test.describe.serial("Mobile-first layout validation", () => {
     expect((inputBox?.y || 0) + (inputBox?.height || 0)).toBeLessThanOrEqual((navBox?.y || 0) + 1);
     expect((sendBox?.y || 0) + (sendBox?.height || 0)).toBeLessThanOrEqual((navBox?.y || 0) + 1);
 
+    await page.getByRole("button", { name: "Open games" }).click();
+    await expect(page.getByRole("button", { name: "Surprise us" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Tic Tac Toe" })).toHaveCount(0);
+    await page.getByRole("button", { name: "See all games" }).click();
+    await expect(page.getByRole("button", { name: "Tic Tac Toe" })).toBeVisible();
     await page.getByRole("button", { name: "This or That" }).click();
     const modal = page.locator("text=Round 1 of 3").locator("..").locator("..");
     await expect(modal).toBeVisible();
@@ -260,5 +285,45 @@ test.describe.serial("Mobile-first layout validation", () => {
     await textArea.focus();
     const textAreaBox = await textArea.boundingBox();
     expect(textAreaBox?.width || 0).toBeGreaterThan(280);
+  });
+
+  test("saved personality or vibe steps resume at photos", async ({ page }) => {
+    await applySession(page, seed.onboardingUser, {
+      onboardingComplete: false,
+      onboardingProfile: {
+        name: "Mobile Onboarding User",
+        basicSaved: true,
+        birthSaved: true,
+        photos: [],
+        currentStep: 7,
+      },
+    });
+
+    await page.goto("/profile-setup");
+    await expect(page.getByRole("heading", { name: /Add your photos/i })).toBeVisible();
+    await expect(page.getByText("7 of 7")).toBeVisible();
+    await expect(page.getByRole("button", { name: /Find my matches/i })).toBeDisabled();
+
+    await page.evaluate(() => {
+      const profile = JSON.parse(localStorage.getItem("tara_onboarding_profile_v2") || "{}");
+      localStorage.setItem("tara_onboarding_profile_v2", JSON.stringify({ ...profile, currentStep: 8 }));
+    });
+    await page.reload();
+    await expect(page.getByRole("heading", { name: /Add your photos/i })).toBeVisible();
+    await expect(page.getByText("7 of 7")).toBeVisible();
+  });
+
+  test("landing auth links stay on the requested screen with an existing session", async ({ page }) => {
+    await applySession(page, seed.appUser);
+
+    await page.goto("/");
+    await page.getByRole("link", { name: /Create an account/i }).click();
+    await expect(page).toHaveURL(/\/auth\?mode=signup$/);
+    await expect(page.getByText("Step 1 of 3")).toBeVisible();
+
+    await page.goto("/");
+    await page.getByRole("link", { name: /Log in/i }).click();
+    await expect(page).toHaveURL(/\/auth\?mode=login$/);
+    await expect(page.getByRole("heading", { name: /Login with phone/i })).toBeVisible();
   });
 });

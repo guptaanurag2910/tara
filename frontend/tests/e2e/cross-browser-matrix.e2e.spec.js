@@ -192,8 +192,9 @@ test.describe("Desktop browser checks", () => {
     await page.waitForLoadState("networkidle");
     await expect(page.getByRole("heading", { name: /Edit Birth Details/i })).toBeVisible();
     await expect(page.getByLabel(/Date of Birth/i)).toBeVisible();
-    await expect(page.getByPlaceholder(/Search city or place/i)).toBeVisible();
-    await expect(page.getByRole("button", { name: /Use Current Location/i })).toBeVisible();
+    await expect(page.getByLabel(/Time of birth/i)).toBeVisible();
+    await expect(page.getByPlaceholder(/Search your place of birth/i)).toBeVisible();
+    await expect(page.getByRole("button", { name: /Use Current Location/i })).toHaveCount(0);
     await assertNoHorizontalOverflow(page);
   });
 

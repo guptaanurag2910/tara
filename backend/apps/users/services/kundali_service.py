@@ -2,6 +2,7 @@ import logging
 from datetime import date, datetime, time
 from typing import Dict, Optional, Tuple, Union
 
+from .nakshatra_data import NAKSHATRAS, attributes_for_nakshatra_index
 from .vedic_kundali_engine import calculate_vedic_kundali
 
 DateInput = Union[date, str]
@@ -20,36 +21,6 @@ ZODIAC_SIGNS = [
     "Capricorn",
     "Aquarius",
     "Pisces",
-]
-
-NAKSHATRAS = [
-    "Ashwini",
-    "Bharani",
-    "Krittika",
-    "Rohini",
-    "Mrigashirsha",
-    "Ardra",
-    "Punarvasu",
-    "Pushya",
-    "Ashlesha",
-    "Magha",
-    "Purva Phalguni",
-    "Uttara Phalguni",
-    "Hasta",
-    "Chitra",
-    "Swati",
-    "Vishakha",
-    "Anuradha",
-    "Jyeshtha",
-    "Mula",
-    "Purva Ashadha",
-    "Uttara Ashadha",
-    "Shravana",
-    "Dhanishta",
-    "Shatabhisha",
-    "Purva Bhadrapada",
-    "Uttara Bhadrapada",
-    "Revati",
 ]
 
 VARNA_BY_SIGN = {
@@ -96,21 +67,6 @@ BHAKOOT_BY_SIGN = {
     "Aquarius": "Kama",
     "Pisces": "Moksha",
 }
-
-# Simplified preset cycles for MVP; easy to replace with canonical tables later.
-GANA_CYCLE = ["Deva", "Manushya", "Rakshasa"]
-NADI_CYCLE = ["Adi", "Madhya", "Antya"]
-YONI_CYCLE = [
-    "Horse",
-    "Elephant",
-    "Sheep",
-    "Serpent",
-    "Dog",
-    "Cat",
-    "Rat",
-    "Cow",
-    "Buffalo",
-]
 
 logger = logging.getLogger(__name__)
 
@@ -200,12 +156,11 @@ def _nakshatra_from_longitude(moon_longitude: float) -> Tuple[str, int, int]:
 
 
 def _assign_attributes(moon_sign: str, nakshatra_index: int) -> Dict[str, str]:
+    nakshatra_attributes = attributes_for_nakshatra_index(nakshatra_index)
     return {
         "varna": VARNA_BY_SIGN[moon_sign],
         "vashya": VASHYA_BY_SIGN[moon_sign],
-        "gana": GANA_CYCLE[nakshatra_index % len(GANA_CYCLE)],
-        "yoni": YONI_CYCLE[nakshatra_index % len(YONI_CYCLE)],
-        "nadi": NADI_CYCLE[nakshatra_index % len(NADI_CYCLE)],
+        **nakshatra_attributes,
         "bhakoot": BHAKOOT_BY_SIGN[moon_sign],
     }
 
@@ -252,7 +207,12 @@ def calculate_kundali(
             "resolved_coordinates": chart["resolved_coordinates"],
             "is_accurate": chart["is_accurate"],
         }
-    except Exception as exc:
+    except RuntimeError as exc:
+        # Keep the development fallback for an unavailable ephemeris only.
+        # Invalid inputs, timezone errors, and calculation failures must not be
+        # turned into a plausible-looking but incorrect chart.
+        if "Swiss Ephemeris dependency missing" not in str(exc):
+            raise
         logger.warning("Falling back to simplified kundali calculation: %s", exc)
 
     dob = _parse_date(date_of_birth)

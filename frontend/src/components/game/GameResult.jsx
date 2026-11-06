@@ -17,12 +17,12 @@ export default function GameResult({
 
   return (
     <section
-      className={`w-full rounded-2xl border border-emerald-300/30 bg-emerald-500/15 p-4 shadow-xl shadow-black/20 transition-all duration-300 ${
+      className={`w-full rounded-2xl border border-[#cdebd8] bg-[#f0fbf4] p-4 transition-all duration-300 ${
         isVisible ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
       }`}
     >
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-200">Result</p>
-      <p className="mt-2 text-sm leading-relaxed text-emerald-50">{resultText}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#21804b]">Result</p>
+      <p className="mt-2 text-sm leading-relaxed text-[#262626]">{resultText}</p>
 
       {onNext ? (
         <div className={compact ? "mt-3" : "mt-4"}>

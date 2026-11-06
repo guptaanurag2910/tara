@@ -13,3 +13,13 @@ export async function markNotificationsRead(notificationIds) {
   const { data } = await api.post("notifications/read/", payload);
   return data;
 }
+
+export async function fetchNotificationPreferences() {
+  const { data } = await api.get("notifications/preferences/");
+  return data;
+}
+
+export async function saveNotificationPreferences(preferences) {
+  const { data } = await api.patch("notifications/preferences/", preferences);
+  return data;
+}

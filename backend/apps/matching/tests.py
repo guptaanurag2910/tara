@@ -8,6 +8,7 @@ from rest_framework.test import APIClient
 
 from apps.chat.models import Message
 from apps.notifications.models import Notification
+from apps.users.models import KundaliProfile, UserProfileImage
 
 from .models import DailyRecommendation, Match, Swipe
 from .swipe_service import handle_swipe
@@ -85,6 +86,46 @@ class RecommendationVisibilityTests(TestCase):
         self.assertEqual(payload["results"][0]["user_id"], self.user_a.id)
         self.assertEqual(payload["results"][0]["name"], self.user_a.name)
 
+    @patch("apps.matching.views.get_recommendations_for_user")
+    def test_recommendation_exposes_real_profile_and_score_details(self, mock_recommendations):
+        mock_recommendations.return_value = []
+        self.user_a.bio = "I love Sunday hikes."
+        self.user_a.interests = ["Hiking", "Coffee"]
+        self.user_a.save(update_fields=["bio", "interests"])
+        UserProfileImage.objects.create(user=self.user_a, file_token="test-photo", image="profile_image/test-photo.jpg")
+        KundaliProfile.objects.create(
+            user=self.user_a, moon_sign="Leo", nakshatra="Magha", nakshatra_pada=1,
+            varna="Kshatriya", vashya="Chatushpada", gana="Rakshasa", yoni="Rat",
+            nadi="Antya", bhakoot="Leo",
+        )
+        self.client.force_authenticate(self.user_b)
+
+        response = self.client.get("/api/recommendations/")
+
+        self.assertEqual(response.status_code, 200)
+        item = response.json()["results"][0]
+        self.assertEqual(item["bio"], "I love Sunday hikes.")
+        self.assertEqual(item["interests"], ["Hiking", "Coffee"])
+        self.assertEqual(len(item["photos"]), 1)
+        self.assertEqual(item["photo"], item["photos"][0])
+        self.assertEqual(item["compatibility_score"], 91)
+        self.assertEqual(item["kundali_score"], 30)
+        self.assertEqual(item["personality_score"], 80)
+        self.assertEqual(item["moon_sign"], "Leo")
+
+    @patch("apps.matching.views.get_recommendations_for_user")
+    def test_placeholder_match_does_not_claim_zero_compatibility(self, mock_recommendations):
+        mock_recommendations.return_value = []
+        self.match.match_type = "Swipe Match"
+        self.match.save(update_fields=["match_type"])
+        self.client.force_authenticate(self.user_b)
+
+        item = self.client.get("/api/recommendations/").json()["results"][0]
+
+        self.assertIsNone(item["compatibility_score"])
+        self.assertIsNone(item["kundali_score"])
+        self.assertIsNone(item["personality_score"])
+
 
 class MutualLikeFlowTests(TestCase):
     def setUp(self):
@@ -146,6 +187,27 @@ class MutualLikeFlowTests(TestCase):
         )
         self.assertEqual(bootstrap_messages.count(), 1)
         self.assertEqual(bootstrap_messages.first().content, "It's a match! Start the conversation ✨")
+
+    def test_like_notes_wait_for_mutual_match_and_are_delivered_once(self):
+        first = handle_swipe(self.user_a, self.user_b, Swipe.Action.LIKE, note="What is your favorite trail?")
+        self.assertFalse(first["is_match"])
+        self.assertFalse(Message.objects.filter(match=self.match, message_type=Message.MessageType.TEXT).exists())
+
+        second = handle_swipe(self.user_b, self.user_a, Swipe.Action.LIKE, note="Let us find a trail together.")
+        self.assertTrue(second["is_match"])
+        notes = Message.objects.filter(match=self.match, message_type=Message.MessageType.TEXT).order_by("id")
+        self.assertEqual(list(notes.values_list("content", flat=True)), ["What is your favorite trail?", "Let us find a trail together."])
+        self.assertEqual(Notification.objects.filter(type=Notification.Type.MESSAGE).count(), 2)
+
+        handle_swipe(self.user_b, self.user_a, Swipe.Action.LIKE, note="Let us find a trail together.")
+        self.assertEqual(Message.objects.filter(match=self.match, message_type=Message.MessageType.TEXT).count(), 2)
+
+    def test_like_note_is_limited_to_280_characters(self):
+        client = APIClient()
+        client.force_authenticate(self.user_a)
+        response = client.post("/api/swipe/like/", {"target_user_id": self.user_b.id, "note": "x" * 281}, format="json")
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(Swipe.objects.filter(user=self.user_a).exists())
 
 
 class DailyRecommendationFlowTests(TestCase):

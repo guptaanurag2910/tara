@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { ArrowLeft, Sparkles, X } from "lucide-react";
 
 import Button from "../components/Button";
 import EmptyState from "../components/EmptyState";
@@ -32,17 +33,6 @@ function initials(name) {
   return parts.map((part) => part[0]?.toUpperCase() || "").join("") || "T";
 }
 
-function scoreColor(score) {
-  const value = Number(score || 0);
-  if (value >= 80) {
-    return "text-emerald-100 bg-emerald-500/20 border-emerald-300/40";
-  }
-  if (value >= 65) {
-    return "text-amber-100 bg-amber-500/20 border-amber-300/40";
-  }
-  return "text-slate-100 bg-slate-500/20 border-slate-300/30";
-}
-
 function insightText(match) {
   if (match?.insight) {
     return match.insight;
@@ -58,9 +48,10 @@ function MatchSpotlight({ match, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-slate-950/70 backdrop-blur-sm">
-      <div className="w-full rounded-t-[1.8rem] border-t border-white/20 bg-slate-950/95 p-5">
-        <div className="mx-auto mb-3 h-1.5 w-14 rounded-full bg-white/20" />
+    <div className="stars-spotlight-overlay" onClick={onClose}>
+      <div aria-label="Match details" aria-modal="true" className="stars-spotlight" onClick={(event) => event.stopPropagation()} role="dialog">
+        <div className="stars-spotlight-handle" />
+        <button aria-label="Close details" className="stars-spotlight-close" onClick={onClose} type="button"><X size={20} /></button>
         <div className="flex items-center gap-3">
           {match.photo ? (
             <img
@@ -137,12 +128,12 @@ export default function DailyMatches() {
   const headingCount = useMemo(() => Math.min(matches.length, 5), [matches.length]);
 
   return (
-    <main className="relative mx-auto min-h-[calc(100dvh-88px)] w-full max-w-md overflow-hidden px-4 py-5">
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_10%,rgba(14,165,233,0.35),transparent_45%),radial-gradient(circle_at_85%_20%,rgba(251,191,36,0.28),transparent_42%),linear-gradient(180deg,#0f172a_0%,#111827_65%,#0a1122_100%)]" />
-
-      <header className="mb-5 rounded-3xl border border-cyan-200/20 bg-white/[0.04] p-4 shadow-xl shadow-black/30 backdrop-blur-sm">
-        <p className="text-[11px] uppercase tracking-[0.18em] text-cyan-100/75">Daily Curations</p>
-        <h1 className="mt-1 text-2xl font-semibold text-white">✨ Your Top Matches Today</h1>
+    <main className="tara-stars-today tara-container">
+      <header className="stars-page-header">
+        <div className="stars-brand">tara<span>.</span></div>
+        <button aria-label="Back to matches" className="stars-back" onClick={() => navigate("/matches")} type="button"><ArrowLeft size={19} /></button>
+        <p className="stars-eyebrow"><Sparkles size={12} /> DAILY CURATIONS</p>
+        <h1>Your Top Matches Today</h1>
         <p className="mt-1 text-sm text-slate-300">
           {headingCount > 0
             ? `${headingCount} handpicked vibes tuned to your energy today.`
@@ -176,11 +167,11 @@ export default function DailyMatches() {
       ) : null}
 
       {!loading && !error && matches.length > 0 ? (
-        <section className="space-y-3">
+        <section className="stars-list">
           {matches.slice(0, 5).map((match, index) => (
             <motion.article
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-2xl border border-cyan-200/20 bg-gradient-to-br from-cyan-300/10 via-slate-900/85 to-amber-300/10 p-4 shadow-lg shadow-cyan-500/10"
+              className="stars-card"
               initial={{ opacity: 0, y: 10 }}
               key={`${match.user_id}-${index}`}
               transition={{ duration: 0.25, delay: index * 0.04 }}
@@ -203,7 +194,7 @@ export default function DailyMatches() {
                       {match.name}
                       <span className="ml-1 text-sm font-normal text-slate-300">{match.age ? `· ${match.age}` : ""}</span>
                     </p>
-                    <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${scoreColor(match.compatibility_score)}`}>
+                    <span className="stars-score">
                       {match.compatibility_score ?? 0}%
                     </span>
                   </div>
@@ -213,14 +204,14 @@ export default function DailyMatches() {
 
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <button
-                  className="rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-sm font-medium text-white transition hover:bg-white/10"
+                  className="stars-view-button"
                   onClick={() => setSpotlightMatch(match)}
                   type="button"
                 >
                   View Details
                 </button>
                 <button
-                  className="rounded-xl bg-gradient-to-r from-cyan-500 via-sky-500 to-amber-400 px-3 py-2 text-sm font-semibold text-white shadow-md shadow-sky-900/40"
+                  className="stars-swipe-button"
                   onClick={() => navigate("/discover")}
                   type="button"
                 >

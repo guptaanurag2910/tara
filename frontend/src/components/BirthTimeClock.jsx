@@ -125,7 +125,7 @@ export default function BirthTimeClock({
   );
 
   return (
-    <div className="rounded-3xl border border-[color:var(--tara-card-border)] bg-white/5 p-4">
+    <div className="tara-birth-clock rounded-3xl border border-[color:var(--tara-card-border)] bg-white/5 p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
         <span className="text-sm font-medium tara-copy">{label}</span>
         <button

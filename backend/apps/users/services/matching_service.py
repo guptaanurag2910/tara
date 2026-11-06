@@ -304,6 +304,34 @@ def calculate_personality_match(
     return {"personality_score": personality_score}
 
 
+def calculate_personality_match_details(
+    traits_a: Mapping[str, object],
+    traits_b: Mapping[str, object],
+    scale_max: float = DEFAULT_TRAIT_SCALE_MAX,
+) -> Dict[str, object]:
+    """Return per-trait similarities for admin/debugging views."""
+    left = _as_trait_dict(traits_a)
+    right = _as_trait_dict(traits_b)
+    shared_traits = sorted(set(left).intersection(right))
+    if not shared_traits:
+        return {"available": False, "score": None, "traits": []}
+
+    comparisons = [
+        {
+            "trait": trait,
+            "user_a": left[trait],
+            "user_b": right[trait],
+            "similarity": round(_trait_similarity(left[trait], right[trait], scale_max) * 100, 1),
+        }
+        for trait in shared_traits
+    ]
+    return {
+        "available": True,
+        "score": int(round(sum(item["similarity"] for item in comparisons) / len(comparisons))),
+        "traits": comparisons,
+    }
+
+
 def calculate_user_guna_match(user_a, user_b) -> Dict[str, object]:
     """
     Convenience wrapper to match two users by stored KundaliProfile.

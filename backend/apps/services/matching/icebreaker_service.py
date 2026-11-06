@@ -57,6 +57,23 @@ def generate_icebreakers(match, *, limit: int = 3) -> List[str]:
     insight = _norm(match.insight_text)
 
     suggestions: List[str] = []
+    from apps.matching.models import GameNightSession
+
+    game = GameNightSession.objects.filter(match=match, status=GameNightSession.Status.MATCHED).first()
+    game_prompts = {
+        "plot_twist": "Our story needs an ending. What happens next?",
+        "split_clue": "We made a good clue-solving team. What mystery would you pick next?",
+        "forbidden_word": "That word game was fun. Which clue gave it away?",
+        "emoji_decode": "Our emoji round deserves a sequel. What scene should we try next?",
+    }
+    if game and game.game_kind in game_prompts:
+        suggestions.append(game_prompts[game.game_kind])
+
+    interests_a = {str(item).strip().lower() for item in (match.user_a.interests or []) if str(item).strip()}
+    interests_b = {str(item).strip().lower() for item in (match.user_b.interests or []) if str(item).strip()}
+    shared = sorted(interests_a & interests_b)
+    if shared:
+        suggestions.append(f"We both like {shared[0]}. What got you into it?")
 
     a_overthinking = user_a_traits.get("overthinking")
     b_overthinking = user_b_traits.get("overthinking")

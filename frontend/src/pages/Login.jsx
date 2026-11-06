@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ChevronDown } from "lucide-react";
+import { ArrowLeft, ChevronDown, Eye, EyeOff } from "lucide-react";
 
-import Logo from "../components/tara/Logo";
 import { useAuth } from "../hooks/useAuth";
-import { getPhoneStatus } from "../services/authService";
+import { getPhoneStatus, sendPhoneOtp, verifyPhoneOtp } from "../services/authService";
 import { isOnboardingComplete } from "../services/onboardingStorage";
 
-const OTP_CODE = "123456";
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 30;
 
@@ -49,11 +47,15 @@ export default function Login() {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [password, setPassword] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [seconds, setSeconds] = useState(RESEND_SECONDS);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
+  const [developmentCode, setDevelopmentCode] = useState("");
   const [checkingPhone, setCheckingPhone] = useState(false);
+  const [pendingAuthDestination, setPendingAuthDestination] = useState(null);
 
   const otpRefs = useRef([]);
 
@@ -66,11 +68,11 @@ export default function Login() {
   const canUseOtp = otp.length === OTP_LENGTH;
 
   useEffect(() => {
-    if (!token) {
+    if (!pendingAuthDestination || !token || !user) {
       return;
     }
-    navigate(isOnboardingComplete(user?.id) ? "/discover" : "/onboarding", { replace: true });
-  }, [token, user, navigate]);
+    navigate(pendingAuthDestination === "signup" ? "/welcome" : isOnboardingComplete(user.id) ? "/discover" : "/onboarding", { replace: true });
+  }, [navigate, pendingAuthDestination, token, user]);
 
   useEffect(() => {
     const inOtpStep =
@@ -103,6 +105,7 @@ export default function Login() {
     setSignupStep("phone");
     setForgotStep("phone");
     setOtp("");
+    setDevelopmentCode("");
     setPassword("");
     setNewPassword("");
     setSeconds(RESEND_SECONDS);
@@ -147,9 +150,11 @@ export default function Login() {
 
       setOtp("");
       setSeconds(RESEND_SECONDS);
+      const delivery = await sendPhoneOtp({ phone_number: fullPhone, purpose: "signup" });
+      setDevelopmentCode(delivery.development_code || "");
       setSignupStep("otp");
       setPickerOpen(false);
-      setInfo("New number detected. Verify with OTP to continue.");
+      setInfo(delivery.development_code ? `Development code: ${delivery.development_code} · No SMS was sent.` : "Verification code sent. Check your SMS messages.");
     } catch (apiError) {
       setError(apiError?.message || "Could not verify this phone number.");
     } finally {
@@ -157,16 +162,15 @@ export default function Login() {
     }
   };
 
-  const onVerifySignupOtp = () => {
+  const onVerifySignupOtp = async () => {
     resetMessages();
     if (!canUseOtp) {
       return;
     }
-    if (otp !== OTP_CODE) {
-      setError("Incorrect OTP. Use 123456.");
-      return;
-    }
-    setSignupStep("password");
+    try {
+      await verifyPhoneOtp({ phone_number: fullPhone, purpose: "signup", otp });
+      setSignupStep("password");
+    } catch (apiError) { setError(apiError?.message || "That code is incorrect or expired."); }
   };
 
   const onCreateAccount = async () => {
@@ -175,8 +179,14 @@ export default function Login() {
       setError("Enter a valid phone number.");
       return;
     }
-    if (otp !== OTP_CODE) {
-      setError("Invalid OTP. Use 123456.");
+    if (!dateOfBirth) {
+      setError("Enter your date of birth to confirm you are 18 or older.");
+      return;
+    }
+    const birth = new Date(`${dateOfBirth}T00:00:00`);
+    const cutoff = new Date(); cutoff.setFullYear(cutoff.getFullYear() - 18);
+    if (birth > cutoff) {
+      setError("Tara is for adults aged 18 and over.");
       return;
     }
     if (password.trim().length < 8) {
@@ -188,9 +198,10 @@ export default function Login() {
         phone_number: fullPhone,
         otp,
         password: password.trim(),
+        date_of_birth: dateOfBirth,
         name: `Tara ${phoneDigits.slice(-4)}`,
       });
-      setInfo("Account created successfully.");
+      setPendingAuthDestination("signup");
     } catch (apiError) {
       setError(apiError?.message || "Could not create account.");
     }
@@ -207,6 +218,7 @@ export default function Login() {
         phone_number: fullPhone,
         password: password.trim(),
       });
+      setPendingAuthDestination("login");
     } catch (apiError) {
       const message = apiError?.message || "Login failed.";
 
@@ -229,27 +241,24 @@ export default function Login() {
     }
   };
 
-  const onSendCodeForgot = () => {
+  const onSendCodeForgot = async () => {
     resetMessages();
     if (!canUsePhone) {
       setError("Enter a valid phone number.");
       return;
     }
-    setOtp("");
-    setNewPassword("");
-    setSeconds(RESEND_SECONDS);
-    setForgotStep("otp");
-    setPickerOpen(false);
+    try {
+      const delivery = await sendPhoneOtp({ phone_number: fullPhone, purpose: "password_reset" });
+      setDevelopmentCode(delivery.development_code || "");
+      setOtp(""); setNewPassword(""); setShowNewPassword(false); setSeconds(RESEND_SECONDS); setForgotStep("otp"); setPickerOpen(false);
+      setInfo(delivery.development_code ? `Development code: ${delivery.development_code} · No SMS was sent.` : "Verification code sent. Check your SMS messages.");
+    } catch (apiError) { setError(apiError?.message || "Could not send a verification code."); }
   };
 
   const onResetPassword = async () => {
     resetMessages();
     if (!canUsePhone) {
       setError("Enter a valid phone number.");
-      return;
-    }
-    if (otp !== OTP_CODE) {
-      setError("Incorrect OTP. Use 123456.");
       return;
     }
     if (newPassword.trim().length < 8) {
@@ -300,14 +309,16 @@ export default function Login() {
     otpRefs.current[Math.min(pasted.length, OTP_LENGTH - 1)]?.focus();
   };
 
-  const resendCode = () => {
+  const resendCode = async () => {
     if (seconds > 0) {
       return;
     }
-    setOtp("");
-    setSeconds(RESEND_SECONDS);
-    setError("");
-    otpRefs.current[0]?.focus();
+    try {
+      const delivery = await sendPhoneOtp({ phone_number: fullPhone, purpose: mode === "signup" ? "signup" : "password_reset" });
+      setDevelopmentCode(delivery.development_code || ""); setOtp(""); setSeconds(RESEND_SECONDS); setError("");
+      setInfo(delivery.development_code ? `Development code: ${delivery.development_code} · No SMS was sent.` : "A new verification code was sent.");
+      otpRefs.current[0]?.focus();
+    } catch (apiError) { setError(apiError?.message || "Could not resend the verification code."); }
   };
 
   const renderPhoneInput = (placeholder = "98765 43210") => (
@@ -381,13 +392,7 @@ export default function Login() {
             onPaste={onOtpPaste}
             disabled={loading}
             aria-label={`Digit ${index + 1}`}
-            className={`h-14 w-12 rounded-2xl text-center font-[var(--font-serif)] text-2xl text-[color:var(--tara-text-primary)] transition-all focus:outline-none ${
-              error
-                ? "border border-rose-300/55 bg-rose-500/10"
-                : otp[index]
-                  ? "border border-[color:var(--tara-gold)]/70 bg-[color:var(--tara-gold)]/10 shadow-[0_0_20px_rgba(226,181,79,0.25)]"
-                  : "glass-strong"
-            }`}
+            className={`auth-otp-input ${error ? "is-error" : otp[index] ? "is-filled" : ""}`}
           />
         ))}
       </div>
@@ -404,29 +409,31 @@ export default function Login() {
         )}
       </div>
       <p className="mt-3 text-center text-xs text-[color:var(--tara-text-secondary)]">
-        Tip: use <span className="text-[color:var(--tara-gold)]">123456</span> in this demo.
+        {developmentCode ? <>Development OTP: <span className="text-[color:var(--tara-gold)]">{developmentCode}</span>. No SMS was sent.</> : "Enter the code sent to your phone."}
       </p>
     </div>
   );
 
   return (
-    <main className="relative mx-auto min-h-[100dvh] w-full max-w-[390px] overflow-hidden bg-cosmic px-6 pb-8 pt-12">
-      <div className="star-field pointer-events-none absolute inset-0 opacity-60" />
-      <div className="pointer-events-none absolute left-1/2 top-16 h-72 w-72 -translate-x-1/2 rounded-full bg-glow blur-3xl" />
-
-      <div className="relative z-10 flex min-h-[100dvh] flex-col">
-        <header className="flex items-center justify-between">
+    <main className="tara-container tara-onboarding tara-entry tara-auth">
+      <div className="entry-body">
+        <header className="entry-header auth-header">
           <button
             onClick={onBack}
             aria-label="Back"
-            className="flex h-10 w-10 items-center justify-center rounded-full glass"
+            className="tara-back-btn"
             type="button"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
-          <Logo size={28} />
-          <div className="h-10 w-10" />
+          <span className="onboarding-brand">tara<span className="onboarding-brand-dot">.</span></span>
+          <div className="h-9 w-9" />
         </header>
+        {mode === "signup" || mode === "forgot" ? (
+          <div aria-label={mode === "forgot" ? "Password reset progress" : "Sign-up progress"} className="tara-progress-track auth-progress" role="progressbar" aria-valuenow={mode === "forgot" ? forgotStep === "phone" ? 1 : 2 : signupStep === "phone" ? 1 : signupStep === "otp" ? 2 : 3} aria-valuemin={0} aria-valuemax={mode === "forgot" ? 2 : 3}>
+            <div className="tara-progress-fill h-full transition-all duration-300" style={{ width: mode === "forgot" ? forgotStep === "phone" ? "50%" : "100%" : signupStep === "phone" ? "33.33%" : signupStep === "otp" ? "66.67%" : "100%" }} />
+          </div>
+        ) : null}
 
         {mode === "signup" && signupStep === "phone" ? (
           <section className="mt-12 flex flex-1 flex-col animate-fade-up">
@@ -434,7 +441,7 @@ export default function Login() {
             <h1 className="tara-heading mt-3 text-6xl leading-tight">
               Enter your
               <br />
-              <span className="text-aurora italic">number?</span>
+              <span className="onboarding-accent-text">number?</span>
             </h1>
             <p className="mt-3 text-[15px] text-[color:var(--tara-text-secondary)]">
               We&apos;ll first check whether this number already has an account. New numbers continue to OTP verification.
@@ -476,7 +483,7 @@ export default function Login() {
             <h1 className="tara-heading mt-3 text-6xl leading-tight">
               Enter the
               <br />
-              <span className="text-aurora italic">six digits</span>
+              <span className="onboarding-accent-text">six digits</span>
             </h1>
             <p className="mt-3 text-[15px] text-[color:var(--tara-text-secondary)]">
               Sent to <span className="text-[color:var(--tara-text-primary)]">{fullPhone}</span>.{" "}
@@ -506,11 +513,17 @@ export default function Login() {
             <h1 className="tara-heading mt-3 text-6xl leading-tight">
               Create your
               <br />
-              <span className="text-aurora italic">password</span>
+              <span className="onboarding-accent-text">password</span>
             </h1>
             <p className="mt-3 text-[15px] text-[color:var(--tara-text-secondary)]">
               You&apos;ll use <span className="text-[color:var(--tara-text-primary)]">{fullPhone}</span> + password for login.
             </p>
+
+            <div className="mt-8 rounded-2xl glass-strong px-4 py-3">
+              <label className="mb-1 block text-[11px] uppercase tracking-[0.22em] text-[color:var(--tara-text-faint)]" htmlFor="signup-date-of-birth">Date of birth · 18+ only</label>
+              <input id="signup-date-of-birth" aria-label="Date of birth" type="date" max={(() => { const d = new Date(); d.setFullYear(d.getFullYear() - 18); return d.toISOString().slice(0, 10); })()} value={dateOfBirth} onChange={(event) => { setDateOfBirth(event.target.value); setError(""); }} className="w-full bg-transparent py-2 text-base text-[color:var(--tara-text-primary)] focus:outline-none" />
+              <p className="text-xs text-[color:var(--tara-text-faint)]">Your full birth date stays private.</p>
+            </div>
 
             <div className="mt-10 rounded-2xl glass-strong px-4 py-3">
               <label className="mb-1 block text-[11px] uppercase tracking-[0.22em] text-[color:var(--tara-text-faint)]">
@@ -532,7 +545,7 @@ export default function Login() {
             <div className="mt-auto">
               <button
                 onClick={onCreateAccount}
-                disabled={password.trim().length < 8 || loading}
+                disabled={password.trim().length < 8 || !dateOfBirth || loading}
                 className="flex h-14 w-full items-center justify-center rounded-full bg-aurora text-base font-semibold text-white shadow-glow transition-all active:scale-[0.98] disabled:opacity-40 disabled:shadow-none"
                 type="button"
               >
@@ -548,7 +561,7 @@ export default function Login() {
             <h1 className="tara-heading mt-3 text-6xl leading-tight">
               Login with
               <br />
-              <span className="text-aurora italic">phone</span>
+              <span className="onboarding-accent-text">phone</span>
             </h1>
             <p className="mt-3 text-[15px] text-[color:var(--tara-text-secondary)]">
               Existing users only need their phone number and password.
@@ -624,12 +637,12 @@ export default function Login() {
         ) : null}
 
         {mode === "forgot" && forgotStep === "phone" ? (
-          <section className="mt-12 flex flex-1 flex-col animate-fade-up">
+          <section className="auth-reset-step mt-12 flex flex-1 flex-col animate-fade-up">
             <p className="text-xs uppercase tracking-[0.32em] text-[color:var(--tara-gold)]">Step 1 of 2</p>
             <h1 className="tara-heading mt-3 text-6xl leading-tight">
               Reset
               <br />
-              <span className="text-aurora italic">password</span>
+              <span className="onboarding-accent-text">password</span>
             </h1>
             <p className="mt-3 text-[15px] text-[color:var(--tara-text-secondary)]">
               Enter your number and we&apos;ll verify with a 6-digit OTP.
@@ -651,25 +664,26 @@ export default function Login() {
         ) : null}
 
         {mode === "forgot" && forgotStep === "otp" ? (
-          <section className="mt-12 flex flex-1 flex-col animate-fade-up">
+          <section className="auth-reset-step mt-12 flex flex-1 flex-col animate-fade-up">
             <p className="text-xs uppercase tracking-[0.32em] text-[color:var(--tara-gold)]">Step 2 of 2</p>
             <h1 className="tara-heading mt-3 text-6xl leading-tight">
               Verify and
               <br />
-              <span className="text-aurora italic">reset</span>
+              <span className="onboarding-accent-text">reset</span>
             </h1>
             <p className="mt-3 text-[15px] text-[color:var(--tara-text-secondary)]">
-              OTP sent to <span className="text-[color:var(--tara-text-primary)]">{fullPhone}</span>.
+              OTP sent to <span className="text-[color:var(--tara-text-primary)]">{fullPhone}</span>.{" "}
+              <button className="auth-reset-edit-phone" onClick={() => setForgotStep("phone")} type="button">Edit number</button>
             </p>
 
             {renderOtpInputs()}
 
-            <div className="mt-6 rounded-2xl glass-strong px-4 py-3">
+            <div className="auth-reset-password mt-6 rounded-2xl glass-strong px-4 py-3">
               <label className="mb-1 block text-[11px] uppercase tracking-[0.22em] text-[color:var(--tara-text-faint)]">
                 New password
               </label>
               <input
-                type="password"
+                type={showNewPassword ? "text" : "password"}
                 value={newPassword}
                 onChange={(event) => {
                   setNewPassword(event.target.value);
@@ -678,6 +692,7 @@ export default function Login() {
                 placeholder="At least 8 characters"
                 className="w-full bg-transparent py-2 text-base text-[color:var(--tara-text-primary)] placeholder:text-[color:var(--tara-text-faint)] focus:outline-none"
               />
+              <button aria-label={showNewPassword ? "Hide password" : "Show password"} onClick={() => setShowNewPassword((visible) => !visible)} type="button">{showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
             </div>
 
             <div className="mt-auto">
@@ -694,12 +709,12 @@ export default function Login() {
         ) : null}
 
         {error ? (
-          <p className="mt-4 rounded-xl border border-rose-300/25 bg-rose-500/10 px-3 py-2 text-sm text-rose-100">
+          <p className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
             {error}
           </p>
         ) : null}
         {info ? (
-          <p className="mt-4 rounded-xl border border-emerald-300/25 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100">
+          <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
             {info}
           </p>
         ) : null}

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { LocateFixed, Loader2, MapPin, Search } from "lucide-react";
+import { LocateFixed, Loader2, MapPin, Search, X } from "lucide-react";
 
 import api from "../services/api";
 
@@ -34,6 +34,7 @@ export default function LocationInput({
   label = "Place of Birth",
   placeholder = "Search city or place",
   autoDetect = true,
+  simple = false,
 }) {
   const initial = useMemo(() => normalizeValue(value), [value]);
 
@@ -83,7 +84,7 @@ export default function LocationInput({
   };
 
   useEffect(() => {
-    setSelectedPlace(initial.place_of_birth);
+    setSelectedPlace(initial.latitude && initial.longitude ? initial.place_of_birth : "");
     setLatitude(initial.latitude);
     setLongitude(initial.longitude);
     setIsUsingCurrentLocation(initial.is_default_location);
@@ -205,39 +206,68 @@ export default function LocationInput({
   }, [query, selectedPlace]);
 
   return (
-    <div className="space-y-2">
-      <p className="text-sm font-medium tara-copy">{label}</p>
+    <div className={`tara-location-input space-y-2 ${simple ? "tara-location-simple" : ""}`}>
+      {!simple ? <p className="text-sm font-medium tara-copy">{label}</p> : null}
 
-      <div className="flex gap-2">
+      {!simple ? <div className="flex gap-2">
         <button
           type="button"
           onClick={detectCurrentLocation}
           disabled={geoLoading}
-          className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--tara-card-border)] bg-white/5 px-3 py-2 text-xs text-[color:var(--tara-text-primary)] transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-70"
+          className="tara-location-current inline-flex items-center gap-1.5 rounded-full border border-[color:var(--tara-card-border)] bg-white/5 px-3 py-2 text-xs text-[color:var(--tara-text-primary)] transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-70"
         >
           {geoLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LocateFixed className="h-3.5 w-3.5" />}
           Use Current Location
         </button>
-      </div>
+      </div> : null}
 
-      <div className="relative">
+      <div className="flex items-center gap-2">
+      <div className="relative min-w-0 flex-1">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--tara-text-faint)]" />
         <input
           ref={inputRef}
+          aria-label={label}
+          autoComplete="off"
           type="text"
           value={query}
           placeholder={placeholder}
           onChange={(event) => {
             setError("");
             setInfo("");
-            setQuery(event.target.value);
+            const nextQuery = event.target.value;
+            setQuery(nextQuery);
+            if (simple) {
+              setSelectedPlace("");
+              setLatitude("");
+              setLongitude("");
+              setIsUsingCurrentLocation(false);
+              emitChange({
+                place_of_birth: nextQuery,
+                latitude: "",
+                longitude: "",
+                is_default_location: false,
+              });
+            }
           }}
           onFocus={() => setShowSuggestions(true)}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              setShowSuggestions(false);
+            }
+            if (event.key === "Enter" && showSuggestions && suggestions.length > 0) {
+              event.preventDefault();
+              const first = suggestions[0];
+              updateSelection({ ...first, is_default_location: false });
+              setSuggestions([]);
+              setShowSuggestions(false);
+              setError("");
+            }
+          }}
           className="tara-input pl-10"
         />
 
         {showSuggestions && (suggestions.length > 0 || searching) ? (
-          <div className="absolute z-30 mt-2 max-h-56 w-full overflow-auto rounded-2xl border border-[color:var(--tara-card-border)] bg-[#0f0d36] p-1 shadow-2xl">
+          <div className="tara-location-menu absolute z-30 mt-2 max-h-56 w-full overflow-auto rounded-2xl border border-[color:var(--tara-card-border)] bg-[#0f0d36] p-1 shadow-2xl">
             {searching ? (
               <div className="flex items-center gap-2 px-3 py-2 text-xs text-[color:var(--tara-text-secondary)]">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -260,7 +290,7 @@ export default function LocationInput({
                   setShowSuggestions(false);
                   setError("");
                 }}
-                className="flex w-full items-start gap-2 rounded-xl px-3 py-2 text-left text-xs text-[color:var(--tara-text-primary)] hover:bg-white/10"
+                className="tara-location-suggestion flex w-full items-start gap-2 rounded-xl px-3 py-2 text-left text-xs text-[color:var(--tara-text-primary)] hover:bg-white/10"
               >
                 <MapPin className="mt-0.5 h-3.5 w-3.5 text-[color:var(--tara-gold)]" />
                 <span>{item.place_of_birth}</span>
@@ -269,9 +299,37 @@ export default function LocationInput({
           </div>
         ) : null}
       </div>
+      {simple && query ? (
+        <button
+          type="button"
+          aria-label="Clear birthplace"
+          onClick={() => {
+            setQuery("");
+            setSelectedPlace("");
+            setLatitude("");
+            setLongitude("");
+            setIsUsingCurrentLocation(false);
+            setSuggestions([]);
+            setShowSuggestions(false);
+            setError("");
+            setInfo("");
+            emitChange({
+              place_of_birth: "",
+              latitude: "",
+              longitude: "",
+              is_default_location: false,
+            });
+            inputRef.current?.focus();
+          }}
+          className="shrink-0 rounded-xl border border-[color:var(--tara-card-border)] p-2 text-[color:var(--tara-text-secondary)] hover:text-[color:var(--tara-text-primary)]"
+        >
+          <X aria-hidden="true" className="h-4 w-4" />
+        </button>
+      ) : null}
+      </div>
 
-      {selectedPlace && latitude && longitude ? (
-        <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-[color:var(--tara-text-secondary)]">
+      {!simple && selectedPlace && latitude && longitude ? (
+        <div className="tara-location-selected rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-[color:var(--tara-text-secondary)]">
           {isUsingCurrentLocation ? (
             <p>
               Using your current location:{" "}
@@ -303,8 +361,8 @@ export default function LocationInput({
         </div>
       ) : null}
 
-      {info ? <p className="text-xs text-emerald-200">{info}</p> : null}
-      {error ? <p className="text-xs text-rose-200">{error}</p> : null}
+      {!simple && info ? <p className="tara-location-info text-xs text-emerald-200">{info}</p> : null}
+      {error ? <p className="tara-location-error text-xs text-rose-200">{error}</p> : null}
     </div>
   );
 }

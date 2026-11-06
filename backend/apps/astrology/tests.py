@@ -1,12 +1,14 @@
-from datetime import date, datetime
+from datetime import date, datetime, time
 from decimal import Decimal
 from unittest.mock import patch
+from zoneinfo import ZoneInfo
 
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.test import TestCase
 from django.test.utils import override_settings
 from rest_framework.test import APIClient
+from apps.users.services.nakshatra_data import NAKSHATRAS
 
 from .models import BirthDetails, Kundali
 from .services.kundali_service import calculate_kundali_payload
@@ -101,6 +103,30 @@ class AstrologyModuleTests(TestCase):
         self.assertEqual(str(self.user.longitude), "72.877700")
         self.assertTrue(self.user.is_default_location)
         self.assertFalse(self.user.is_birth_time_default)
+
+        chart = self.client.get("/api/astrology/kundali/").data
+        moon_degree = chart["chart_data"]["planets"]["moon"]["degree"]
+        self.assertEqual(chart["nakshatra"], NAKSHATRAS[int(moon_degree / (360 / 27))])
+        self.assertIn(chart["nakshatra_pada"], (1, 2, 3, 4))
+        self.assertTrue(chart["birth_context"]["time_known"])
+        self.assertEqual(chart["birth_context"]["timezone"], "Asia/Kolkata")
+        self.assertEqual(chart["calculation_settings"]["ayanamsha"], "Lahiri")
+        self.assertEqual(chart["calculation_settings"]["houses"], "Whole sign")
+
+    def test_missing_birth_time_is_flagged_as_noon_assumption(self):
+        with patch(
+            "apps.astrology.services.ephemeris_service.local_to_utc",
+            side_effect=lambda dob, tob, _tz: datetime.combine(dob, tob or time(12, 0)),
+        ):
+            response = self.client.post(
+                "/api/astrology/birth-details/",
+                {"date_of_birth": "1995-02-14", "place_of_birth": "Mumbai, India", "latitude": "19.076000", "longitude": "72.877700"},
+                format="json",
+            )
+        self.assertEqual(response.status_code, 200)
+        chart = self.client.get("/api/astrology/kundali/").data
+        self.assertFalse(chart["birth_context"]["time_known"])
+        self.assertEqual(chart["birth_context"]["time_assumption"], "12:00 local")
 
     def test_update_birth_details_updates_kundali(self):
         self.client.post(
@@ -216,7 +242,9 @@ class AstrologyModuleTests(TestCase):
         second = self.client.get("/api/astrology/daily-horoscope/")
         self.assertEqual(first.status_code, 200)
         self.assertEqual(second.status_code, 200)
-        self.assertEqual(first.data.get("date"), date.today().isoformat())
+        self.assertEqual(first.data.get("date"), datetime.now(ZoneInfo("Asia/Kolkata")).date().isoformat())
+        self.assertEqual(first.data.get("timezone"), "Asia/Kolkata")
+        self.assertEqual(first.data.get("transit_snapshot"), "12:00 local time")
         self.assertEqual(first.data, second.data)
 
     def test_horoscope_cache_refreshes_after_birth_edit(self):

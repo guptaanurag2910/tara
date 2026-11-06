@@ -15,6 +15,16 @@ export async function getPhoneStatus(payload) {
   return data;
 }
 
+export async function sendPhoneOtp(payload) {
+  const { data } = await api.post("auth/otp/send/", payload);
+  return data;
+}
+
+export async function verifyPhoneOtp(payload) {
+  const { data } = await api.post("auth/otp/verify/", payload);
+  return data;
+}
+
 export async function getUser() {
   const { data } = await api.get("auth/me");
   return data;

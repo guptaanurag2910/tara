@@ -12,6 +12,7 @@ import { Route as WelcomeRouteImport } from "./routes/welcome";
 import { Route as OnboardingRouteImport } from "./routes/onboarding";
 import { Route as ProfileSetupRouteImport } from "./routes/profile-setup";
 import { Route as DiscoverRouteImport } from "./routes/discover";
+import { Route as GameNightRouteImport } from "./routes/game-night";
 import { Route as StarsTodayRouteImport } from "./routes/stars-today";
 import { Route as KundaliRouteImport } from "./routes/kundali";
 import { Route as MatchesRouteImport } from "./routes/matches";
@@ -23,6 +24,7 @@ import { Route as ProfileEditRouteImport } from "./routes/profile.edit";
 import { Route as ProfileEditSectionRouteImport } from "./routes/profile.edit.$section";
 import { Route as SettingsRouteImport } from "./routes/settings";
 import { Route as YourVibeRouteImport } from "./routes/your-vibe";
+import { Route as AdminRouteImport } from "./routes/admin";
 
 const IndexRoute = IndexRouteImport.update({
   id: "/",
@@ -57,6 +59,11 @@ const ProfileSetupRoute = ProfileSetupRouteImport.update({
 const DiscoverRoute = DiscoverRouteImport.update({
   id: "/discover",
   path: "/discover",
+  getParentRoute: () => rootRouteImport,
+});
+const GameNightRoute = GameNightRouteImport.update({
+  id: "/game-night",
+  path: "/game-night",
   getParentRoute: () => rootRouteImport,
 });
 const StarsTodayRoute = StarsTodayRouteImport.update({
@@ -114,6 +121,11 @@ const YourVibeRoute = YourVibeRouteImport.update({
   path: "/your-vibe",
   getParentRoute: () => rootRouteImport,
 });
+const AdminRoute = AdminRouteImport.update({
+  id: "/admin",
+  path: "/admin",
+  getParentRoute: () => rootRouteImport,
+});
 
 const rootRouteChildren = {
   IndexRoute,
@@ -123,6 +135,7 @@ const rootRouteChildren = {
   OnboardingRoute,
   ProfileSetupRoute,
   DiscoverRoute,
+  GameNightRoute,
   StarsTodayRoute,
   KundaliRoute,
   MatchesRoute,
@@ -134,6 +147,7 @@ const rootRouteChildren = {
   ProfileEditSectionRoute,
   SettingsRoute,
   YourVibeRoute,
+  AdminRoute,
 };
 
 export const routeTree = rootRouteImport._addFileChildren(rootRouteChildren);

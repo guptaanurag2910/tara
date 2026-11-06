@@ -99,6 +99,24 @@ class ApiEndToEndSmokeTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["date_of_birth"][0], "You must be 18+ to use Tara.")
 
+    def test_profile_basic_accepts_prefer_not_to_say_gender(self):
+        user = self._signup(name="Privacy Choice", email="privacy.choice@tara.demo")
+        client = self._auth_client(user["access"])
+
+        response = client.post(
+            "/api/profile/basic/",
+            {
+                "name": "Privacy Choice",
+                "date_of_birth": "1997-01-01",
+                "gender": "prefer_not_to_say",
+                "preference": "everyone",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["gender"], "prefer_not_to_say")
+
     def test_full_authenticated_api_flow(self):
         response = self.anon.post("/api/profile/basic/", {"name": "x"}, format="json")
         self.assertEqual(response.status_code, 401)

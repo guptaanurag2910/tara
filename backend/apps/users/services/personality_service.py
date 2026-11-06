@@ -4,6 +4,7 @@ from typing import Dict
 from django.db import transaction
 
 from ..models import PersonalityOption, PersonalityQuestion, PersonalityResponse, Trait
+from .vibe_question_bank import OPTION_LABELS, QUESTION_PREFIX, STATEMENTS, option_mapping, question_text
 
 STARTER_PERSONALITY_QUESTION_BANK = [
     {
@@ -119,32 +120,48 @@ def _normalize_scores(raw_scores: Dict[str, float], minimum: float = 1.0, maximu
 @transaction.atomic
 def sync_starter_personality_questions() -> None:
     active_questions = PersonalityQuestion.objects.filter(is_active=True)
-    if active_questions.exclude(question_text__startswith="[Demo]").exists():
+    if active_questions.exclude(question_text__startswith="[Demo]").exclude(question_text__startswith=QUESTION_PREFIX).exists():
         return
-
-    next_question_texts = [item["question_text"] for item in STARTER_PERSONALITY_QUESTION_BANK]
-    stale_demo_questions = PersonalityQuestion.objects.filter(question_text__startswith="[Demo]").exclude(
-        question_text__in=next_question_texts
-    )
-    PersonalityResponse.objects.filter(question__in=stale_demo_questions).delete()
-    PersonalityOption.objects.filter(question__in=stale_demo_questions).delete()
-    stale_demo_questions.delete()
-
-    for question_payload in STARTER_PERSONALITY_QUESTION_BANK:
+    # Preserve historical demo responses, but do not include those questions in the new test.
+    PersonalityQuestion.objects.filter(question_text__startswith="[Demo]").update(is_active=False)
+    if active_questions.filter(question_text__startswith=QUESTION_PREFIX).count() == len(STATEMENTS):
+        return
+    for index, statement in enumerate(STATEMENTS):
         question, _ = PersonalityQuestion.objects.update_or_create(
-            question_text=question_payload["question_text"],
+            question_text=question_text(index, statement),
             defaults={
-                "category": question_payload["category"],
+                "category": PersonalityQuestion.Category.PERSONALITY,
                 "is_active": True,
             },
         )
-
-        for option_payload in question_payload["options"]:
+        for response, label in enumerate(OPTION_LABELS, start=1):
             PersonalityOption.objects.update_or_create(
                 question=question,
-                option_text=option_payload["option_text"],
-                defaults={"trait_mapping": option_payload["trait_mapping"]},
+                option_text=label,
+                defaults={"trait_mapping": option_mapping(index, response)},
             )
+
+
+def _big_five_scores(user):
+    question_count = PersonalityQuestion.objects.filter(is_active=True, question_text__startswith=QUESTION_PREFIX).count()
+    if not question_count:
+        return None
+    responses = PersonalityResponse.objects.filter(
+        user=user, question__is_active=True, question__question_text__startswith=QUESTION_PREFIX
+    ).select_related("selected_option")
+    if responses.count() < question_count:
+        return {}
+
+    values = defaultdict(list)
+    for response in responses:
+        for trait, value in (response.selected_option.trait_mapping or {}).items():
+            numeric = _coerce_number(value)
+            if numeric is not None:
+                values[trait].append(numeric)
+    return {
+        trait: round(1 + ((sum(scores) / len(scores) - 1) / 4) * 9, 2)
+        for trait, scores in values.items() if scores
+    }
 
 
 @transaction.atomic
@@ -158,8 +175,8 @@ def calculate_traits(user) -> Dict[str, float]:
     3. Normalize aggregated values to 1-10.
     4. Save to Trait model.
     """
-    raw_scores = _aggregate_trait_scores(user)
-    normalized_scores = _normalize_scores(raw_scores)
+    big_five_scores = _big_five_scores(user)
+    normalized_scores = big_five_scores if big_five_scores is not None else _normalize_scores(_aggregate_trait_scores(user))
 
     Trait.objects.update_or_create(
         user=user,

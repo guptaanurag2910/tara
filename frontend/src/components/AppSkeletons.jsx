@@ -1,11 +1,11 @@
 function Shimmer({ className = "" }) {
-  return <div className={`animate-pulse rounded-2xl bg-white/10 ${className}`} />;
+  return <div className={`animate-pulse rounded-2xl bg-[#ebebeb] ${className}`} />;
 }
 
 export function DiscoverSkeleton() {
   return (
     <div className="relative flex-1">
-      <div className="h-[67vh] max-h-[590px] rounded-[2rem] border border-white/10 bg-slate-900/55 p-4 shadow-xl shadow-black/20">
+      <div className="h-[67vh] max-h-[590px] rounded-[2rem] border border-[#e7e7e7] bg-white p-4">
         <Shimmer className="h-[54%] rounded-[1.6rem]" />
         <div className="mt-4 space-y-3">
           <Shimmer className="h-8 w-40 rounded-full" />
@@ -25,29 +25,29 @@ export function DiscoverSkeleton() {
 
 export function MatchesSkeleton() {
   return (
-    <div className="mt-6 space-y-6">
+    <div className="matches-skeleton">
       <section>
-        <Shimmer className="mb-3 h-3 w-16 rounded-full" />
-        <div className="-mx-5 flex gap-3 overflow-hidden px-5 pb-2">
+        <Shimmer className="h-4 w-36 rounded-full" />
+        <div className="matches-skeleton-avatars">
           {Array.from({ length: 4 }).map((_, index) => (
-            <div key={index} className="flex w-20 shrink-0 flex-col items-center gap-2">
-              <Shimmer className="h-20 w-20 rounded-full" />
-              <Shimmer className="h-3 w-14 rounded-full" />
+            <div key={index} className="matches-skeleton-avatar">
+              <Shimmer className="h-[68px] w-[68px] rounded-full" />
+              <Shimmer className="h-3 w-12 rounded-full" />
             </div>
           ))}
         </div>
       </section>
 
-      <section className="space-y-3">
-        <Shimmer className="h-3 w-20 rounded-full" />
-        {Array.from({ length: 5 }).map((_, index) => (
-          <div key={index} className="flex items-center gap-4 rounded-3xl border border-white/10 bg-white/5 p-3">
-            <Shimmer className="h-16 w-16 shrink-0 rounded-2xl" />
-            <div className="min-w-0 flex-1 space-y-2">
-              <Shimmer className="h-5 w-40 rounded-full" />
-              <Shimmer className="h-3 w-5/6 rounded-full" />
+      <section>
+        <Shimmer className="mb-4 h-4 w-24 rounded-full" />
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="matches-skeleton-card">
+            <Shimmer className="h-[62px] w-[62px] shrink-0 rounded-xl" />
+            <div className="min-w-0 flex-1 space-y-2.5">
+              <Shimmer className="h-5 w-32 rounded-full" />
+              <Shimmer className="h-3 w-44 max-w-full rounded-full" />
             </div>
-            <Shimmer className="h-4 w-10 rounded-full" />
+            <Shimmer className="h-6 w-11 rounded-full" />
           </div>
         ))}
       </section>
@@ -93,7 +93,7 @@ export function ChatThreadSkeleton() {
           <Shimmer className="h-3 w-12 rounded-full" />
         </div>
       </div>
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
+      <div className="rounded-3xl border border-[#e7e7e7] bg-[#fafafa] p-4">
         <Shimmer className="h-4 w-24 rounded-full" />
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <Shimmer className="h-20 rounded-2xl" />

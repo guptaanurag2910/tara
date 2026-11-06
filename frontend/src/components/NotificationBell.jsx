@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 
 import { useAuth } from "../hooks/useAuth";
 import { fetchNotifications, markNotificationsRead } from "../services/notificationService";
@@ -27,26 +28,34 @@ function BellIcon() {
   );
 }
 
-export default function NotificationBell() {
+export default function NotificationBell({ light = false }) {
   const { token } = useAuth();
+  const router = useNavigate();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [markingRead, setMarkingRead] = useState(false);
   const [error, setError] = useState("");
   const [notifications, setNotifications] = useState([]);
   const rootRef = useRef(null);
+  const lastLoadedAtRef = useRef(0);
 
   const unreadCount = useMemo(
     () => notifications.filter((item) => item && !item.is_read).length,
     [notifications],
   );
 
-  async function refreshNotifications() {
+  async function refreshNotifications({ force = false } = {}) {
+    const now = Date.now();
+    if (!force && now - lastLoadedAtRef.current < 15000) {
+      return;
+    }
+
     setLoading(true);
     setError("");
     try {
       const items = await fetchNotifications();
       setNotifications(items);
+      lastLoadedAtRef.current = now;
     } catch {
       setError("Could not load notifications.");
     } finally {
@@ -61,11 +70,17 @@ export default function NotificationBell() {
     }
 
     let alive = true;
-    async function load() {
+    async function load({ force = false } = {}) {
+      const now = Date.now();
+      if (!force && now - lastLoadedAtRef.current < 15000) {
+        return;
+      }
+
       try {
         const items = await fetchNotifications();
         if (alive) {
           setNotifications(items);
+          lastLoadedAtRef.current = now;
         }
       } catch {
         if (alive) {
@@ -74,7 +89,7 @@ export default function NotificationBell() {
       }
     }
 
-    load();
+    load({ force: true });
     function onFocus() {
       load();
     }
@@ -83,14 +98,17 @@ export default function NotificationBell() {
         load();
       }
     }
-    const timerId = window.setInterval(load, 45000);
+    const timerId = window.setInterval(load, 30000);
+    function onNotificationRefresh() { load({ force: true }); }
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("tara-notifications-refresh", onNotificationRefresh);
     return () => {
       alive = false;
       window.clearInterval(timerId);
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("tara-notifications-refresh", onNotificationRefresh);
     };
   }, [token]);
 
@@ -100,17 +118,24 @@ export default function NotificationBell() {
         setOpen(false);
       }
     }
-    if (open) {
-      document.addEventListener("mousedown", onPointerDown);
+    function onKeyDown(event) {
+      if (event.key === "Escape") setOpen(false);
     }
-    return () => document.removeEventListener("mousedown", onPointerDown);
+    if (open) {
+      document.addEventListener("pointerdown", onPointerDown);
+      document.addEventListener("keydown", onKeyDown);
+    }
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
   }, [open]);
 
   async function onOpenToggle() {
     const nextOpen = !open;
     setOpen(nextOpen);
     if (nextOpen) {
-      await refreshNotifications();
+      await refreshNotifications({ force: true });
     }
   }
 
@@ -130,16 +155,35 @@ export default function NotificationBell() {
     }
   }
 
+  async function onMarkOneRead(item) {
+    if (item.is_read) return;
+    try {
+      await markNotificationsRead([item.id]);
+      setNotifications((prev) => prev.map((entry) => entry.id === item.id ? { ...entry, is_read: true } : entry));
+    } catch {
+      setError("Could not mark this notification as read.");
+    }
+  }
+
+  async function onOpenNotification(item) {
+    if (!item.is_read) await onMarkOneRead(item);
+    const destination = typeof item.action_url === "string" && item.action_url.startsWith("/") && !item.action_url.startsWith("//")
+      ? item.action_url
+      : item.type === "recommendation" ? "/discover" : item.type === "match" ? "/matches" : "/chat";
+    setOpen(false);
+    router({ to: destination });
+  }
+
   if (!token) {
     return null;
   }
 
   return (
-    <div className="fixed right-3 top-3 z-50" ref={rootRef}>
+    <div className={`fixed right-3 top-3 ${open ? "z-[100]" : "z-50"} ${light ? "tara-light-notification-bell" : ""}`} ref={rootRef}>
       <button
         aria-expanded={open}
         aria-label="Open notifications"
-        className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-slate-900/80 text-slate-100 backdrop-blur transition hover:border-rose-200/60"
+        className={`relative inline-flex h-10 w-10 items-center justify-center rounded-full backdrop-blur transition ${light ? "border border-[#dbdbdb] bg-white text-[#262626] hover:border-[#0095f6]" : "border border-white/25 bg-slate-900/80 text-slate-100 hover:border-rose-200/60"}`}
         onClick={onOpenToggle}
         type="button"
       >
@@ -152,43 +196,45 @@ export default function NotificationBell() {
       </button>
 
       {open ? (
-        <section className="fixed inset-x-3 top-16 max-h-[70vh] overflow-hidden rounded-2xl border border-white/20 bg-slate-950/95 shadow-2xl shadow-black/50 backdrop-blur sm:absolute sm:inset-x-auto sm:right-0 sm:top-12 sm:w-96">
-          <header className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-            <p className="text-sm font-semibold text-white">Notifications</p>
-            <button
-              className="rounded-full border border-white/20 px-3 py-1 text-[11px] font-medium text-slate-200 disabled:opacity-60"
-              disabled={markingRead || unreadCount === 0}
-              onClick={onMarkAllRead}
-              type="button"
-            >
-              {markingRead ? "Marking..." : "Mark all read"}
-            </button>
+        <section aria-label="Notifications" className="notification-panel" role="dialog">
+          <header className="notification-panel-header">
+            <div><h2>Notifications</h2><p>{unreadCount > 0 ? `${unreadCount} unread` : "You're all caught up"}</p></div>
+            <button aria-label="Close notifications" className="notification-close" onClick={() => setOpen(false)} type="button">×</button>
           </header>
 
-          <div className="max-h-[calc(70vh-56px)] overflow-y-auto">
+          {unreadCount > 0 ? <button className="notification-mark-read" disabled={markingRead} onClick={onMarkAllRead} type="button">{markingRead ? "Marking..." : "Mark all read"}</button> : null}
+
+          <div className="notification-panel-content">
             {loading ? (
-              <p className="px-4 py-5 text-sm text-slate-300">Loading notifications...</p>
+              <p className="notification-status">Loading notifications...</p>
             ) : null}
 
             {!loading && error ? (
-              <p className="px-4 py-5 text-sm text-rose-200">{error}</p>
+              <div className="notification-status notification-error"><p>{error}</p><button onClick={() => refreshNotifications({ force: true })} type="button">Try again</button></div>
             ) : null}
 
             {!loading && !error && notifications.length === 0 ? (
-              <p className="px-4 py-5 text-sm text-slate-300">No notifications yet.</p>
+              <div className="notification-empty"><span><BellIcon /></span><strong>No updates yet</strong><p>New connections, messages and game turns will show up here.</p></div>
             ) : null}
 
             {!loading && !error && notifications.length > 0 ? (
-              <ul className="divide-y divide-white/10">
+              <ul className="notification-list">
                 {notifications.map((item, index) => (
                   <li
-                    className={`px-4 py-3 ${item.is_read ? "bg-transparent" : "bg-rose-500/10"}`}
+                    className={item.is_read ? "" : "is-unread"}
                     key={item.id || `${item.timestamp || "n"}-${index}`}
                   >
-                    <p className={`text-sm ${item.is_read ? "text-slate-200" : "font-semibold text-white"}`}>{item.text}</p>
-                    <div className="mt-1 flex items-center justify-between text-[11px] text-slate-400">
-                      <span className="capitalize">{item.type}</span>
-                      <span>{formatNotificationTime(item.timestamp)}</span>
+                    <span className="notification-dot" aria-hidden="true" />
+                    <div className="notification-item-copy">
+                      <button className="notification-open" onClick={() => onOpenNotification(item)} type="button">
+                        <p>{item.text}</p>
+                        <div>
+                          <span>{item.type === "match" ? "Connection" : item.type === "game_turn" ? "Game turn" : item.type === "recommendation" ? "Discover" : "Message"}</span>
+                          <span>{formatNotificationTime(item.timestamp)}</span>
+                        </div>
+                        <span className="notification-action-hint">Open →</span>
+                      </button>
+                      {!item.is_read ? <button aria-label="Mark as read" className="notification-item-read" onClick={() => onMarkOneRead(item)} type="button">Mark read</button> : null}
                     </div>
                   </li>
                 ))}

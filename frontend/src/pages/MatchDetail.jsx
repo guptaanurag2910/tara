@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Heart, MessageCircle, Moon, Sparkles, Sun } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, MessageCircle, Moon, Sparkles, Sun } from "lucide-react";
 
 import Loader from "../components/Loader";
-import { fetchMatchDetail } from "../services/matchingService";
+import { fetchMatchDetail, setMatchConnection } from "../services/matchingService";
 
 function matchErrorMessage(apiError) {
   const status = Number(apiError?.status || 0);
@@ -27,41 +27,21 @@ function label(value, fallback = "") {
   return normalized.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function insightPreview(text) {
-  const preview = String(text || "").split(/[.!?]/)[0]?.trim();
-  return preview || "Your stars suggest an emotionally aligned connection.";
-}
-
-function traitsFromInsight(insight) {
-  const words = insightPreview(insight).split(/\s+/).filter(Boolean);
-  const base = ["Intuitive", "Grounded", "Warm", "Curious"];
-  if (words.length < 4) {
-    return base;
-  }
-  return [words[0], words[1], words[2], words[3]].map((word) => label(word.replace(/[^a-z]/gi, "")) || "Aligned");
-}
-
 function Stat({ icon, label: statLabel, value, note }) {
   return (
-    <div className="rounded-2xl glass p-4">
-      <div className="flex items-center gap-1.5 text-[color:var(--tara-gold)]">
-        {icon}
-        <span className="text-[10px] uppercase tracking-[0.16em] text-[color:var(--tara-text-faint)]">{statLabel}</span>
-      </div>
-      <p className="mt-1 font-[var(--font-serif)] text-3xl text-[color:var(--tara-text-primary)]">{value}</p>
-      <p className="text-[11px] text-[color:var(--tara-text-secondary)]">{note}</p>
+    <div className="match-detail-stat">
+      <div>{icon}<span>{statLabel}</span></div>
+      <strong>{value}</strong>
+      <p>{note}</p>
     </div>
   );
 }
 
 function Attribute({ label: attributeLabel, value, icon }) {
   return (
-    <div className="flex items-center justify-between rounded-2xl glass px-4 py-3">
-      <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[color:var(--tara-violet)]/20">{icon}</div>
-        <span className="text-sm text-[color:var(--tara-text-secondary)]">{attributeLabel}</span>
-      </div>
-      <span className="font-[var(--font-serif)] text-xl text-[color:var(--tara-text-primary)]">{value}</span>
+    <div className="match-detail-attribute">
+      <span>{icon}{attributeLabel}</span>
+      <strong>{value}</strong>
     </div>
   );
 }
@@ -69,25 +49,28 @@ function Attribute({ label: attributeLabel, value, icon }) {
 export default function MatchDetail() {
   const { matchId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [connectionBusy, setConnectionBusy] = useState(false);
+
+  const loadDetail = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await fetchMatchDetail(matchId);
+      setDetail(data || null);
+    } catch (apiError) {
+      setError(matchErrorMessage(apiError));
+    } finally {
+      setLoading(false);
+    }
+  }, [matchId]);
 
   useEffect(() => {
-    async function loadDetail() {
-      setLoading(true);
-      setError("");
-      try {
-        const data = await fetchMatchDetail(matchId);
-        setDetail(data || null);
-      } catch (apiError) {
-        setError(matchErrorMessage(apiError));
-      } finally {
-        setLoading(false);
-      }
-    }
     loadDetail();
-  }, [matchId]);
+  }, [loadDetail]);
 
   const name = detail?.user?.name || "Match";
   const age = detail?.user?.age ? `, ${detail.user.age}` : "";
@@ -96,6 +79,17 @@ export default function MatchDetail() {
   const personalityScore = Number(detail?.personality_score ?? 0);
   const insight = detail?.insight || "Your stars suggest an emotionally aligned connection.";
   const hasDetail = Boolean(detail) && !error;
+
+  async function resumeConnection() {
+    setConnectionBusy(true);
+    setError("");
+    try {
+      await setMatchConnection(matchId, "resume");
+      await loadDetail();
+    } catch (apiError) {
+      setError(matchErrorMessage(apiError));
+    } finally { setConnectionBusy(false); }
+  }
 
   const moonSign = useMemo(() => {
     const source = detail?.user?.moon_sign || detail?.moon_sign || "";
@@ -112,107 +106,106 @@ export default function MatchDetail() {
     return label(source);
   }, [detail?.nakshatra, detail?.user?.nakshatra]);
 
-  const traits = useMemo(() => traitsFromInsight(insight), [insight]);
   const hasKundaliAttributes = Boolean(sunSign || moonSign || nakshatra);
+  const breakdownEntries = Object.entries(detail?.breakdown || {});
+  const returnTo = location.state?.from === "chat" ? `/chat/${matchId}` : "/matches";
+  const returnLabel = location.state?.from === "chat" ? "Back to chat" : "Back to matches";
 
   return (
-    <main className="tara-container pb-28">
-      <div className="relative h-80 w-full overflow-hidden">
+    <main className="tara-match-detail tara-container">
+      <div className="match-detail-hero">
         {detail?.user?.photo ? (
-          <img src={detail.user.photo} alt={name} className="h-full w-full object-cover" />
+          <img src={detail.user.photo} alt={name} />
         ) : (
-          <div className="h-full w-full bg-[radial-gradient(circle_at_30%_20%,#9f9fff_0%,#4f46e5_45%,#090338_100%)]" />
+          <div className="match-detail-placeholder">{name.charAt(0).toUpperCase()}</div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-[#090338]" />
+        <div className="match-detail-hero-shade" />
         <button
-          onClick={() => navigate("/matches")}
-          className="absolute left-5 top-5 flex h-10 w-10 items-center justify-center rounded-full glass-strong"
+          onClick={() => navigate(returnTo)}
+          className="match-detail-back"
           type="button"
-          aria-label="Back"
+          aria-label={returnLabel}
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft size={20} />
         </button>
-        <div className="absolute bottom-0 left-0 right-0 p-5">
-          <h1 className="tara-heading text-5xl text-[color:var(--tara-text-primary)]">
+        <div className="match-detail-hero-copy">
+          <h1>
             {hasDetail ? name : "Match unavailable"}
-            {hasDetail ? <span className="text-[color:var(--tara-text-secondary)]">{age}</span> : null}
+            {hasDetail ? <span>{age}</span> : null}
           </h1>
           {hasDetail && (sunSign || moonSign) ? (
-            <div className="mt-2 flex items-center gap-2">
-              {sunSign ? (
-                <span className="rounded-full glass-strong px-3 py-1 text-xs font-medium">{sunSign} sun</span>
-              ) : null}
-              {moonSign ? (
-                <span className="rounded-full glass-strong px-3 py-1 text-xs font-medium">{moonSign} moon</span>
-              ) : null}
+            <div className="match-detail-signs">
+              {sunSign ? <span>{sunSign} sun</span> : null}
+              {moonSign ? <span>{moonSign} moon</span> : null}
             </div>
           ) : null}
         </div>
       </div>
 
-      <div className="px-5 pt-6">
+      <div className="match-detail-content">
         {loading ? <Loader text="Loading compatibility..." /> : null}
         {!loading && error ? (
-          <p className="rounded-xl border border-rose-300/20 bg-rose-500/10 px-3 py-3 text-sm text-rose-100">{error}</p>
+          <div className="match-detail-error" role="alert">
+            <p>{error}</p>
+            <button onClick={loadDetail} type="button">Try again</button>
+          </div>
         ) : null}
 
         {!loading && !error && hasDetail ? (
           <>
-            <div className="rounded-3xl bg-card-gradient p-6 shadow-card-mystic">
-              <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--tara-gold)]">Cosmic compatibility</p>
-              <div className="mt-2 flex items-end gap-2">
-                <span className="font-[var(--font-serif)] text-7xl text-aurora">{compatibility}</span>
-                <span className="pb-2 font-[var(--font-serif)] text-3xl text-[color:var(--tara-text-secondary)]">%</span>
-              </div>
-              <p className="mt-3 font-[var(--font-serif)] text-lg italic leading-snug text-[color:var(--tara-text-primary)]">
-                &quot;{insightPreview(insight)}&quot;
-              </p>
+            <div className="match-detail-score-card">
+              <p>YOUR CONNECTION</p>
+              <div><strong>{compatibility}</strong><span>% match</span></div>
+              <p className="match-detail-insight">{insight}</p>
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <Stat icon={<Moon className="h-4 w-4" />} label="Kundali" value={`${kundaliScore}/36`} note="Strong guna match" />
-              <Stat icon={<Sparkles className="h-4 w-4" />} label="Personality" value={`${personalityScore}%`} note="Compatible vibes" />
+            <div className="match-detail-stats">
+              <Stat icon={<Moon size={17} />} label="Kundali" value={`${kundaliScore}/36`} note="Guna score" />
+              <Stat icon={<Sparkles size={17} />} label="Personality" value={`${personalityScore}%`} note="Vibe score" />
             </div>
 
             {hasKundaliAttributes ? (
-              <section className="mt-6">
-                <h2 className="mb-3 text-xs uppercase tracking-widest text-[color:var(--tara-text-faint)]">Kundali attributes</h2>
-                <div className="space-y-2">
-                  {sunSign ? (
-                    <Attribute label="Sun sign" value={sunSign} icon={<Sun className="h-4 w-4 text-[color:var(--tara-gold)]" />} />
-                  ) : null}
-                  {moonSign ? (
-                    <Attribute label="Moon sign" value={moonSign} icon={<Moon className="h-4 w-4 text-[color:var(--tara-gold)]" />} />
-                  ) : null}
-                  {nakshatra ? (
-                    <Attribute label="Nakshatra" value={nakshatra} icon={<Sparkles className="h-4 w-4 text-[color:var(--tara-gold)]" />} />
-                  ) : null}
+              <section className="match-detail-section">
+                <h2>Astrology details</h2>
+                <div className="match-detail-attributes">
+                  {sunSign ? <Attribute label="Sun sign" value={sunSign} icon={<Sun size={17} />} /> : null}
+                  {moonSign ? <Attribute label="Moon sign" value={moonSign} icon={<Moon size={17} />} /> : null}
+                  {nakshatra ? <Attribute label="Nakshatra" value={nakshatra} icon={<Sparkles size={17} />} /> : null}
                 </div>
               </section>
             ) : null}
 
-            <section className="mt-6">
-              <h2 className="mb-3 text-xs uppercase tracking-widest text-[color:var(--tara-text-faint)]">Their vibe</h2>
-              <div className="flex flex-wrap gap-2">
-                {traits.map((trait) => (
-                  <span key={trait} className="rounded-full glass px-4 py-2 text-xs font-medium text-[color:var(--tara-text-primary)]">
-                    {trait}
-                  </span>
-                ))}
-              </div>
-            </section>
+            {breakdownEntries.length ? (
+              <section className="match-detail-section">
+                <h2>Ashtakoota breakdown</h2>
+                <div className="match-detail-attributes">
+                  {breakdownEntries.map(([key, value]) => {
+                    const score = Number(value);
+                    const shownScore = Number.isFinite(score) ? (Number.isInteger(score) ? score : score.toFixed(1)) : String(value);
+                    return (
+                      <div className="match-detail-attribute" key={key}>
+                        <span>{label(key)}</span>
+                        <strong>{shownScore}</strong>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            ) : (
+              <section className="match-detail-section">
+                <h2>Ashtakoota breakdown</h2>
+                <p className="match-detail-breakdown-empty">Detailed Kundali scores aren’t available for this match yet.</p>
+              </section>
+            )}
 
-            <div className="mt-8 flex gap-3">
-              <button className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full glass-strong" type="button">
-                <Heart className="h-5 w-5 text-[color:var(--tara-gold)]" fill="currentColor" />
-              </button>
-              <Link
+            <div className="match-detail-action">
+              {detail.is_visible === false ? <div className="w-full rounded-2xl border border-amber-200 bg-amber-50 p-4 text-center"><p className="font-semibold text-amber-900">This connection is paused</p><p className="mt-1 text-sm text-amber-800">Chat and game invites are paused for both of you.</p><button className="mt-3 rounded-xl bg-violet-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50" disabled={connectionBusy} onClick={resumeConnection} type="button">{connectionBusy ? "Resuming…" : "Resume connection"}</button></div> : <Link
                 to={`/chat/${matchId}`}
-                className="flex h-14 flex-1 items-center justify-center gap-2 rounded-full bg-aurora text-base font-semibold text-white shadow-glow"
+                className="match-detail-chat"
               >
-                <MessageCircle className="h-4 w-4" />
+                <MessageCircle size={18} />
                 Start chatting
-              </Link>
+              </Link>}
             </div>
           </>
         ) : null}

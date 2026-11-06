@@ -142,8 +142,48 @@ test.describe.serial("Detailed screen-by-screen UI + API validation", () => {
 
   test("1) Landing screen (/) UI renders correctly", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { name: /Love written/i })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Begin your journey/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Some connections feel written in the stars." })).toBeVisible();
+    await expect(page.locator(".landing-zodiac-name")).toHaveCount(12);
+    await expect(page.getByText("Astrology-led dating")).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /Create an account/i })).toBeVisible();
+  });
+
+  test("1b) Unknown routes and admin sign-in do not show member chrome", async ({ page }) => {
+    await page.goto("/not-a-real-screen");
+    await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
+    await expect(page.getByRole("navigation")).toHaveCount(0);
+    await page.getByRole("link", { name: "Return home" }).click();
+    await expect(page).toHaveURL(/\/$/);
+
+    await page.goto("/admin");
+    await expect(page.getByRole("heading", { name: "Admin portal" })).toBeVisible();
+    await expect(page.getByRole("navigation")).toHaveCount(0);
+    await expect(page.getByLabel("Open notifications")).toHaveCount(0);
+  });
+
+  test("1c) Admin overview and mobile navigation render without member chrome", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.addInitScript(() => sessionStorage.setItem("tara_admin_access", "ui-test-token"));
+    await page.route("**/api/admin-portal/overview/", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ users: 20, new_users_today: 2, active_users_week: 8, recommendations: 40, matches: 3, messages: 9, game_sessions: 1, swipes_today: 6, unread_notifications: 0, realtime_matches: 0, signups: [], recent_users: [] }),
+    }));
+    await page.route("**/api/admin-portal/users/**", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ results: [], page: 1, page_size: 20, count: 0 }),
+    }));
+
+    await page.goto("/admin");
+    await expect(page.getByText("Good to see you")).toBeVisible();
+    await expect(page.getByText("20", { exact: true })).toBeVisible();
+    await expect(page.getByLabel("Open notifications")).toHaveCount(0);
+    await expect.poll(() => page.locator("body").evaluate((body) => body.scrollWidth)).toBeLessThanOrEqual(390);
+    await page.getByRole("navigation").getByRole("button", { name: "Users" }).click();
+    await expect(page.getByRole("heading", { name: "User directory" })).toBeVisible();
+    await page.getByRole("button", { name: "Sign out" }).click();
+    await expect(page.getByRole("heading", { name: "Admin portal" })).toBeVisible();
   });
 
   test("2) Login redirect route (/login) routes to /auth", async ({ page }) => {
@@ -256,6 +296,15 @@ test.describe.serial("Detailed screen-by-screen UI + API validation", () => {
     }
 
     await expect(page.getByRole("heading", { name: /Where were you born/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Use Current Location/i })).toHaveCount(0);
+    await expect(page.locator(".tara-location-selected")).toHaveCount(0);
+    const birthplaceInput = page.getByPlaceholder("Search your place of birth");
+    await expect(birthplaceInput).toBeEmpty();
+    await expect(page.getByRole("button", { name: /Continue/i })).toBeDisabled();
+    await birthplaceInput.fill("New Delhi");
+    await expect(page.getByRole("button", { name: /Continue/i })).toBeDisabled();
+    await expect(page.getByRole("button", { name: /New Delhi/i }).first()).toBeVisible();
+    await page.getByRole("button", { name: /New Delhi/i }).first().click();
     await clickEnabledContinue(page);
 
     await expect(page.getByRole("heading", { name: /Time of birth/i })).toBeVisible();
@@ -278,49 +327,8 @@ test.describe.serial("Detailed screen-by-screen UI + API validation", () => {
     });
     await page.locator('input[type="file"]').first().setInputFiles(imagePath);
     await uploadPromise;
-    await clickEnabledContinue(page);
-    await expect(page.locator("button.tara-option-card:visible").first()).toBeVisible();
-
-    const continueButton = page.getByRole("button", { name: /Continue/i });
-    const firstQuestionHeading = page.locator("h1").last();
-    const firstQuestionText = await firstQuestionHeading.textContent();
-    const firstQuestionOptions = page.locator("button.tara-option-card:visible");
-    await firstQuestionOptions.first().click();
-    await clickEnabledContinue(page);
-
-    const secondQuestionHeading = page.locator("h1").last();
-    await expect(secondQuestionHeading).toBeVisible();
-    if (firstQuestionText) {
-      await expect(secondQuestionHeading).not.toHaveText(firstQuestionText);
-    }
-    const secondQuestionText = await secondQuestionHeading.textContent();
-
-    const secondQuestionOptions = page.locator("button.tara-option-card:visible");
-    const secondOptionCount = await secondQuestionOptions.count();
-    for (let index = 0; index < secondOptionCount; index += 1) {
-      await secondQuestionOptions.nth(index).click();
-      if (await continueButton.isEnabled()) {
-        break;
-      }
-    }
-    await expect(continueButton).toBeEnabled();
-
     await page.reload();
-    await expect(page.locator("text=Personality").first()).toBeVisible();
-    await expect(page.locator("h1").last()).toHaveText(secondQuestionText || "");
-    await expect(continueButton).toBeEnabled();
-    await clickEnabledContinue(page);
-
-    const thirdQuestionOptions = page.locator("button.tara-option-card:visible");
-    await expect(thirdQuestionOptions.first()).toBeVisible();
-    const thirdOptionCount = await thirdQuestionOptions.count();
-    for (let index = 0; index < thirdOptionCount; index += 1) {
-      await thirdQuestionOptions.nth(index).click();
-      if (await continueButton.isEnabled()) {
-        break;
-      }
-    }
-    await clickEnabledContinue(page);
+    await expect(page.getByRole("heading", { name: /Add your photos/i })).toBeVisible();
 
     {
       const mePromise = waitForApi(page, {
@@ -328,7 +336,7 @@ test.describe.serial("Detailed screen-by-screen UI + API validation", () => {
         method: "GET",
         expectedStatuses: [200],
       });
-      await page.getByRole("button", { name: /Find my matches/i }).click();
+      await page.getByRole("button", { name: "Finish setup" }).click();
       await mePromise;
     }
 
@@ -345,7 +353,15 @@ test.describe.serial("Detailed screen-by-screen UI + API validation", () => {
     await page.goto("/discover");
     await recPromise;
 
-    const likeButton = page.getByRole("button", { name: "♡" });
+    await page.getByRole("button", { name: "Filters" }).click();
+    await expect(page.getByRole("dialog", { name: "Discovery filters" })).toBeVisible();
+    await page.getByLabel("Minimum age").fill("25");
+    await expect(page.getByRole("button", { name: "Reset filters" })).toBeVisible();
+    await page.getByRole("button", { name: "Reset filters" }).click();
+    await expect(page.getByLabel("Minimum age")).toHaveValue("18");
+    await page.getByRole("button", { name: "Close filters" }).click();
+
+    const likeButton = page.getByRole("button", { name: "Like", exact: true });
     await expect(likeButton).toBeVisible();
     if (await likeButton.isEnabled()) {
       const swipePromise = waitForApi(page, {
@@ -356,8 +372,119 @@ test.describe.serial("Detailed screen-by-screen UI + API validation", () => {
       await likeButton.click();
       await swipePromise;
     } else {
-      await expect(page.getByText(/Check back later for new matches/i)).toBeVisible();
+      await expect(page.getByText(/Come back soon for new connections/i)).toBeVisible();
     }
+  });
+
+  test("6b) Mutual like opens the match dialog with a working chat route", async ({ page }) => {
+    await applySession(page, seed.primary, { onboardingComplete: true });
+    await page.route("**/api/recommendations/", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify([{ user_id: 987654, name: "Avery", age: 28, compatibility_score: 91, kundali_score: 30, personality_score: 88, insight: "Easy conversation ahead.", user: { id: 987654, name: "Avery", age: 28 } }]),
+    }));
+    await page.route("**/api/swipe/like/", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ is_match: true, match_id: 123 }),
+    }));
+
+    await page.goto("/discover");
+    await page.getByRole("button", { name: "Like", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "It's a match!" });
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toContainText("You and Avery");
+    await expect(dialog).toContainText("91% compatible");
+    await expect(dialog.getByRole("link", { name: "Start the conversation" })).toHaveAttribute("href", "/chat/123");
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+  });
+
+  test("6c) Discover story, explanation, and personal like work on mobile", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await applySession(page, seed.primary, { onboardingComplete: true });
+    const photo = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
+    await page.route("**/api/recommendations/", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify([{ user_id: 987655, name: "Mira", age: 28, photo, photos: [photo, `${photo}#two`], bio: "I love weekend hikes and coffee.", interests: ["Hiking", "Coffee"], compatibility_score: 91, kundali_score: 30, personality_score: 88, insight: "You share an easy rhythm." }]),
+    }));
+    let sentNote = null;
+    await page.route("**/api/swipe/like/", (route) => {
+      sentNote = route.request().postDataJSON().note;
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ is_match: false }) });
+    });
+
+    await page.goto("/discover");
+    await expect(page.getByAltText("Mira, photo 1 of 2")).toBeVisible();
+    await page.getByRole("button", { name: "Next photo" }).click();
+    await expect(page.getByAltText("Mira, photo 2 of 2")).toBeVisible();
+    await page.getByRole("button", { name: "Why we fit" }).click();
+    const why = page.getByRole("dialog", { name: "Why we fit" });
+    await expect(why).toContainText("30/36");
+    await expect(why).toContainText("I love weekend hikes and coffee.");
+    await why.getByRole("button", { name: "Like with a note" }).click();
+    const note = page.getByRole("dialog", { name: "Like with note" });
+    await expect(note).toContainText("only if you both like each other");
+    await note.getByLabel("Your note").fill("What is your favorite trail?");
+    await note.getByRole("button", { name: "Send like with note" }).click();
+    await expect(note).toHaveCount(0);
+    expect(sentNote).toBe("What is your favorite trail?");
+  });
+
+  test("6d) Discover does not invent scores or zodiac data", async ({ page }) => {
+    await applySession(page, seed.primary, { onboardingComplete: true });
+    await page.route("**/api/recommendations/", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify([{ user_id: 987656, name: "Noor", age: 27, photo: null, compatibility_score: null, kundali_score: null, personality_score: null, insight: "", moon_sign: "" }]),
+    }));
+    await page.goto("/discover");
+    await expect(page.getByRole("heading", { name: /Noor/ })).toBeVisible();
+    await expect(page.locator(".discover-profile-card")).not.toContainText("Scorpio");
+    await expect(page.locator(".discover-profile-card")).not.toContainText("0% match");
+    await page.getByRole("button", { name: "Why we fit" }).click();
+    await expect(page.getByRole("dialog", { name: "Why we fit" })).toContainText("no further profile details");
+  });
+
+  test("6e) A personal like note reaches chat only after a mutual match", async ({ request }) => {
+    const unique = uniqueId("like-note");
+    const first = await apiSignup(request, { name: "Note First", email: `note.first.${unique}@tara.demo` });
+    const second = await apiSignup(request, { name: "Note Second", email: `note.second.${unique}@tara.demo` });
+    const firstLike = await apiPost(request, first.access, "swipe/like/", { target_user_id: second.user.id, note: "What is your favorite trail?" });
+    expect(firstLike.status()).toBe(200);
+    expect((await firstLike.json()).is_match).toBe(false);
+
+    const secondLike = await apiPost(request, second.access, "swipe/like/", { target_user_id: first.user.id });
+    expect(secondLike.status()).toBe(200);
+    const matchId = (await secondLike.json()).match_id;
+    const messages = await request.get(`${API_BASE}/chat/${matchId}/messages/`, { headers: { Authorization: `Bearer ${second.access}` } });
+    expect(messages.status()).toBe(200);
+    expect((await messages.json()).filter((message) => message.content === "What is your favorite trail?")).toHaveLength(1);
+
+    await apiPost(request, second.access, "swipe/like/", { target_user_id: first.user.id });
+    const again = await request.get(`${API_BASE}/chat/${matchId}/messages/`, { headers: { Authorization: `Bearer ${second.access}` } });
+    expect((await again.json()).filter((message) => message.content === "What is your favorite trail?")).toHaveLength(1);
+  });
+
+  test("6f) Discover remains scroll-free on a compact phone", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await applySession(page, seed.primary, { onboardingComplete: true });
+    await page.route("**/api/recommendations/", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify([{ user_id: 987657, name: "Sana", age: 29, compatibility_score: 84, bio: "I love a good book and a long walk." }]),
+    }));
+    await page.goto("/discover");
+    await expect(page.getByRole("heading", { name: /Sana/ })).toBeVisible();
+    const scroll = await page.locator("div.overflow-y-auto.overscroll-contain").first().evaluate((node) => ({ height: node.clientHeight, content: node.scrollHeight }));
+    expect(scroll.content).toBeLessThanOrEqual(scroll.height + 1);
+    await expect(page.getByRole("button", { name: "Like", exact: true })).toBeVisible();
+
+    await page.setViewportSize({ width: 320, height: 568 });
+    const narrowScroll = await page.locator("div.overflow-y-auto.overscroll-contain").first().evaluate((node) => ({ height: node.clientHeight, content: node.scrollHeight }));
+    expect(narrowScroll.content).toBeLessThanOrEqual(narrowScroll.height + 1);
+    await expect(page.getByRole("button", { name: "Like", exact: true })).toBeVisible();
   });
 
   test("7) Matches list screen (/matches) UI and matches API", async ({ page }) => {
@@ -370,6 +497,23 @@ test.describe.serial("Detailed screen-by-screen UI + API validation", () => {
     await page.goto("/matches");
     await matchesPromise;
     await expect(page.getByRole("heading", { name: /^Matches$/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Stars Today/i })).toBeVisible();
+
+    const dailyPromise = waitForApi(page, {
+      fragment: "daily-recommendations/",
+      method: "GET",
+      expectedStatuses: [200],
+    });
+    await page.getByRole("link", { name: /Stars Today/i }).click();
+    await dailyPromise;
+    await expect(page).toHaveURL(/\/stars-today$/);
+    await page.getByRole("button", { name: "Back to matches" }).click();
+    await expect(page).toHaveURL(/\/matches$/);
+
+    const firstMatch = page.getByRole("region", { name: "All matches" }).getByRole("link").first();
+    await expect(firstMatch).toBeVisible();
+    await firstMatch.click();
+    await expect(page).toHaveURL(/\/matches\/\d+$/);
   });
 
   test("8) Match detail screen (/matches/:id) UI and detail API", async ({ page }) => {
@@ -380,8 +524,37 @@ test.describe.serial("Detailed screen-by-screen UI + API validation", () => {
       expectedStatuses: [200],
     });
     await page.goto(`/matches/${seed.matchId}`);
-    await detailPromise;
+    const detailResponse = await detailPromise;
+    const detail = await detailResponse.json();
     await expect(page.getByRole("link", { name: /Start chatting/i })).toBeVisible();
+    if (Object.keys(detail.breakdown || {}).length) {
+      await expect(page.getByRole("heading", { name: "Ashtakoota breakdown" })).toBeVisible();
+      for (const key of Object.keys(detail.breakdown)) {
+        await expect(page.getByText(key.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()), { exact: true })).toBeVisible();
+      }
+    } else {
+      await expect(page.getByText(/Detailed Kundali scores aren’t available for this match yet/i)).toBeVisible();
+    }
+    if (detail.user?.sun_sign) {
+      await expect(page.getByText(`${detail.user.sun_sign} sun`, { exact: true })).toBeVisible();
+    }
+    if (detail.user?.moon_sign) {
+      await expect(page.getByText(`${detail.user.moon_sign} moon`, { exact: true })).toBeVisible();
+    }
+
+    await page.getByRole("link", { name: /Start chatting/i }).click();
+    await expect(page).toHaveURL(new RegExp(`/chat/${seed.matchId}$`));
+    await expect(page.getByRole("link", { name: /View match profile for/i })).toBeVisible();
+    const returnDetailPromise = waitForApi(page, {
+      fragment: `matches/${seed.matchId}/`,
+      method: "GET",
+      expectedStatuses: [200],
+    });
+    await page.getByRole("link", { name: /View match profile for/i }).click();
+    await returnDetailPromise;
+    await expect(page).toHaveURL(new RegExp(`/matches/${seed.matchId}$`));
+    await page.getByRole("button", { name: "Back to chat" }).click();
+    await expect(page).toHaveURL(new RegExp(`/chat/${seed.matchId}$`));
   });
 
   test("9) Chat list screen (/chat) UI and API", async ({ page }) => {
@@ -394,6 +567,14 @@ test.describe.serial("Detailed screen-by-screen UI + API validation", () => {
     await page.goto("/chat");
     await matchesPromise;
     await expect(page.getByRole("heading", { name: /Conversations/i })).toBeVisible();
+    const search = page.getByRole("searchbox", { name: "Search conversations" });
+    await search.fill("not-a-real-match-name");
+    await expect(page.getByRole("heading", { name: "No conversations found" })).toBeVisible();
+    await page.getByRole("button", { name: "Clear search" }).click();
+    const firstConversation = page.getByRole("region", { name: "Conversations list" }).getByRole("link").first();
+    await expect(firstConversation).toBeVisible();
+    await firstConversation.click();
+    await expect(page).toHaveURL(/\/chat\/\d+$/);
   });
 
   test("10) Chat room screen (/chat/:id) loads history and sends message via API", async ({ page }) => {
@@ -421,6 +602,12 @@ test.describe.serial("Detailed screen-by-screen UI + API validation", () => {
     await applySession(page, seed.primary, { onboardingComplete: true });
     await page.goto("/kundali");
     await expect(page.getByRole("heading", { name: /Your Kundali/i })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Overview" })).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByText("Nakshatra", { exact: true })).toBeVisible();
+    await expect(page.getByText("Birth information used")).toBeVisible();
+
+    await page.getByRole("button", { name: /Edit details/i }).click();
+    await expect(page.getByRole("button", { name: /^Update details$/i })).toBeVisible();
 
     const savePromise = waitForApi(page, {
       fragment: "astrology/birth-details/",
@@ -438,11 +625,52 @@ test.describe.serial("Detailed screen-by-screen UI + API validation", () => {
       expectedStatuses: [200],
     });
 
-    await page.getByRole("button", { name: /Update details/i }).click();
+    await page.getByRole("button", { name: /^Update details$/i }).click();
     await savePromise;
     await kundaliPromise;
     await horoscopePromise;
-    await expect(page.getByRole("heading", { name: /Kundali Dashboard/i })).toBeVisible();
+    await expect(page.getByText(/Birth details saved\. Regenerating kundali now\./i)).toBeVisible();
+    await expect(page.getByRole("button", { name: /Edit details/i })).toBeVisible();
+    await page.getByRole("tab", { name: "Birth chart" }).click();
+    await expect(page.getByRole("tab", { name: "Birth chart" })).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByRole("tabpanel").getByRole("heading", { name: "Birth chart" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /House 1, /i })).toHaveAttribute("aria-pressed", "true");
+    await page.getByRole("button", { name: /House 2, /i }).click();
+    await expect(page.getByRole("button", { name: /House 2, /i })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByText("HOUSE 02")).toBeVisible();
+    await page.getByRole("button", { name: "Moon", exact: true }).click();
+    await expect(page.getByText(/re-centers the same sign placements on your moon sign/i)).toBeVisible();
+    await page.getByRole("button", { name: "Sun", exact: true }).click();
+    await expect(page.getByText(/re-centers the same sign placements on your sun sign/i)).toBeVisible();
+    await page.getByRole("button", { name: "Lagna", exact: true }).click();
+    await page.getByRole("button", { name: "Houses", exact: true }).click();
+    await expect(page.getByRole("button", { name: /House 1, /i })).toHaveAttribute("aria-pressed", "true");
+    await page.getByRole("button", { name: "Diagram", exact: true }).click();
+    await expect(page.getByRole("group", { name: /Lagna chart, North Indian layout/i })).toBeVisible();
+    await page.setViewportSize({ width: 320, height: 568 });
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await page.getByRole("region", { name: "Twelve-house birth chart" }).scrollIntoViewIfNeeded();
+    await expect(page.getByRole("region", { name: "Twelve-house birth chart" })).toBeVisible();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.locator("summary").filter({ hasText: "Planet placements" })).toBeVisible();
+    await page.getByRole("tab", { name: "Insights" }).click();
+    await expect(page.getByText(/Dasha periods, yogas, and doshas are not calculated/i)).toBeVisible();
+    await page.getByRole("tab", { name: "Today" }).click();
+    await expect(page.getByRole("tabpanel").getByRole("heading", { name: "Today" })).toBeVisible();
+
+    await page.route("**/api/astrology/kundali/", async (route) => {
+      const response = await route.fetch();
+      const chart = await response.json();
+      chart.birth_context = { ...chart.birth_context, time: null, time_known: false, time_assumption: "12:00 local" };
+      await route.fulfill({ response, json: chart });
+    });
+    await page.reload();
+    await expect(page.getByText(/Birth time is missing\. The chart uses 12:00 local time/i)).toBeVisible();
+    await expect(page.getByText("Time needed")).toBeVisible();
+    await page.getByRole("button", { name: "Update birth details" }).click();
+    await expect(page.getByRole("button", { name: "Update details" })).toBeVisible();
+    await page.setViewportSize({ width: 320, height: 568 });
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });
 
   test("12) Profile screen (/profile) uses real summary data and honest empty states", async ({ page }) => {
@@ -465,12 +693,14 @@ test.describe.serial("Detailed screen-by-screen UI + API validation", () => {
     await expect(page.getByText(me.basic_info.name)).toBeVisible();
     await expect(page.getByTestId("profile-stat-matches-value")).toHaveText(String(me.stats.matches_count));
     await expect(page.getByTestId("profile-stat-likes-value")).toHaveText(String(me.stats.likes_received_count));
-    await expect(page.getByTestId("profile-stat-seen-value")).toHaveText(String(me.stats.profile_impressions_count));
+    await expect(page.getByTestId("profile-stat-seen-value")).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Settings", exact: true })).toHaveCount(1);
+    await expect(page.getByRole("link", { name: /Stars Today/i })).toHaveCount(0);
 
     if (me.profile_extras.bio) {
       await expect(page.getByTestId("profile-bio-card")).toContainText(me.profile_extras.bio);
     } else {
-      await expect(page.getByTestId("profile-bio-card")).toContainText(/Add a short bio/i);
+      await expect(page.getByTestId("profile-add-bio")).toBeVisible();
     }
 
     if (Array.isArray(me.photos) && me.photos.length > 0) {
@@ -609,7 +839,7 @@ test.describe.serial("Detailed screen-by-screen UI + API validation", () => {
       method: "GET",
       expectedStatuses: [200],
     });
-    await page.getByPlaceholder(/Search city or place/i).fill("New Delhi");
+    await page.getByPlaceholder(/Search your place of birth/i).fill("New Delhi");
     await searchPromise;
     await page.getByRole("button", { name: /New Delhi/i }).first().click();
 
@@ -627,7 +857,19 @@ test.describe.serial("Detailed screen-by-screen UI + API validation", () => {
     await page.reload();
     await expect(page.locator('input[id="astro-dob"]')).toHaveValue("1994-08-17");
     await expect(page.locator('input[id="astro-tob"]')).toHaveValue("08:45");
-    await expect(page.locator("body")).toContainText(/Selected location: New Delhi/i);
+    await expect(page.getByPlaceholder(/Search your place of birth/i)).toHaveValue(/New Delhi/i);
+
+    await page.locator('input[id="astro-tob"]').fill("");
+    const clearTimePromise = waitForApi(page, {
+      fragment: "astrology/birth-details/",
+      method: "PUT",
+      expectedStatuses: [200],
+    });
+    await page.getByRole("button", { name: /^Update details$/i }).click();
+    const clearTimeResponse = await clearTimePromise;
+    expect((await clearTimeResponse.json()).time_of_birth).toBeNull();
+    await page.reload();
+    await expect(page.locator('input[id="astro-tob"]')).toHaveValue("");
   });
 
   test("15) Settings screen (/settings) UI controls and logout guard", async ({ page }) => {
@@ -699,16 +941,11 @@ test.describe.serial("Detailed screen-by-screen UI + API validation", () => {
     await expect(page).toHaveURL(/\/$/);
   });
 
-  test("16) Your vibe screen (/your-vibe) UI and profile API", async ({ page, request }) => {
-    const loginResponse = await request.post(`${API_BASE}/auth/login/`, {
-      data: {
-        phone_number: "+919000000005",
-        password: PHONE_AUTH_PASSWORD,
-      },
+  test("16) Your vibe test (/your-vibe) saves an answer through the profile API", async ({ page, request }) => {
+    const vibeUser = await apiSignup(request, {
+      name: "Vibe Test User",
+      email: `${uniqueId("vibe-test")}@tara.demo`,
     });
-    expect(loginResponse.status()).toBe(200);
-    const vibeUser = await loginResponse.json();
-
     await applySession(page, vibeUser, { onboardingComplete: true });
     const mePromise = waitForApi(page, {
       fragment: "profile/me/",
@@ -718,21 +955,21 @@ test.describe.serial("Detailed screen-by-screen UI + API validation", () => {
     await page.goto("/your-vibe");
     const meResponse = await mePromise;
     const me = await meResponse.json();
+    expect(me.personality_responses).toEqual([]);
     await expect(page.getByRole("heading", { name: /Your Vibe/i })).toBeVisible();
-    await expect(page.locator("body")).toContainText(`Based on ${me.personality_responses.length} answered onboarding questions.`);
+    await expect(page.getByRole("button", { name: "Start personality test" })).toBeVisible();
+    await page.getByRole("button", { name: "Start personality test" }).click();
+    await expect(page.locator(".vibe-question-row")).toHaveCount(1);
+    await expect(page.getByRole("progressbar", { name: "Test progress" })).toHaveAttribute("aria-valuenow", "0");
 
-    const topTraits = Object.entries(me.traits || {})
-      .map(([key, value]) => [key, Number(value)])
-      .filter(([, value]) => Number.isFinite(value) && value > 0)
-      .sort((left, right) => right[1] - left[1])
-      .slice(0, 3);
-
-    for (const [key, value] of topTraits) {
-      await expect(page.getByTestId(`vibe-card-${key}`)).toContainText(`${value.toFixed(1)}/10`);
-    }
-
-    await expect(page.getByTestId("vibe-card-overthinking")).toHaveCount(1);
-    await expect(page.getByTestId("your-vibe-empty")).toHaveCount(0);
+    const firstQuestion = page.locator(".vibe-question-row").first();
+    await firstQuestion.getByRole("button", { name: /^Strongly agree for / }).click();
+    await expect(page.getByRole("progressbar", { name: "Test progress" })).toHaveAttribute("aria-valuenow", "1");
+    const savedResponse = await request.get(`${API_BASE}/profile/me/`, {
+      headers: { Authorization: `Bearer ${vibeUser.access}` },
+    });
+    expect(savedResponse.status()).toBe(200);
+    expect((await savedResponse.json()).personality_responses).toHaveLength(1);
   });
 
   test("16b) Your vibe handles users without personality responses gracefully", async ({ page, request }) => {
@@ -755,8 +992,9 @@ test.describe.serial("Detailed screen-by-screen UI + API validation", () => {
     expect(me.personality_responses).toEqual([]);
     expect(me.traits).toEqual({});
     await expect(page.getByRole("heading", { name: /Your Vibe/i })).toBeVisible();
-    await expect(page.getByTestId("your-vibe-empty")).toContainText(/No vibe summary yet/i);
-    await expect(page.locator("body")).toContainText(/Your vibe appears after you answer the personality questions in onboarding./i);
+    await expect(page.getByRole("heading", { name: "Get to know your vibe" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Start personality test" })).toBeEnabled();
+    await expect(page.locator(".vibe-trait")).toHaveCount(0);
   });
 
   test("17) Stars today screen (/stars-today) UI and recommendations API", async ({ page, request }) => {
@@ -798,6 +1036,10 @@ test.describe.serial("Detailed screen-by-screen UI + API validation", () => {
       await expect(page.locator("body")).toContainText(firstDailyMatch.insight);
     }
     expect(pageResults[0]?.user_id).toBe(firstDailyMatch.user_id);
+    await page.getByRole("button", { name: "View Details" }).first().click();
+    await expect(page.getByRole("dialog", { name: "Match details" })).toBeVisible();
+    await page.getByRole("button", { name: "Close details" }).click();
+    await expect(page.getByRole("dialog", { name: "Match details" })).toHaveCount(0);
 
     const refreshPromise = waitForApi(page, {
       fragment: "daily-recommendations/",
@@ -814,6 +1056,42 @@ test.describe.serial("Detailed screen-by-screen UI + API validation", () => {
         : [];
     expect(refreshedResults[0]?.user_id).toBe(firstDailyMatch.user_id);
     await expect(page.locator("body")).toContainText(firstDailyMatch.name);
+  });
+
+  test("17a) Stars Today loading, empty, error, retry, and return navigation", async ({ page }) => {
+    await applySession(page, seed.secondary, { onboardingComplete: true });
+    let responseMode = "loading";
+    let notifyLoadingStarted;
+    let releaseLoading;
+    const loadingStarted = new Promise((resolve) => { notifyLoadingStarted = resolve; });
+    const loadingGate = new Promise((resolve) => { releaseLoading = resolve; });
+    await page.route("**/api/daily-recommendations/**", async (route) => {
+      if (responseMode === "loading") {
+        notifyLoadingStarted();
+        await loadingGate;
+        await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ results: [] }) });
+      } else if (responseMode === "error") {
+        await route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ detail: "temporarily unavailable" }) });
+      } else {
+        await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ results: [] }) });
+      }
+    });
+
+    const navigation = page.goto("/stars-today");
+    await loadingStarted;
+    await expect(page.getByText("Reading today's stars...")).toBeVisible();
+    releaseLoading();
+    await navigation;
+    await expect(page.getByText(/Check back later for new matches/i)).toBeVisible();
+
+    responseMode = "error";
+    await page.reload();
+    await expect(page.getByText("Stars are syncing right now. Please try again shortly.")).toBeVisible();
+    responseMode = "empty";
+    await page.getByRole("button", { name: "Try Again" }).click();
+    await expect(page.getByText(/Check back later for new matches/i)).toBeVisible();
+    await page.getByRole("button", { name: "Back to matches" }).click();
+    await expect(page).toHaveURL(/\/matches$/);
   });
 
   test("17b) Notification bell creates, reads, and refreshes unread counts correctly", async ({ page, request }) => {
@@ -865,8 +1143,8 @@ test.describe.serial("Detailed screen-by-screen UI + API validation", () => {
     });
     await bellButton.click();
     await openRefresh;
-    await expect(page.locator("body")).toContainText("You have a new match");
-    await expect(page.locator("body")).toContainText("Someone messaged you");
+    await expect(page.locator("body")).toContainText(`You and ${sender.user.name} are connected! Say hello`);
+    await expect(page.locator("body")).toContainText(`${sender.user.name} sent you a message`);
 
     const markReadPromise = page.waitForResponse((res) => {
       return (
@@ -901,6 +1179,20 @@ test.describe.serial("Detailed screen-by-screen UI + API validation", () => {
     await page.reload();
     await reloadRefresh;
     await expect(page.getByLabel("Open notifications")).toContainText("1");
+
+    const notificationsRefresh = waitForApi(page, {
+      fragment: "notifications/",
+      method: "GET",
+      expectedStatuses: [200],
+    });
+    await page.getByLabel("Open notifications").click();
+    await notificationsRefresh;
+    const messageNotification = page.getByRole("button", { name: /sent you a message/i }).first();
+    await expect(messageNotification).toBeVisible();
+    const readPromise = page.waitForResponse((res) => res.url().includes("/api/notifications/read/") && res.request().method() === "POST" && res.status() === 200);
+    await messageNotification.click();
+    await readPromise;
+    await expect(page).toHaveURL(new RegExp(`/chat/${matchId}$`));
   });
 
   test("18) Profile photos section (/profile/edit/photos) upload + delete APIs", async ({ page }) => {

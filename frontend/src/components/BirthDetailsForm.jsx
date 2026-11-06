@@ -1,10 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 
 import { fetchMyBirthDetails, upsertBirthDetails } from "../services/astrologyService";
-import BirthTimeClock from "./BirthTimeClock";
 import Button from "./Button";
-import Input from "./Input";
 import Loader from "./Loader";
 import LocationInput from "./LocationInput";
 
@@ -16,10 +13,16 @@ function normalizeTime(value) {
 }
 
 function isPastDate(value) {
-  if (!value) return false;
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return false;
-  return parsed.getTime() < Date.now();
+  const matched = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!matched) return false;
+  const year = Number(matched[1]);
+  const month = Number(matched[2]);
+  const day = Number(matched[3]);
+  const parsed = new Date(year, month - 1, day);
+  if (parsed.getFullYear() !== year || parsed.getMonth() !== month - 1 || parsed.getDate() !== day) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return parsed < today;
 }
 
 function toFormState(payload) {
@@ -55,7 +58,12 @@ export default function BirthDetailsForm({ initialValues = null, onSaved }) {
         setMethod(next.date_of_birth ? "put" : "post");
       } catch (apiError) {
         if (!active) return;
-        setError(apiError?.message || "Could not load birth details.");
+        if (apiError?.status === 404) {
+          setForm(toFormState(initialValues || {}));
+          setMethod("post");
+        } else {
+          setError(apiError?.message || "Could not load birth details.");
+        }
       } finally {
         if (active) setLoading(false);
       }
@@ -67,19 +75,13 @@ export default function BirthDetailsForm({ initialValues = null, onSaved }) {
     };
   }, [initialValues]);
 
-  const actionLabel = useMemo(() => (method === "put" ? "Update details" : "Save details"), [method]);
+  const actionLabel = method === "put" ? "Update details" : "Save details";
 
   const onFieldChange = (event) => {
     const { name, value } = event.target;
     setError("");
     setMessage("");
     setForm((previous) => ({ ...previous, [name]: value }));
-  };
-
-  const onTimeChange = (nextTime) => {
-    setError("");
-    setMessage("");
-    setForm((previous) => ({ ...previous, time_of_birth: nextTime }));
   };
 
   const onLocationChange = (locationPayload) => {
@@ -147,41 +149,46 @@ export default function BirthDetailsForm({ initialValues = null, onSaved }) {
   };
 
   return (
-    <motion.section
-      animate={{ opacity: 1, y: 0 }}
-      className="rounded-3xl border border-white/10 bg-slate-900/50 p-5 shadow-xl shadow-black/20"
-      initial={{ opacity: 0, y: 10 }}
-      transition={{ duration: 0.25 }}
-    >
-      <div className="mb-4">
-        <h2 className="font-serif text-2xl text-white">Birth Details</h2>
-        <p className="mt-1 text-xs text-slate-300">Update once, and we auto-regenerate your chart.</p>
-      </div>
-
+    <section className="birth-details-editor">
       {loading ? <Loader text="Loading your birth details..." /> : null}
 
       {!loading ? (
-        <form className="space-y-3" onSubmit={onSubmit}>
-          <Input id="astro-dob" label="Date of Birth" name="date_of_birth" onChange={onFieldChange} type="date" value={form.date_of_birth} />
-          <BirthTimeClock label="Time of Birth (Optional)" manualInputId="astro-tob" onChange={onTimeChange} value={form.time_of_birth} />
-          <LocationInput
-            value={{
-              place_of_birth: form.place_of_birth,
-              latitude: form.latitude,
-              longitude: form.longitude,
-              is_default_location: form.is_default_location,
-            }}
-            onChange={onLocationChange}
-          />
+        <form className="birth-details-fields" onSubmit={onSubmit}>
+          <p className="birth-details-intro">Use the details you know. Your chart updates when you save.</p>
+          <label className="birth-details-field" htmlFor="astro-dob">
+            <span>Date of birth</span>
+            <input className="tara-input w-full" id="astro-dob" name="date_of_birth" onChange={onFieldChange} required type="date" value={form.date_of_birth} />
+          </label>
+          <label className="birth-details-field" htmlFor="astro-tob">
+            <span>Time of birth <small>(optional)</small></span>
+            <input className="tara-input w-full" id="astro-tob" name="time_of_birth" onChange={onFieldChange} type="time" value={form.time_of_birth} />
+          </label>
+          <p className="birth-details-hint">Leave this blank if you don't know it. Lagna and houses may be uncertain.</p>
+          <div className="birth-details-field">
+            <span>Place of birth</span>
+            <LocationInput
+              autoDetect={false}
+              onChange={onLocationChange}
+              placeholder="Search your place of birth"
+              simple
+              value={{
+                place_of_birth: form.place_of_birth,
+                latitude: form.latitude,
+                longitude: form.longitude,
+                is_default_location: form.is_default_location,
+              }}
+            />
+            <small className="birth-details-hint">Select a result to use its coordinates and timezone.</small>
+          </div>
 
-          {error ? <p className="rounded-xl border border-rose-300/20 bg-rose-500/10 px-3 py-2 text-xs text-rose-100">{error}</p> : null}
-          {message ? <p className="rounded-xl border border-emerald-300/20 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100">{message}</p> : null}
+          {error ? <p className="birth-details-error" role="alert">{error}</p> : null}
+          {message ? <p className="birth-details-success" role="status">{message}</p> : null}
 
           <Button loading={saving} type="submit">
             {actionLabel}
           </Button>
         </form>
       ) : null}
-    </motion.section>
+    </section>
   );
 }

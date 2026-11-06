@@ -1,10 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { ChevronRight, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { ArrowRight, Heart, Sparkles } from "lucide-react";
 
 import { MatchesSkeleton } from "../components/AppSkeletons";
-import Button from "../components/Button";
-import EmptyState from "../components/EmptyState";
 import { fetchMatches } from "../services/matchingService";
 
 function firstName(name) {
@@ -13,27 +11,23 @@ function firstName(name) {
 
 function normalizeInsight(text) {
   const sentence = String(text || "").split(/[.!?]/)[0]?.trim();
-  if (!sentence) {
-    return "Your moons align in a beautiful way.";
-  }
-  return sentence.length > 54 ? `${sentence.slice(0, 51)}...` : sentence;
+  if (!sentence) return "A new connection worth getting to know.";
+  return sentence.length > 64 ? `${sentence.slice(0, 61)}...` : sentence;
 }
 
-function MatchAvatar({ name, photo, large = false }) {
-  const size = large ? "h-20 w-20" : "h-16 w-16";
+function matchesErrorMessage(apiError) {
+  const status = Number(apiError?.status || 0);
+  if (status === 401) return "Your session expired. Please log in again.";
+  if (status >= 500) return "Your matches are temporarily unavailable. Please try again shortly.";
+  if (status === 0) return "Cannot reach the server. Check your connection and try again.";
+  return apiError?.message || "Could not load your matches.";
+}
+
+function MatchAvatar({ name, photo, square = false }) {
   return (
-    <div className={`relative ${size} shrink-0`}>
-      <div className="absolute inset-0 rounded-full bg-[color:var(--tara-violet)] opacity-40 blur-md" />
-      <div className={`relative ${size} overflow-hidden rounded-full ring-2 ring-[color:var(--tara-gold)]/60 ring-offset-2 ring-offset-[#090338]`}>
-        {photo ? (
-          <img src={photo} alt={name || "Match"} className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-indigo-400/80 via-indigo-600/70 to-amber-300/70 text-base font-semibold text-white">
-            {firstName(name).slice(0, 1)}
-          </div>
-        )}
-      </div>
-    </div>
+    <span className={`matches-avatar ${square ? "matches-avatar-square" : ""}`}>
+      {photo ? <img src={photo} alt="" /> : <span>{firstName(name).slice(0, 1)}</span>}
+    </span>
   );
 }
 
@@ -42,102 +36,85 @@ export default function MatchesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    async function loadMatches() {
-      setLoading(true);
-      setError("");
-      try {
-        const data = await fetchMatches();
-        setMatches(Array.isArray(data) ? data : []);
-      } catch (apiError) {
-        setError(apiError?.message || "Could not load matches.");
-      } finally {
-        setLoading(false);
-      }
+  async function loadMatches() {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await fetchMatches();
+      setMatches(Array.isArray(data) ? data : []);
+    } catch (apiError) {
+      setError(matchesErrorMessage(apiError));
+    } finally {
+      setLoading(false);
     }
+  }
+
+  useEffect(() => {
     loadMatches();
   }, []);
 
-  const featured = useMemo(() => matches.slice(0, 4), [matches]);
-
   return (
-    <main className="tara-container px-5 pb-28 pt-8">
-      <header>
-        <p className="text-xs uppercase tracking-[0.3em] text-[color:var(--tara-gold)]">Your constellations</p>
-        <h1 className="tara-heading mt-2 text-6xl leading-none">Matches</h1>
-        <p className="mt-1 text-[15px] text-[color:var(--tara-text-secondary)]">
-          {loading ? "Reading your alignments..." : `${matches.length} souls aligned with yours.`}
+    <main className="tara-matches tara-container">
+      <header className="matches-header">
+        <div className="matches-brand">tara<span>.</span></div>
+        <p className="matches-eyebrow">YOUR CONNECTIONS</p>
+        <h1>Matches</h1>
+        <p className="matches-subtitle">
+          {loading ? "Finding your connections..." : error ? "Your connections are temporarily unavailable." : matches.length === 1 ? "1 person liked you back." : `${matches.length} people liked you back.`}
         </p>
       </header>
 
+      <Link className="matches-daily-link" to="/stars-today">
+        <span className="matches-daily-icon"><Sparkles size={20} /></span>
+        <span className="matches-daily-copy"><strong>Stars Today</strong><small>Fresh picks for you</small></span>
+        <ArrowRight aria-hidden="true" size={18} />
+      </Link>
+
       {loading ? <MatchesSkeleton /> : null}
-      {error ? <p className="mt-4 rounded-xl border border-rose-300/25 bg-rose-500/10 px-3 py-2 text-sm text-rose-100">{error}</p> : null}
+
+      {!loading && error ? (
+        <section className="matches-state" role="alert">
+          <span className="matches-state-icon"><Heart size={25} /></span>
+          <h2>Couldn't load your matches</h2>
+          <p>{error}</p>
+          <button onClick={loadMatches} type="button">Try again</button>
+        </section>
+      ) : null}
 
       {!loading && !error && matches.length === 0 ? (
-        <div className="mt-8">
-          <EmptyState
-            title="No matches yet"
-            subtitle="When two people like each other, the connection lands here. Keep exploring and your first conversation will be one tap away."
-            action={(
-              <Link to="/discover">
-                <Button type="button">Go to Discover</Button>
-              </Link>
-            )}
-          />
-        </div>
+        <section className="matches-state">
+          <span className="matches-state-icon"><Heart size={25} /></span>
+          <h2>No matches yet</h2>
+          <p>When you both like each other, you'll see them here. Your next connection could be one swipe away.</p>
+          <Link to="/discover">Explore Discover <ArrowRight size={17} /></Link>
+        </section>
       ) : null}
 
       {!loading && !error && matches.length > 0 ? (
         <>
-          <section className="mt-6">
-            <h2 className="mb-3 text-xs uppercase tracking-[0.2em] text-[color:var(--tara-text-faint)]">New</h2>
-            <div className="-mx-5 flex gap-3 overflow-x-auto px-5 pb-2">
-              {featured.map((match) => (
-                <Link key={`new-${match.match_id}`} to={`/matches/${match.match_id}`} className="flex w-20 shrink-0 flex-col items-center gap-2">
-                  <MatchAvatar large name={match?.user?.name} photo={match?.user?.photo} />
-                  <p className="w-full truncate text-center text-xs font-medium text-[color:var(--tara-text-primary)]">{firstName(match?.user?.name)}</p>
+          <section className="matches-featured" aria-label="Your connections">
+            <div className="matches-section-heading"><h2>Your connections</h2><span>{matches.length}</span></div>
+            <div className="matches-featured-row">
+              {matches.slice(0, 4).map((match) => (
+                <Link key={`featured-${match.match_id}`} to={`/matches/${match.match_id}`} className="matches-featured-item">
+                  <MatchAvatar name={match?.user?.name} photo={match?.user?.photo} />
+                  <span>{firstName(match?.user?.name)}</span>
                 </Link>
               ))}
             </div>
           </section>
 
-          <section className="mt-6">
-            <h2 className="mb-3 text-xs uppercase tracking-[0.2em] text-[color:var(--tara-text-faint)]">All matches</h2>
-            <div className="space-y-3">
+          <section className="matches-list-section" aria-label="All matches">
+            <div className="matches-section-heading"><h2>All matches</h2></div>
+            <div className="matches-list">
               {matches.map((match) => (
-                <Link
-                  key={match.match_id}
-                  to={`/matches/${match.match_id}`}
-                  className="group flex items-center gap-4 rounded-3xl glass p-3 transition-all active:scale-[0.99]"
-                >
-                  <div className="relative h-16 w-16 shrink-0">
-                    <div className="absolute inset-0 rounded-2xl bg-[color:var(--tara-violet)] opacity-30 blur-md" />
-                    <div className="relative h-16 w-16 overflow-hidden rounded-2xl ring-1 ring-[color:var(--tara-card-border)]">
-                      {match?.user?.photo ? (
-                        <img src={match.user.photo} alt={match?.user?.name || "Match"} className="h-full w-full object-cover" />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-indigo-400/80 via-indigo-600/70 to-amber-300/70 text-white">
-                          {firstName(match?.user?.name).slice(0, 1)}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between">
-                      <h3 className="tara-heading text-3xl leading-none text-[color:var(--tara-text-primary)]">
-                        {match?.user?.name || "Match"}
-                        {match?.user?.age ? `, ${match.user.age}` : ""}
-                      </h3>
-                      <span className="text-sm font-semibold text-gold-gradient">{match?.compatibility_score ?? 0}%</span>
-                    </div>
-                    <p className="mt-1 flex items-center gap-1 truncate text-sm italic text-[color:var(--tara-text-secondary)]">
-                      <Sparkles className="h-3 w-3 shrink-0 text-[color:var(--tara-gold)]" />
-                      {normalizeInsight(match?.insight)}
-                    </p>
-                  </div>
-
-                  <ChevronRight className="h-4 w-4 shrink-0 text-[color:var(--tara-text-faint)]" />
+                <Link key={match.match_id} to={`/matches/${match.match_id}`} className="matches-list-card">
+                  <MatchAvatar square name={match?.user?.name} photo={match?.user?.photo} />
+                  <span className="matches-list-copy">
+                    <span className="matches-list-name">{match?.user?.name || "Match"}{match?.user?.age ? <span>, {match.user.age}</span> : null}</span>
+                    <span className="matches-list-insight"><Sparkles size={13} /><span>{normalizeInsight(match?.insight)}</span></span>
+                  </span>
+                  <span className="matches-list-score">{match?.compatibility_score ?? 0}%</span>
                 </Link>
               ))}
             </div>

@@ -149,8 +149,15 @@ def local_to_utc(date_of_birth: DateInput, time_of_birth: TimeInput, timezone_na
     naive_local = datetime.combine(dob, tob)
     try:
         local_dt = tz.localize(naive_local, is_dst=None)
-    except Exception:
-        local_dt = tz.localize(naive_local, is_dst=False)
+    except pytz.AmbiguousTimeError as exc:
+        raise ValueError(
+            f"Birth time {naive_local.isoformat()} is ambiguous in {timezone_name} because clocks changed. "
+            "Provide the correct UTC offset or confirm the recorded time."
+        ) from exc
+    except pytz.NonExistentTimeError as exc:
+        raise ValueError(
+            f"Birth time {naive_local.isoformat()} did not occur in {timezone_name} because clocks changed."
+        ) from exc
 
     return local_dt.astimezone(pytz.utc)
 

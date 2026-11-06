@@ -191,5 +191,5 @@ def create_match_from_mutual_like(
         matched_at=timezone.now(),
     )
     if existing_status != Match.Status.MATCHED and match.status == Match.Status.MATCHED:
-        notify_new_match(left.id, right.id)
+        notify_new_match(left.id, right.id, match_id=match.id)
     return match

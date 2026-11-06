@@ -8,7 +8,11 @@ export const ONBOARDING_DEFAULTS = {
   currentStep: 0,
   currentQuestionIndex: 0,
   responsesByQuestion: {},
+  personalityAnswers: {},
+  personalityScores: null,
+  personalityTestStatus: "not_started",
   birth_place: "",
+  birthPlaceConfirmed: false,
   birth_time: "",
   latitude: "",
   longitude: "",
@@ -169,6 +173,11 @@ export function initializeOnboardingForSignup(user, userId = null) {
   return saveOnboardingProfile(
     {
       ...seeded,
+      birth_place: "",
+      birthPlaceConfirmed: false,
+      latitude: "",
+      longitude: "",
+      is_default_location: false,
       basicSaved: false,
       birthSaved: false,
       completed: false,

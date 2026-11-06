@@ -1,7 +1,10 @@
 from django.urls import path
+from rest_framework_simplejwt.views import TokenRefreshView
 
 from .views import (
     BirthDetailsUpsertView,
+    AccountDataExportView,
+    AccountDeleteView,
     ForgotPasswordResetView,
     HoroscopeBySignView,
     KundaliDetailView,
@@ -11,6 +14,8 @@ from .views import (
     PersonalityQuestionListView,
     PersonalityResponseView,
     PhoneStatusView,
+    PhoneOtpSendView,
+    PhoneOtpVerifyView,
     ProfileBasicView,
     ProfileBirthView,
     ProfileExtrasView,
@@ -18,6 +23,7 @@ from .views import (
     ProfilePhotoDeleteView,
     ProfilePhotoListCreateView,
     ProfilePhotoReorderView,
+    PrivacySettingsView,
     SignupView,
 )
 
@@ -28,10 +34,13 @@ urlpatterns = [
     path("auth/login/", LoginView.as_view(), name="login-slash"),
     path("auth/phone-status", PhoneStatusView.as_view(), name="phone-status"),
     path("auth/phone-status/", PhoneStatusView.as_view(), name="phone-status-slash"),
+    path("auth/otp/send/", PhoneOtpSendView.as_view(), name="phone-otp-send"),
+    path("auth/otp/verify/", PhoneOtpVerifyView.as_view(), name="phone-otp-verify"),
     path("auth/forgot-password/reset", ForgotPasswordResetView.as_view(), name="forgot-password-reset"),
     path("auth/forgot-password/reset/", ForgotPasswordResetView.as_view(), name="forgot-password-reset-slash"),
     path("auth/me", MeView.as_view(), name="auth-me"),
     path("auth/me/", MeView.as_view(), name="auth-me-slash"),
+    path("auth/token/refresh/", TokenRefreshView.as_view(), name="auth-token-refresh"),
     path("birth-details/", BirthDetailsUpsertView.as_view(), name="birth-details"),
     path("birth-details", BirthDetailsUpsertView.as_view(), name="birth-details-no-slash"),
     path("kundali/", KundaliDetailView.as_view(), name="kundali-detail"),
@@ -49,4 +58,7 @@ urlpatterns = [
     path("profile/photos/", ProfilePhotoListCreateView.as_view(), name="profile-photos"),
     path("profile/photos/reorder/", ProfilePhotoReorderView.as_view(), name="profile-photos-reorder"),
     path("profile/photos/<int:photo_id>/", ProfilePhotoDeleteView.as_view(), name="profile-photos-delete"),
+    path("privacy/settings/", PrivacySettingsView.as_view(), name="privacy-settings"),
+    path("account/export/", AccountDataExportView.as_view(), name="account-data-export"),
+    path("account/", AccountDeleteView.as_view(), name="account-delete"),
 ]

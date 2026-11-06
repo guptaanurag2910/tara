@@ -13,8 +13,11 @@ from apps.astrology.models import BirthDetails as AstrologyBirthDetails
 
 from .models import KundaliProfile, PersonalityOption, PersonalityQuestion, PersonalityResponse, Trait
 from .services.kundali_service import calculate_kundali
+from .services.ashta_koota_service import calculate_ashta_koota_match
 from .services.matching_service import calculate_guna_match
-from .services.vedic_kundali_engine import calculate_vedic_kundali
+from .services.personality_service import calculate_traits, sync_starter_personality_questions
+from .services.vedic_kundali_engine import calculate_vedic_kundali, local_to_utc
+from .services.vibe_question_bank import REVERSE_KEYED, STATEMENTS, TRAITS
 
 User = get_user_model()
 TINY_PNG_BYTES = b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9WlAbwAAAABJRU5ErkJggg==")
@@ -449,6 +452,37 @@ class PersonalityResponseFlowTests(TestCase):
         self.assertNotIn("communication", trait_profile.traits)
 
 
+class VibeQuestionBankTests(TestCase):
+    def test_existing_sixty_statements_keep_their_reverse_keyed_scoring(self):
+        user = User.objects.create_user(
+            email="vibe.bank@tara.demo", password="StrongPass@123", date_of_birth="1994-06-10",
+            gender="other", preference="everyone", latitude=Decimal("12.971600"),
+            longitude=Decimal("77.594600"), birth_place="Bengaluru, India",
+        )
+        sync_starter_personality_questions()
+        questions = list(PersonalityQuestion.objects.filter(is_active=True).prefetch_related("options").order_by("id"))
+
+        self.assertEqual(len(questions), len(STATEMENTS))
+        self.assertEqual([len(question.options.all()) for question in questions], [5] * len(STATEMENTS))
+        client = APIClient()
+        client.force_authenticate(user=user)
+        api_questions = client.get("/api/personality/questions/")
+        self.assertEqual(api_questions.status_code, 200)
+        self.assertEqual(api_questions.data[0]["question_text"], STATEMENTS[0])
+        responses = []
+        for index, question in enumerate(questions):
+            preferred_label = "Strongly disagree" if index in REVERSE_KEYED else "Strongly agree"
+            selected = next(option for option in question.options.all() if option.option_text == preferred_label)
+            responses.append(PersonalityResponse(user=user, question=question, selected_option=selected))
+
+        PersonalityResponse.objects.bulk_create(responses[:-1])
+        self.assertEqual(calculate_traits(user), {})
+        PersonalityResponse.objects.create(user=user, question=responses[-1].question, selected_option=responses[-1].selected_option)
+        scores = calculate_traits(user)
+        self.assertEqual(set(scores), set(TRAITS))
+        self.assertTrue(all(score == 10 for score in scores.values()))
+
+
 class _FakeSwe:
     SUN = 0
     MOON = 1
@@ -648,3 +682,50 @@ class AshtaKootaMatchingTests(TestCase):
         self.assertIn("compatibility", response.data)
         self.assertIn("breakdown", response.data)
         self.assertIn("nadi", response.data["breakdown"])
+
+
+class KundaliReferenceFixtureTests(TestCase):
+    """Regression checks against published Swiss Ephemeris reference charts."""
+
+    def test_varanasi_reference_chart(self):
+        chart = calculate_vedic_kundali(
+            date_of_birth="1990-05-15", time_of_birth="14:30",
+            place_of_birth="Varanasi, India", latitude=25.31668, longitude=83.01041,
+        )
+        self.assertAlmostEqual(chart["ascendant_degree"], 157.037, places=2)
+        expected = {"Sun": 30.55, "Moon": 271.894, "Mars": 324.515, "Mercury": 14.302,
+                    "Jupiter": 75.792, "Venus": 348.95, "Saturn": 271.526, "Rahu": 287.62, "Ketu": 107.62}
+        for planet, longitude in expected.items():
+            self.assertAlmostEqual(chart["planets"][planet]["degree"], longitude, places=2, msg=planet)
+
+    def test_delhi_reference_chart(self):
+        chart = calculate_vedic_kundali(
+            date_of_birth="1975-12-25", time_of_birth="23:55",
+            place_of_birth="Delhi, India", latitude=28.6139, longitude=77.209,
+        )
+        self.assertAlmostEqual(chart["ascendant_degree"], 153.921, places=2)
+        self.assertAlmostEqual(chart["planets"]["Moon"]["degree"], 161.754, places=2)
+
+    def test_dst_gap_and_repeated_hour_are_not_silently_guessed(self):
+        with self.assertRaisesRegex(ValueError, "did not occur"):
+            local_to_utc("2021-03-14", "02:30", "America/New_York")
+        with self.assertRaisesRegex(ValueError, "ambiguous"):
+            local_to_utc("2021-11-07", "01:30", "America/New_York")
+
+
+class AshtaKootaRuleTests(TestCase):
+    def test_tara_awards_half_points_when_only_one_direction_is_favorable(self):
+        # Rohini to Bharani is unfavorable; the reverse direction is favorable.
+        result = calculate_ashta_koota_match(
+            {"nakshatra": "Rohini", "moon_sign": "Taurus"},
+            {"nakshatra": "Bharani", "moon_sign": "Aries"},
+        )
+        self.assertEqual(result["breakdown"]["tara"], 1.5)
+        self.assertEqual(result["total_score"], round(sum(result["breakdown"].values()), 2))
+
+    def test_gana_score_does_not_depend_on_profile_order(self):
+        deva = {"nakshatra": "Ashwini", "moon_sign": "Aries"}
+        manushya = {"nakshatra": "Bharani", "moon_sign": "Aries"}
+        first = calculate_ashta_koota_match(deva, manushya)
+        second = calculate_ashta_koota_match(manushya, deva)
+        self.assertEqual(first["breakdown"]["gana"], second["breakdown"]["gana"])

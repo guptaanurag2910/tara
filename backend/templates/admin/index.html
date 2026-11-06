@@ -1,0 +1,52 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+{% if tara_dashboard %}
+<style>
+  .tara-dashboard{margin:0 0 28px;color:#222}
+  .tara-heading{display:flex;justify-content:space-between;align-items:end;gap:16px;margin:8px 0 18px}
+  .tara-heading h1{font-size:24px;margin:0 0 4px}.tara-heading p{margin:0;color:#666}
+  .tara-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:18px}
+  .tara-card{background:var(--body-bg,#fff);border:1px solid var(--border-color,#ddd);border-radius:10px;padding:16px;text-decoration:none;color:inherit;display:block}
+  a.tara-card:hover{border-color:var(--link-fg,#417690);box-shadow:0 3px 12px #00000010}
+  .tara-card-label{font-size:13px;color:#666}.tara-card-value{font-size:27px;font-weight:700;margin:5px 0}.tara-card-detail{font-size:12px;color:#777}
+  .tara-panels{display:grid;grid-template-columns:1.2fr 1fr;gap:14px;margin-bottom:24px}
+  .tara-panel{background:var(--body-bg,#fff);border:1px solid var(--border-color,#ddd);border-radius:10px;padding:18px}
+  .tara-panel h2{font-size:16px;margin:0 0 14px}.tara-chart{height:150px;display:flex;align-items:end;gap:12px;border-bottom:1px solid #ddd;padding:0 4px}
+  .tara-bar-wrap{height:100%;flex:1;display:flex;flex-direction:column;justify-content:end;align-items:center;gap:5px;color:#666;font-size:11px}
+  .tara-bar{width:min(34px,75%);min-height:4px;background:#7754c8;border-radius:5px 5px 0 0}.tara-shortcuts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .tara-shortcuts a{padding:11px;border-radius:7px;background:#f5f4f8;text-decoration:none}.tara-shortcuts a:hover{background:#eeebf5}
+  .tara-recent{width:100%;border-collapse:collapse}.tara-recent th,.tara-recent td{text-align:left;padding:9px 6px;border-bottom:1px solid #eee;font-size:13px}.tara-recent th{color:#666}
+  @media(max-width:900px){.tara-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.tara-panels{grid-template-columns:1fr}}
+  @media(max-width:520px){.tara-metrics{grid-template-columns:1fr}.tara-heading{display:block}}
+</style>
+<section class="tara-dashboard" aria-label="Tara admin overview">
+  <div class="tara-heading"><div><h1>Tara overview</h1><p>Live product activity and administration</p></div></div>
+  <div class="tara-metrics">
+    {% for metric in tara_dashboard.metrics %}
+      <a class="tara-card" href="{{ metric.url }}"><div class="tara-card-label">{{ metric.label }}</div><div class="tara-card-value">{{ metric.value }}</div><div class="tara-card-detail">{{ metric.detail }}</div></a>
+    {% endfor %}
+  </div>
+  <div class="tara-panels">
+    <div class="tara-panel"><h2>New users · last 7 days</h2><div class="tara-chart">
+      {% for day in tara_dashboard.signup_trend %}<div class="tara-bar-wrap"><span>{{ day.count }}</span><div class="tara-bar" style="height:{{ day.height }}%"></div><span>{{ day.date }}</span></div>{% endfor %}
+    </div></div>
+    <div class="tara-panel"><h2>Operations snapshot</h2><div class="tara-shortcuts">
+      <a href="/admin/matching/swipe/">Swipes today <strong>{{ tara_dashboard.swipes_today }}</strong></a>
+      <a href="/admin/notifications/notification/">Unread notifications <strong>{{ tara_dashboard.notifications_unread }}</strong></a>
+      <a href="/admin/realtime/match/">Realtime matches <strong>{{ tara_dashboard.realtime_matches }}</strong></a>
+      <a href="/admin/astrology/kundali/">Kundali records</a>
+      <a href="/admin/games/gamesession/">Game sessions</a>
+      <a href="/admin/chat/message/">Chat messages</a>
+    </div></div>
+  </div>
+  <div class="tara-panel"><h2>Recently joined users</h2><table class="tara-recent"><thead><tr><th>Name</th><th>Email</th><th>Joined</th><th>Status</th></tr></thead><tbody>
+    {% for user in tara_dashboard.recent_users %}<tr><td><a href="/admin/users/user/{{ user.pk }}/change/">{{ user.name|default:"—" }}</a></td><td>{{ user.email }}</td><td>{{ user.date_joined|date:"M j, Y" }}</td><td>{% if user.is_active %}Active{% else %}Inactive{% endif %}</td></tr>{% empty %}<tr><td colspan="4">No users yet.</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+{% endif %}
+<div id="content-main">
+  {% include "admin/app_list.html" with app_list=app_list show_changelinks=True %}
+</div>
+{% endblock %}

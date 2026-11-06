@@ -6,6 +6,7 @@ class Notification(models.Model):
     class Type(models.TextChoices):
         MATCH = "match", "Match"
         MESSAGE = "message", "Message"
+        GAME_TURN = "game_turn", "Game turn"
         RECOMMENDATION = "recommendation", "Recommendation"
 
     user = models.ForeignKey(
@@ -15,6 +16,8 @@ class Notification(models.Model):
     )
     type = models.CharField(max_length=20, choices=Type.choices, db_index=True)
     text = models.TextField()
+    action_url = models.CharField(max_length=255, blank=True, default="")
+    actor_name = models.CharField(max_length=255, blank=True, default="")
     is_read = models.BooleanField(default=False, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 

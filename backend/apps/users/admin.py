@@ -16,8 +16,12 @@ from .models import (
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
     model = User
-    list_display = ("id", "phone_number", "email", "name", "gender", "preference", "is_staff")
-    ordering = ("id",)
+    list_display = ("id", "name", "email", "phone_number", "gender", "preference", "is_active", "date_joined", "last_login", "is_staff")
+    list_filter = ("is_active", "is_staff", "gender", "preference", "date_joined")
+    search_fields = ("name", "email", "phone_number")
+    list_select_related = True
+    ordering = ("-date_joined",)
+    list_per_page = 50
     fieldsets = (
         (None, {"fields": ("phone_number", "email", "password")}),
         (
@@ -36,6 +40,7 @@ class UserAdmin(BaseUserAdmin):
                 )
             },
         ),
+        ("Notification Preferences", {"fields": ("notification_preferences",)}),
         ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}),
         ("Important dates", {"fields": ("last_login", "date_joined")}),
     )

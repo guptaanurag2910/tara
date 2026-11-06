@@ -46,8 +46,8 @@ export async function upsertBirthDetails(data, method = "post") {
     payload.longitude = data.longitude;
   }
 
-  if (data.time_of_birth) {
-    payload.time_of_birth = data.time_of_birth;
+  if (data.time_of_birth !== undefined) {
+    payload.time_of_birth = data.time_of_birth || null;
   }
   if (data.is_default_location !== undefined) {
     payload.is_default_location = Boolean(data.is_default_location);

@@ -1,10 +1,11 @@
 SEED_GAMES = []
 
 
-def _binary(prompt, left, right):
+def _binary(prompt, left, right, theme="everyday"):
     return {
         "question_text": prompt,
         "options": [left, right],
+        "tags": [theme],
     }
 
 
@@ -20,6 +21,105 @@ def _open_choice(prompt, *options):
         "question_text": prompt,
         "options": list(options),
     }
+
+
+THIS_OR_THAT_EXTRA = [
+    ("For a spontaneous date: street-food crawl or a tiny dessert café?", "Street-food crawl", "Dessert café", "food"),
+    ("Build the perfect taco: extra guac or extra salsa?", "Extra guac", "Extra salsa", "food"),
+    ("Breakfast date: pancakes or a savory brunch?", "Pancakes", "Savory brunch", "food"),
+    ("One snack for a movie marathon: popcorn or nachos?", "Popcorn", "Nachos", "food"),
+    ("Choose a forever dessert: warm brownie or mango kulfi?", "Warm brownie", "Mango kulfi", "food"),
+    ("Coffee order: iced and sweet or hot and strong?", "Iced and sweet", "Hot and strong", "food"),
+    ("Dinner plan: try the new place or revisit your favorite?", "Try somewhere new", "Revisit a favorite", "food"),
+    ("Pizza night: thin and crispy or thick and fluffy?", "Thin and crispy", "Thick and fluffy", "food"),
+    ("Pick a comfort meal: noodles or a big bowl of soup?", "Noodles", "Soup", "food"),
+    ("Share the last bite or order one more?", "Share it", "Order one more", "food"),
+    ("For a road trip: packed snacks or surprise pit stops?", "Packed snacks", "Surprise stops", "travel"),
+    ("Weekend escape: cabin in the hills or a beach hut?", "Hill cabin", "Beach hut", "travel"),
+    ("Explore a city: follow a walking map or wander at random?", "Follow a map", "Wander at random", "travel"),
+    ("A free flight appears: Tokyo or Lisbon?", "Tokyo", "Lisbon", "travel"),
+    ("Vacation pace: see everything or leave room for naps?", "See everything", "Leave room to nap", "travel"),
+    ("Choose the scenic route or get there as fast as possible?", "Scenic route", "Fastest route", "travel"),
+    ("A surprise day off: train to a new town or stay nearby?", "Explore a new town", "Stay nearby", "travel"),
+    ("Travel light with one bag or bring options for every mood?", "One-bag light", "Pack every option", "travel"),
+    ("Sunset view: rooftop skyline or quiet shoreline?", "Rooftop skyline", "Quiet shoreline", "travel"),
+    ("Pick a trip souvenir: a postcard or a tiny local snack?", "Postcard", "Local snack", "travel"),
+    ("Concert night: front-row energy or a laid-back spot at the back?", "Front-row energy", "Laid-back at the back", "music"),
+    ("Make a playlist: songs everyone knows or hidden gems?", "Familiar favorites", "Hidden gems", "music"),
+    ("Sing along loudly or know every word quietly?", "Sing out loud", "Quietly know every word", "music"),
+    ("A long drive needs: one perfect album or a chaotic shuffle?", "One perfect album", "Chaotic shuffle", "music"),
+    ("Dance break: planned moves or absolutely no plan?", "Planned moves", "Freestyle", "music"),
+    ("Discover a new artist from a friend or from a movie soundtrack?", "Friend recommendation", "Movie soundtrack", "music"),
+    ("Live music: tiny acoustic set or huge festival crowd?", "Acoustic set", "Big festival", "music"),
+    ("Pick the soundtrack for a rainy day: jazz or indie pop?", "Jazz", "Indie pop", "music"),
+    ("Would you rather get a song recommendation or send one?", "Get a recommendation", "Send one", "music"),
+    ("Karaoke duet: dramatic ballad or ridiculous throwback?", "Dramatic ballad", "Ridiculous throwback", "music"),
+    ("Free evening: board-game café or live comedy show?", "Board-game café", "Comedy show", "weekend"),
+    ("Ideal Sunday: slow morning or spontaneous adventure?", "Slow morning", "Spontaneous adventure", "weekend"),
+    ("A perfect evening ends with: one more episode or an early night?", "One more episode", "Early night", "weekend"),
+    ("Plan the weekend in advance or decide over breakfast?", "Plan ahead", "Decide at breakfast", "weekend"),
+    ("Choose a tiny treat: flowers on the table or a handwritten note?", "Flowers", "Handwritten note", "weekend"),
+    ("Rainy day: blanket fort or puddle walk?", "Blanket fort", "Puddle walk", "weekend"),
+    ("Try a new hobby together or get better at one you already like?", "Try something new", "Practice a favorite", "weekend"),
+    ("At a party: find the snacks or find the coziest conversation?", "Find the snacks", "Find a good conversation", "weekend"),
+    ("A free hour: people-watch at a café or browse a bookstore?", "People-watch", "Browse a bookstore", "weekend"),
+    ("Choose a low-key celebration: homemade cake or a silly little trophy?", "Homemade cake", "Silly trophy", "weekend"),
+    ("Co-op game night: solve a mystery or escape a puzzle room?", "Solve a mystery", "Escape a puzzle room", "play"),
+    ("Survive a silly island challenge: build a treehouse or find the snacks?", "Build a treehouse", "Find the snacks", "play"),
+    ("Team superpower: talk to animals or pause time for ten minutes?", "Talk to animals", "Pause time", "play"),
+    ("For a made-up café: name it first or invent the menu first?", "Name it first", "Invent the menu first", "play"),
+    ("Choose your team mascot: tiny dragon or overconfident penguin?", "Tiny dragon", "Confident penguin", "play"),
+    ("In a treasure hunt: follow a cryptic clue or a suspicious parrot?", "Cryptic clue", "Suspicious parrot", "play"),
+    ("Build a blanket fort or turn the living room into a dance floor?", "Blanket fort", "Dance floor", "play"),
+    ("Pick a fictional sidekick: chatty robot or clever fox?", "Chatty robot", "Clever fox", "play"),
+    ("Team challenge: make the weirdest sandwich or the best paper plane?", "Weird sandwich", "Best paper plane", "play"),
+    ("Choose a silly quest: return a dragon's library book or find its lost sock?", "Return the book", "Find the sock", "play"),
+    ("For a cozy night: mystery novel or comfort rewatch?", "Mystery novel", "Comfort rewatch", "cozy"),
+    ("Read together: take turns aloud or share favorite lines after?", "Read aloud", "Share favorite lines", "cozy"),
+    ("Pick a film vibe: clever mystery or joyful adventure?", "Clever mystery", "Joyful adventure", "cozy"),
+    ("A rainy afternoon calls for: baking something or ordering something?", "Bake something", "Order something", "cozy"),
+    ("Cozy corner: window seat or a pile of cushions on the floor?", "Window seat", "Cushion pile", "cozy"),
+    ("Best background sound: rain on the roof or a crackling fireplace?", "Rain on the roof", "Crackling fireplace", "cozy"),
+    ("Pick a comfort rewatch: comedy series or animated movie?", "Comedy series", "Animated movie", "cozy"),
+    ("Make a home feel warmer: soft lights or lots of plants?", "Soft lights", "Lots of plants", "cozy"),
+    ("Bookshop date: choose for each other or browse side by side?", "Choose for each other", "Browse together", "cozy"),
+    ("Relax together: quiet parallel reading or a long catch-up chat?", "Quiet reading", "Long chat", "cozy"),
+    ("Learn a new skill: cooking something tricky or dancing something silly?", "Tricky recipe", "Silly dance", "curious"),
+    ("Would you rather be great at remembering names or remembering lyrics?", "Remember names", "Remember lyrics", "curious"),
+    ("Pick a museum: ancient history or wonderfully weird inventions?", "Ancient history", "Weird inventions", "curious"),
+    ("Ask the expert: how the universe began or how deep the ocean goes?", "The universe", "The deep ocean", "curious"),
+    ("Explore a new neighborhood by its street art or its bakeries?", "Street art", "Bakeries", "curious"),
+    ("For a day, speak every language or play every instrument?", "Speak every language", "Play every instrument", "curious"),
+    ("Choose a tiny superpower: always find parking or always pick the right queue?", "Find parking", "Pick the right queue", "curious"),
+    ("Would you rather see the past for one day or the future for one day?", "See the past", "See the future", "curious"),
+    ("Ask one question of a wise old tree or a very honest cat?", "Wise old tree", "Honest cat", "curious"),
+    ("Learn by trying it yourself or by watching someone explain it?", "Try it myself", "Watch an explanation", "curious"),
+    ("For a first meet-up: a short walk or a relaxed coffee?", "Short walk", "Relaxed coffee", "date"),
+    ("Choose the date playlist: take turns picking or press shuffle?", "Take turns picking", "Press shuffle", "date"),
+    ("A little late: send a funny update or arrive with a snack apology?", "Funny update", "Snack apology", "date"),
+    ("At dinner: share a few dishes or each order a favorite?", "Share dishes", "Order favorites", "date"),
+    ("Date activity: mini golf or a pottery class?", "Mini golf", "Pottery class", "date"),
+    ("Choose a first-date setting: lively market or quiet garden?", "Lively market", "Quiet garden", "date"),
+    ("Would you rather swap favorite songs or favorite comfort foods?", "Swap favorite songs", "Swap comfort foods", "date"),
+    ("Split a dessert or order two and compare?", "Split one", "Order two", "date"),
+    ("Try something new together or show each other a personal favorite?", "Try something new", "Share a favorite", "date"),
+    ("Finish a date with: one more stop or a cheerful goodnight?", "One more stop", "Cheerful goodnight", "date"),
+    ("Make a tiny bucket list: see bioluminescent water or watch a meteor shower?", "Glowing water", "Meteor shower", "dreams"),
+    ("Pick a home view: leafy courtyard or city lights?", "Leafy courtyard", "City lights", "dreams"),
+    ("Choose a dream weekend: tiny house in the woods or houseboat?", "Woods cabin", "Houseboat", "dreams"),
+    ("If the day had an extra hour: use it to explore or to rest?", "Explore", "Rest", "dreams"),
+    ("A magic door opens to: a secret garden or a hidden library?", "Secret garden", "Hidden library", "dreams"),
+    ("Choose a little tradition: annual trip or monthly themed dinner?", "Annual trip", "Themed dinner", "dreams"),
+    ("Pick a view for breakfast: mountain mist or ocean waves?", "Mountain mist", "Ocean waves", "dreams"),
+    ("A personal robot could handle: laundry or grocery shopping?", "Laundry", "Groceries", "dreams"),
+    ("Choose a tiny daily luxury: fresh flowers or excellent coffee?", "Fresh flowers", "Excellent coffee", "dreams"),
+    ("Make a shared tradition: Sunday walk or Friday snack tasting?", "Sunday walk", "Friday snack tasting", "dreams"),
+]
+
+THIS_OR_THAT_QUESTIONS = [
+    _binary(prompt, left, right, theme)
+    for prompt, left, right, theme in THIS_OR_THAT_EXTRA
+]
 
 
 SEED_GAMES.extend(
@@ -43,7 +143,7 @@ SEED_GAMES.extend(
                 _binary("Luxury ✨ or Budget 💸?", "Luxury ✨", "Budget 💸"),
                 _binary("Long drive 🚗 or Walk 🚶?", "Long drive 🚗", "Walk 🚶"),
                 _binary("Late night chats 🌙 or Early morning texts ☀️?", "Late night chats 🌙", "Early morning texts ☀️"),
-            ],
+            ] + THIS_OR_THAT_QUESTIONS,
         },
         {
             "slug": "would_you_rather",

@@ -107,3 +107,20 @@ class NotificationApiTests(TestCase):
         self.assertTrue(own_unread.is_read)
         self.assertTrue(own_read.is_read)
         self.assertFalse(foreign_unread.is_read)
+
+    def test_notification_preferences_default_patch_and_persist(self):
+        self.client.force_authenticate(self.user)
+        url = "/api/notifications/preferences/"
+
+        defaults = self.client.get(url)
+        self.assertEqual(defaults.status_code, 200)
+        self.assertEqual(defaults.json(), {"matches": True, "messages": True, "game_turns": True})
+
+        updated = self.client.patch(url, {"messages": False, "game_turns": False}, format="json")
+        self.assertEqual(updated.status_code, 200)
+        self.assertEqual(updated.json(), {"matches": True, "messages": False, "game_turns": False})
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.notification_preferences, {"matches": True, "messages": False, "game_turns": False})
+
+        invalid = self.client.patch(url, {"messages": "sometimes"}, format="json")
+        self.assertEqual(invalid.status_code, 400)

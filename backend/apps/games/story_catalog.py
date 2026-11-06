@@ -1,0 +1,73 @@
+"""Curated, lighthearted starters for the asynchronous Build a Story game."""
+
+OPENINGS = [
+    "A tiny dragon showed up at our door with a very serious problem…",
+    "At midnight, the museum's dinosaurs started a group chat…",
+    "We found a map inside a fortune cookie, and it led to…",
+    "The world's least confident superhero got their first mission…",
+    "A penguin in a raincoat asked us to keep a secret…",
+    "Our houseplant finally spoke, and the first thing it said was…",
+    "The elevator opened onto a beach that definitely wasn't in the building…",
+    "A robot entered a baking contest with one unusual ingredient…",
+    "We accidentally adopted a cloud that followed us everywhere…",
+    "The town's new mayor was a very persuasive raccoon…",
+    "A mysterious package arrived with a note that read…",
+    "The moon sent us a voice note asking for a favor…",
+    "Our picnic was interrupted by a very polite alien…",
+    "A time-traveling tourist asked us for directions to…",
+    "The old library had one book that kept changing its ending…",
+    "A pair of sunglasses let us hear what dogs were thinking…",
+    "We woke up to discover every shoe in town had gone missing…",
+    "A pirate ship was parked in the grocery store car park…",
+    "The smallest café in the city served one impossible drink…",
+    "A friendly ghost wanted help planning a surprise party…",
+    "Our GPS announced it was taking a personal day…",
+    "The last train of the night had a very unusual conductor…",
+    "A vending machine offered us one button labeled 'adventure'…",
+    "We discovered a door behind the waterfall, and inside was…",
+    "A famous chef challenged us to cook dinner using only…",
+    "The neighborhood cats elected one of us their spokesperson…",
+    "An invitation arrived for a party on top of a moving bus…",
+    "A tiny spaceship crash-landed in our laundry basket…",
+    "The weather forecast predicted a shower of something unexpected…",
+    "We found a treasure chest, but it was full of…",
+    "A squirrel offered to trade us a golden acorn for…",
+    "Our reflection winked before we did, then…",
+    "A sleepy wizard accidentally turned the city square into…",
+    "The new escape room had one rule: never mention…",
+    "A postcard arrived from tomorrow with the message…",
+    "The world's friendliest monster was afraid of…",
+    "We got a call from a number labeled 'Past You'…",
+    "A very small detective arrived to solve the case of…",
+    "The bakery's new pastry made everyone tell the truth about…",
+    "A staircase appeared in the middle of the park and led to…",
+]
+
+TWISTS = [
+    "Then the lights flickered and a kazoo began playing by itself.",
+    "Just then, a very determined goose demanded to come along.",
+    "The only clue was a glittery sock with a tiny bell attached.",
+    "Unfortunately, the whole plan depended on a dramatic dance move.",
+    "A talking teapot interrupted with surprisingly good advice.",
+    "That was when we realized our map was upside down—and humming.",
+    "The ticket was valid, but only if we traveled backward.",
+    "A tiny audience of frogs began cheering from the bushes.",
+    "The password turned out to be the name of a very boring sandwich.",
+    "At that exact moment, everything smelled faintly of popcorn.",
+    "A second note appeared, written in extremely neat spaghetti.",
+    "We had to choose a captain, and the houseplant raised a leaf.",
+    "The door opened, but it led to the same room with better lighting.",
+    "Someone had replaced the treasure with a handwritten apology.",
+    "The plan was working beautifully until the confetti cannon sneezed.",
+    "Our new companion insisted on communicating only through song.",
+    "A mysterious voice said, 'Nice try,' and left us a cupcake.",
+    "We discovered the whole town had been waiting for our cue.",
+    "The next clue was hidden inside a very competitive board game.",
+    "Everything made sense once we asked the nearest pigeon.",
+]
+
+QUESTIONS = [
+    {"question_text": f"Story starter: {opening} {twist}", "tags": ["creative", "cooperative", "async"]}
+    for opening in OPENINGS
+    for twist in TWISTS
+][:100]

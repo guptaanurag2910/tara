@@ -3,6 +3,14 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
+from uuid import uuid4
+
+
+def game_photo_upload_to(instance, filename):
+    extension = filename.rsplit(".", 1)[-1].lower() if "." in filename else "jpg"
+    if not extension.isalnum() or len(extension) > 8:
+        extension = "jpg"
+    return f"game_photos/{instance.session_id}/{instance.user_id}/{uuid4().hex}.{extension}"
 
 
 class GameCategory(models.Model):
@@ -154,8 +162,11 @@ class QuestionExposure(models.Model):
 
 class GameSession(models.Model):
     class Status(models.TextChoices):
+        INVITED = "invited", "Invited"
         ACTIVE = "active", "Active"
         COMPLETED = "completed", "Completed"
+        DECLINED = "declined", "Declined"
+        EXPIRED = "expired", "Expired"
 
     match = models.ForeignKey(
         "matching.Match",
@@ -187,6 +198,7 @@ class GameSession(models.Model):
         related_name="started_game_sessions",
     )
     current_question_index = models.PositiveIntegerField(default=0)
+    game_state = models.JSONField(default=dict, blank=True)
     status = models.CharField(
         max_length=16,
         choices=Status.choices,
@@ -200,8 +212,8 @@ class GameSession(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["match", "game"],
-                condition=Q(status="active"),
-                name="games_one_active_session_per_match_game",
+                condition=Q(status__in=["invited", "active"]),
+                name="games_one_open_session_per_match_game",
             ),
         ]
         indexes = [
@@ -232,7 +244,7 @@ class GameSessionQuestion(models.Model):
         related_name="session_questions",
     )
     order = models.PositiveSmallIntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(3)],
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
     )
 
     class Meta:
@@ -279,7 +291,18 @@ class GameResponse(models.Model):
         blank=True,
         related_name="responses",
     )
+    predicted_text_answer = models.TextField(blank=True)
     text_answer = models.TextField(blank=True)
+    # Used by collaborative text games such as Build a Story. Each row is a
+    # participant's private contribution for one turn/question.
+    story_text = models.TextField(blank=True)
+    truth_statements = models.JSONField(default=list, blank=True)
+    lie_index = models.PositiveSmallIntegerField(null=True, blank=True)
+    guessed_lie_index = models.PositiveSmallIntegerField(null=True, blank=True)
+    ranking = models.JSONField(default=list, blank=True)
+    photo = models.FileField(upload_to=game_photo_upload_to, null=True, blank=True)
+    photo_caption = models.CharField(max_length=280, blank=True, default="")
+    predicted_text_answer = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:

@@ -11,9 +11,9 @@ from uuid import uuid4
 
 from apps.matching.models import DailyRecommendation, Match, Swipe
 from .models import KundaliProfile, PersonalityOption, PersonalityQuestion, PersonalityResponse, Trait, UserProfileImage
+from .otp_service import verify_phone_otp
 
 User = get_user_model()
-HARD_CODED_OTP = "123456"
 
 
 def detect_image_format(uploaded_file) -> str | None:
@@ -67,6 +67,11 @@ def normalize_phone_number(value: str) -> str:
 def build_phone_email(phone_number: str) -> str:
     digits = re.sub(r"\D", "", str(phone_number or ""))
     return f"phone.{digits}@tara.local"
+
+
+def is_at_least_18(birth_date):
+    today = timezone.localdate()
+    return today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day)) >= 18
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -161,12 +166,18 @@ class SignupSerializer(serializers.ModelSerializer):
             attrs["phone_number"] = normalized_phone
             if User.objects.filter(phone_number=normalized_phone).exists():
                 raise serializers.ValidationError({"phone_number": "This phone number is already registered."})
-            if otp != HARD_CODED_OTP:
-                raise serializers.ValidationError({"otp": "Invalid OTP. Use 123456 for now."})
             attrs["email"] = email or build_phone_email(normalized_phone)
         else:
             if not email:
                 raise serializers.ValidationError({"phone_number": "phone_number is required for signup."})
+
+        birth_date = attrs.get("date_of_birth")
+        if birth_date is None:
+            raise serializers.ValidationError({"date_of_birth": "Enter your date of birth to confirm you are at least 18."})
+        if not is_at_least_18(birth_date):
+            raise serializers.ValidationError({"date_of_birth": "Tara is for adults aged 18 and over."})
+        if phone_number:
+            verify_phone_otp(attrs["phone_number"], "signup", otp)
 
         if "latitude" in attrs and "longitude" not in attrs:
             raise serializers.ValidationError({"longitude": "longitude is required when latitude is provided."})
@@ -235,14 +246,12 @@ class ForgotPasswordResetSerializer(serializers.Serializer):
     def validate(self, attrs):
         normalized_phone = normalize_phone_number(attrs.get("phone_number"))
         attrs["phone_number"] = normalized_phone
-        if str(attrs.get("otp") or "").strip() != HARD_CODED_OTP:
-            raise serializers.ValidationError({"otp": "Invalid OTP. Use 123456 for now."})
-
         user = User.objects.filter(phone_number=normalized_phone).first()
         if user is None:
             raise serializers.ValidationError({"phone_number": "No user found with this phone number."})
         if not user.is_active:
             raise serializers.ValidationError({"detail": "Account is inactive."})
+        verify_phone_otp(normalized_phone, "password_reset", attrs.get("otp"))
         attrs["user"] = user
         return attrs
 
@@ -357,6 +366,9 @@ def _display_personality_question_text(text):
     normalized = str(text or "")
     if normalized.startswith("[Demo] "):
         return normalized[len("[Demo] ") :]
+    if normalized.startswith("[Vibe "):
+        _, _, statement = normalized.partition("] ")
+        return statement or normalized
     return normalized
 
 
@@ -594,9 +606,9 @@ class KundaliMatchRequestSerializer(serializers.Serializer):
 
 
 class KundaliMatchResponseSerializer(serializers.Serializer):
-    total_score = serializers.IntegerField()
+    total_score = serializers.FloatField()
     compatibility = serializers.CharField()
-    breakdown = serializers.DictField(child=serializers.IntegerField())
+    breakdown = serializers.DictField(child=serializers.FloatField())
 
 
 class ProfileMeSerializer(serializers.Serializer):

@@ -15,11 +15,19 @@ export async function fetchMatchMessages(matchId) {
   return data;
 }
 
-export async function sendMatchMessage(matchId, content, clientMessageId) {
+export async function sendMatchMessage(matchId, content, clientMessageId, replyToId) {
   const payload = { content };
   if (clientMessageId) {
     payload.client_message_id = clientMessageId;
   }
+  if (replyToId) {
+    payload.reply_to_id = replyToId;
+  }
   const { data } = await api.post(`chat/${matchId}/message/`, payload);
+  return data;
+}
+
+export async function toggleMessageReaction(matchId, messageId, emoji) {
+  const { data } = await api.post(`chat/${matchId}/messages/${messageId}/reaction/`, { emoji });
   return data;
 }

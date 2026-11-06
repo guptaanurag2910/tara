@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import date, datetime, time
 from typing import Dict, Mapping, Optional, Tuple, Union
 
+from .nakshatra_data import NAKSHATRAS, attributes_for_nakshatra_index
+
 DateInput = Union[date, str]
 TimeInput = Optional[Union[time, str]]
 
@@ -19,36 +21,6 @@ ZODIAC_SIGNS = [
     "Capricorn",
     "Aquarius",
     "Pisces",
-]
-
-NAKSHATRAS = [
-    "Ashwini",
-    "Bharani",
-    "Krittika",
-    "Rohini",
-    "Mrigashirsha",
-    "Ardra",
-    "Punarvasu",
-    "Pushya",
-    "Ashlesha",
-    "Magha",
-    "Purva Phalguni",
-    "Uttara Phalguni",
-    "Hasta",
-    "Chitra",
-    "Swati",
-    "Vishakha",
-    "Anuradha",
-    "Jyeshtha",
-    "Mula",
-    "Purva Ashadha",
-    "Uttara Ashadha",
-    "Shravana",
-    "Dhanishta",
-    "Shatabhisha",
-    "Purva Bhadrapada",
-    "Uttara Bhadrapada",
-    "Revati",
 ]
 
 VARNA_BY_SIGN = {
@@ -95,20 +67,6 @@ BHAKOOT_BY_SIGN = {
     "Aquarius": "Kama",
     "Pisces": "Moksha",
 }
-
-GANA_CYCLE = ["Deva", "Manushya", "Rakshasa"]
-NADI_CYCLE = ["Adi", "Madhya", "Antya"]
-YONI_CYCLE = [
-    "Horse",
-    "Elephant",
-    "Sheep",
-    "Serpent",
-    "Dog",
-    "Cat",
-    "Rat",
-    "Cow",
-    "Buffalo",
-]
 
 PLANET_IDS = {
     "Sun": "SUN",
@@ -249,9 +207,13 @@ def local_to_utc(
     naive = datetime.combine(dob, tob)
     try:
         local_dt = tz.localize(naive, is_dst=None)
-    except Exception:
-        # For ambiguous/non-existent local times (DST boundaries), pick the standard-safe branch.
-        local_dt = tz.localize(naive, is_dst=False)
+    except pytz.AmbiguousTimeError as exc:
+        raise ValueError(
+            f"Birth time {naive.isoformat()} is ambiguous in {tz_name} because clocks changed. "
+            "Provide the correct UTC offset or confirm the recorded time."
+        ) from exc
+    except pytz.NonExistentTimeError as exc:
+        raise ValueError(f"Birth time {naive.isoformat()} did not occur in {tz_name} because clocks changed.") from exc
 
     return local_dt.astimezone(pytz.utc)
 
@@ -361,12 +323,11 @@ def _nakshatra_from_longitude(moon_longitude: float) -> Tuple[str, int, int]:
 
 
 def _compatibility_attributes(moon_sign: str, nakshatra_index: int) -> Dict[str, str]:
+    nakshatra_attributes = attributes_for_nakshatra_index(nakshatra_index)
     return {
         "varna": VARNA_BY_SIGN[moon_sign],
         "vashya": VASHYA_BY_SIGN[moon_sign],
-        "gana": GANA_CYCLE[nakshatra_index % len(GANA_CYCLE)],
-        "yoni": YONI_CYCLE[nakshatra_index % len(YONI_CYCLE)],
-        "nadi": NADI_CYCLE[nakshatra_index % len(NADI_CYCLE)],
+        **nakshatra_attributes,
         "bhakoot": BHAKOOT_BY_SIGN[moon_sign],
     }
 

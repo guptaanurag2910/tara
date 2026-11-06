@@ -13,7 +13,7 @@ export const DEFAULT_SETTINGS = {
   notifications: {
     matches: true,
     messages: true,
-    likes: true,
+    game_turns: true,
   },
   appearance: "system",
   privacy: {
@@ -60,6 +60,10 @@ function normalizeSettings(settings) {
       ...(settings?.privacy || {}),
     },
   };
+
+  if (settings?.notifications?.game_turns === undefined && settings?.notifications?.likes !== undefined) {
+    merged.notifications.game_turns = settings.notifications.likes;
+  }
 
   const minAge = Number(merged.discovery.minAge) || DEFAULT_SETTINGS.discovery.minAge;
   const maxAge = Number(merged.discovery.maxAge) || DEFAULT_SETTINGS.discovery.maxAge;

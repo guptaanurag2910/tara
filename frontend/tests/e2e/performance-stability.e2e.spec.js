@@ -1,4 +1,10 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { expect, test } from "@playwright/test";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const API_BASE = process.env.E2E_API_BASE_URL || "http://127.0.0.1:8003/api";
 const PERF_PHONE = "+919990030000";
@@ -231,6 +237,7 @@ test.describe.serial("Performance and stability checks", () => {
     await expect(page.getByRole("heading", { name: /Edit Photos/i })).toBeVisible();
 
     const startedAt = Date.now();
+    const imagePath = path.resolve(__dirname, "../../src/assets/profile-1.png");
     for (let index = 0; index < 5; index += 1) {
       const uploadResponse = page.waitForResponse(
         (response) =>
@@ -238,7 +245,7 @@ test.describe.serial("Performance and stability checks", () => {
           response.request().method() === "POST" &&
           response.status() === 201,
       );
-      await page.locator('input[type="file"]').setInputFiles('/Users/anurag/Library/CloudStorage/OneDrive-CargillInc/Desktop/mm/tara/frontend/src/assets/profile-1.png');
+      await page.locator('input[type="file"]').setInputFiles(imagePath);
       await uploadResponse;
     }
 
